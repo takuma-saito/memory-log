@@ -1,0 +1,15 @@
+$TTL 86400
+
+;; SOAレコード
+@       IN SOA ns1.domain. root.domain. (
+            2012040202  ; Serial
+            3600          ; 1 hours Refresh
+            900         ; 15 mintutes Retry
+            604800      ; 1 weeexpire
+            3600)       ; Minimum
+        IN NS ns1.ドメイン名.
+        IN A ホストIPアドレス
+
+; サブドメインの設定
+ns1    IN A IPADDRESS
+www    IN CNAME ns1

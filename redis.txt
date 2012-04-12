@@ -1,0 +1,184 @@
+redis - 高性能キーバリューストア
+============================
+
+reids の特徴
+----------------------------
+
++ memcachedのようないわゆるKVS
++ valueにはStringだけではなく、List, Setも利用できる
++ データに対するpush/pop, add/removeのような操作はすべてatomicな操作
++ 通常はメモリ上で動作するが、定期的にデータをディスクに書き出す（常に書き出すような設定も可能）
++ Master-Slaveのレプしケーションをサポート
++ Ruby, Python, Perl, Java...などの各言語のバインディングを用意
+
+ただのKVSではなく保存する値（つまりvalue）に様々なデータ構造を用いることができる。
+
+
+redisのインストール・起動方法（Mac版）
+----------------------------
+
+* reids のインストール:
+    
+    % sudo port install reids
+
+* サーバーの起動:
+
+    % redis-server /opt/local/etc/redis.conf 1>/dev/null 2>&1 &
+
+* クライアントの起動:
+
+    % redis-cli
+    redis 127.0.0.1:6379> 
+
+redisのチュートリアル
+----------------------------
+
+### redis の value について ###
+redisの特徴は様々なデータ構造をvalueに指定できること。
+
++ バナリーセーフな文字列
++ 文字列のリスト
++ 文字列のHash
+
+### redis のキーについて ###
+redis のキーはバイナリーセーフなので、どんな文字列も安全に保存することができる。
+また、以下の点に注意する
+
++ redis のキーは1024バイト以内に収めるのがよい。それ以上大きくなる場合パフォーマンスが落ちる。
++ keyが小さすぎるのも、可読性を考えると推奨されない
+
+### 文字列に対する操作 ### 
+get, set コマンドで文字列の保存・取り出しができる。一番基本的なコマンド。
+
+* `set key value`: key と value を保存する
+* `get key`: key に関連付いている value を取り出す
+
+    redis 127.0.0.1:6379> set mykey "my binary safe value"
+    OK
+    redis 127.0.0.1:6379> get mykey
+    "my binary safe value"redis 127.0.0.1:6379> 
+
+incr(increment), decr(decriment) コマンドでvalueの加算・減算もできる。
+
+    redis 127.0.0.1:6379> set count 1000
+    OK
+    redis 127.0.0.1:6379> incr count
+    (integer) 1001
+    redis 127.0.0.1:6379> decr count
+    (integer) 1000
+
+### Listに対する操作 ###
+redis のリストはリンクドリストで実装されいてる。
+よって、List型のデータに対するの検索はO(n), 追加・消去にはO(1)の計算量が必要になる。
+ただし検索もindexを指定すればO(1)の早さでアクセスすることができる。
+
+* `rpush lists`: list の最後に値を追加する
+* `lpush lists`: list の最初に値を追加する
+* `lrange lists first-number last-number`: 指定された範囲の値を表示させる
+
+
+### Setに対する操作 ###
+集合を追加する時はSADDコマンドを使う。
+また、SMEMBERSコマンドで集合の値を調べられる。
+
+    redis 127.0.0.1:6379> SADD myset 
+    1(integer) 1
+    redis 127.0.0.1:6379> SADD myset 2
+    (integer) 1
+    redis 127.0.0.1:6379> SADD myset 4 5
+    (integer) 2
+    redis 127.0.0.1:6379> SMEMBERS myset
+    1) "1"
+    2) "2"
+    3) "4"
+    4) "5"
+
+SISMEMBER で集合に値があるかどうかが分かる。
+
+    redis 127.0.0.1:6379> SISMEMBER myset 3
+    (integer) 0
+    redis 127.0.0.1:6379> SISMEMBER myset 5
+    (integer) 1
+    redis 127.0.0.1:6379> SISMEMBER myset 4
+    (integer) 1
+    redis 127.0.0.1:6379> SISMEMBER myset 42
+    (integer) 0
+    redis 127.0.0.1:6379> SISMEMBER myset 2
+    (integer) 1
+
+
+redis リファレンスリスト
+----------------------------
+
+後できちんと追記する
+
+* 現在のkeyを全て出力する:
+    KEYS * 
+    (※)このコマンドは本番のコードで利用するべきではない
+    なぜならKEYSコマンドは線形探索行うので時間がかかるため。
+
+* サーバーの状況を知りたい:
+    INFO
+
+* データベースを選択する:
+    SELECT <number> ... <number> のデータベースを利用する    
+
+* keyのタイプを調べる:
+    TYPE [KEY]
+
+* key で許される種類
+  - list: 配列型。
+    valueとなる配列に対して高速に削除・追加ができる。
+    indexを指定すれば検索も高速に行える。
+  
+  - string: 文字列型
+  
+  - hash: 複数のkey, valueを保持できる
+  
+  - zset: sorted hash 型
+  
+  - sets: 順不同の集合
+  
+  - sorted sets: 順序付けされた集合
+
+* データベースから全てのデータを削除する:
+    FLUSHDB
+
+* LIST に対する操作
+
+* HASH に対する操作
+
+* SETS に対する操作
+
+* STRING に対する操作
+
+* トランザクションを利用したい:
+    MULTIとEXECを組み合わせることで実現できる。
+    例）
+    MULTI
+    (複数のコマンドを実行）
+    EXEC
+
+* KEY に期限を設定する
+
+
+参考サイト・書籍
+----------------------------
+
+* [コマンドリファレンス（日本語）](http://redis.shibu.jp/commandreference/index.html)
+* [redisドキュメント日本語訳](http://redis.shibu.jp/)
+* [redisの設定ファイル](http://redis.shibu.jp/admin/config.html)
+* [インメモリKVSのRedisについて](http://rest-term.com/archives/2898/)
+* [redis のコマンド一覧](http://redis.io/commands/): redisで利用するコマンドが全て掲載されている
+* [A fifteen minute introduction to Redis data types](http://redis.io/topics/data-types-intro): 15分間のチュートリアル
+* [the little redis book](https://github.com/karlseguin/the-little-redis-book)
+* [writing twitter clone with redis](http://redis.io/topics/twitter-clone)
+* [Auto Complete with Redis](http://antirez.com/post/autocomplete-with-redis.html)
+
+
+ruby言語のバインディング
+----------------------------
+
+
+    % gem install redis
+

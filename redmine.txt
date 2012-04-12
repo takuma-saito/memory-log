@@ -1,0 +1,186 @@
+redmine の導入方法・使い方
+============================
+
+
+redmineの導入
+----------------------------
+
+### 1, 環境構築: rvm をインストールする ###
+rvmの導入方法についてはrvm.txtを参照のこと。
+下記のようにコマンドを打ち、ruby 1.8.7系をredmineで利用するgemsetを作る
+
+    rvm install 1.8.7
+    rvm use 1.8.7
+    rvm gemset create redmine
+    rvm gemset use  redmine
+
+### 2, 下記の依存パッケージをそれぞれインストールする ###
+
+    gem install --no-ri --no-rdoc rails -v=2.3.5 
+    gem install --no-ri --no-rdoc i18n -v=0.4.2
+    gem install --no-ri --no-rdoc rack -v=1.1.1
+    gem install --no-ri --no-rdoc rake -v=0.8.7
+    gem update --system 1.7.1
+    gem install mysql
+
+### 3, redmineのダウンロード・設定 ###
+最新の[redmine](http://rubyforge.org/frs/download.php)をダウンロードディレクトリに展開する。
+
+### 4, データベース設定 ###
+下記のようにmysqlのデータベースと専用ユーザーを作成する。
+
+    mysql > CREATE DATABASE （データベース名）;
+    mysql > GRANT ALL PRIVILEGES ON (データベース名）.* TO （ユーザー名）@localhost IDENTIFIED BY 'パスワード';
+    mysql > FLUSH PRIVILEGES;
+
+設定ファイルの変更。
+
+    mv config/configuration.{yml.example,yml}
+    mv config/database.{yml.example,yml}
+
+config/database.yml のproductionに
+先ほど設定したMysqlのパスワード・ユーザー名・データベース名を入れる.
+
+    production:
+      adapter: mysql
+      database: （データベース名）
+      host: localhost
+      username: （ユーザー名）
+      password: （パスワード）
+      encoding: utf8
+
+セキュリティのためのsessionなどを生成する
+
+    rake generate_session_store
+
+データベーススキーマーのインストール・テスト用のデータ生成
+    
+    RAILS_ENV=production rake db:migrate
+
+デフォルトデータをロード（言語はjaを選択する）
+
+    RAILS_ENV=production rake redmine:load_default_data
+
+この時点でrailsの環境設定は完了できている。
+下記のコマンドを打って http://localhost:3256/ にアクセス
+redmineが閲覧できれば成功
+
+    ruby script/server webrick -e production 3256
+
+### 5, apacheで動かすための設定 ###
+ruby用のapacheモジュールをインストールする。
+gem のpassengerを利用すれば簡単にapacheモジュールを作れる
+
+    # passengerをインストール
+    gem install passenger   
+    
+     # apache2モジュールを生成(Enterを押して進めばインストールできる）
+    passenger-install-apache2-module  
+
+以下の*で囲った部分をapacheの設定ファイルの適当な部分に追記することで設定完了。
+ちなみに必要な設定は下記のコマンドを打つことでいつでも確認できます。
+
+    passenger-install-apache2-module --snippet
+
+    --------------------------------------------
+    The Apache 2 module was successfully installed.
+
+    Please edit your Apache configuration file, and add these lines:
+
+       ########################################################################################################################################
+       # LoadModule passenger_module /Users/saitoutakuma/.rvm/gems/ruby-1.8.7-p358@redmine/gems/passenger-3.0.11/ext/apache2/mod_passenger.so #
+       # PassengerRoot /Users/saitoutakuma/.rvm/gems/ruby-1.8.7-p358@redmine/gems/passenger-3.0.11                                            #    
+       # PassengerRuby /Users/saitoutakuma/.rvm/wrappers/ruby-1.8.7-p358@redmine/ruby                                                         #
+       ########################################################################################################################################    
+    
+    --------------------------------------------
+
+僕の場合は、下記のようなpassgener.confを作ってconf.dディレクトリ下に置いた。
+全ての作業が完了したら、apacheを再起動させる。
+
+サブディレクトリにインストールした場合は設定ファイルや.htaccessに以下のコマンドを付け足す。
+
+    RailsBaseURI /sub/Directory/public
+
+またPassengerモジュールを追加したので、
+httpd.confに新しく設定する必要がある。
+
+    **************************************************
+
+    # Passengerの基本設定。
+
+    #################################
+    d# 上記の***で囲まれた部分を追記 #
+    #################################
+
+    # Passengerが追加するHTTPヘッダを削除するための設定。
+    Header always unset "X-Powered-By"
+    Header always unset "X-Rack-Cache"
+    Header always unset "X-Content-Digest"
+    Header always unset "X-Runtime"
+    
+    # 必要に応じてPassengerのチューニングのための設定を追加。
+    PassengerMaxPoolSize 20
+    PassengerMaxInstancesPerApp 4
+    PassengerPoolIdleTime 36000
+    PassengerUseGlobalQueue on
+    PassengerHighPerformance on
+    PassengerStatThrottleRate 10
+    RailsSpawnMethod smart
+    RailsAppSpawnerIdleTime 86400
+    RailsFrameworkSpawnerIdleTime 0
+    
+    **************************************************
+
+### 7, 参考URL ###
+
+・11 – Readmine : さくらVPSでCentOSサーバ構築
+http://blog.redmine.jp/articles/redmine-1_2-installation_centos/
+
+・Redmine 1.2をCentOS 5.6にインストールする手順
+http://blog.redmine.jp/articles/redmine-1_2-installation_centos/
+
+
+Gitとの連携方法
+----------------------------
+
+・参考URL
+http://yumewaza.yumemi.co.jp/2011/08/git-redmine-integration-using-rest-api-python.html
+
+### 1, git-redmineを取得、実行ファイルをパスに置く ###
+
+    git clone git://github.com/coiled-coil/git-redmine.git
+    cp git-redmine/src/git-redmine ~/bin/
+
+### 2, APIキーを設定 ###
+以下の設定を管理者が行うと右上メニュー個人設定のページからAPIアクセスキーが取得できるようになる
+管理 > 設定 > 認証 > REST API を許可のチェックを付ける
+    
+    git config --global redmine.apiKey xxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+### 3, プロジェクトの各GitレポジトリにURLを設定 ###
+
+    git config redmine.projectUrl http://SAMPLE.COM/repos/YOUR-PROJECT
+
+・簡易コマンドリファレンス
+
+* git redmine: 
+    チケット一覧を表示
+    
+* git redmine 123: 
+    あるチケットの詳細を表示する
+
+* git redmine commit 123: 
+    チケットの情報を利用してコミット
+
+* git redmine commit 1234 --done-ratio=90: 
+    チケットの情報を利用してコミット, 同時にチケットの達成率を90%に更新
+
+
+redmine の使い方
+----------------------------
+
+・チケット = 1つのタスク
+      ⇒ チケットと期限を設定し、どんどん続けていく
+
+

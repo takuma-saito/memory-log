@@ -1,0 +1,47 @@
+resolv.conf の解説
+============================
+
+resolv.confとは
+----------------------------
+
+resolv.conf は自分のマシンが利用するDNSサーバーの情報（IPアドレス）を記述するファイル。
+DNSを利用する際にはこのファイルにDNSサーバーのIPアドレスをお設定しなければならない。
+nameserver という項目に続きてIPアドレスを記述する。
+
+コマンド一覧
+----------------------------
+
+* nameserver: ネームサーバーのIPアドレス
+* domain: ローカルドメイン
+* search: 検索リスト
+
+例
+----------------------------
+
+IPアドレスとドメインの関連付けが下記のような設定だった場合。
+
+192.168.0.1 test.my-site.com
+192.168.0.2 ftp.my-site.com
+
+resolv.confを以下のように設定すれば
+test, ftpだけでサイトにアクセスできる。
+
+    domain my-site.com
+    nameserver 192.168.0.1
+
+http://test ⇔  http://test.my-site.com
+http://ftp  ⇔  http://ftp.my-site.com
+
+また`search`の場合複数のホスト名が設定できるところが、`domain`と違う。
+
+* `domain`: 単一ドメイン
+* `search`: 複数ドメイン
+
+192.168.0.1 test.foo.my-site.com
+192.168.0.2 ftp.hoge.my-site.com
+
+    search foo.my-site.com hoge.my-site.com
+    nameserver 192.168.0.1
+
+http://test ⇔  http://test.foo.my-site.com
+http://ftp  ⇔  http://ftp.hoge.my-site.com

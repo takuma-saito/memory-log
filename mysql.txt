@@ -1,0 +1,76 @@
+mysql 入門
+============================
+
+mysql とは
+----------------------------
+
+
+mysql のインストール方法
+----------------------------
+パッケージ管理ソフトからインストールできる。
+
+    $ sudo yum install mysql mysql-server mysql-devel
+
+
+mysqlの初期設定
+----------------------------
+mysql の設定ファイル（/etc/my.cnf）にエンコード設定を追加する
+
+    [mysqld]
+    character-set-server = utf8 # 追加する
+
+mysqld を実行し、`mysql_secure_installation` を実行する
+
+    $ /etc/init.d/mysqld start
+    $ /usr/bin/mysqladmin -u root password '新しいパスワード'
+    $ /usr/bin/mysql_secure_installation
+
+mysql 端末にログインし、エンコードが全てutf8になっているか確認する。
+
+    $ mysql -u ユーザー名 -pパスワード
+    
+    root:(none) > SHOW VARIABLES LIKE '%character%';
+    +--------------------------+----------------------------+
+    | Variable_name            | Value                      |
+    +--------------------------+----------------------------+
+    | character_set_client     | utf8                       |
+    | character_set_connection | utf8                       |
+    | character_set_database   | utf8                       |
+    | character_set_filesystem | binary                     |
+    | character_set_results    | utf8                       |
+    | character_set_server     | utf8                       |
+    | character_set_system     | utf8                       |
+    | character_sets_dir       | /usr/share/mysql/charsets/ |
+    +--------------------------+----------------------------+
+
+ユーザー管理
+----------------------------
+
+* ユーザー追加:
+    `GRANT ALL PRIVILEGES ON データベース名* TO ユーザー名 IDENTIFIED BY 'パスワード'`;
+    `FLUSH PRIVILEGES`
+
+* 利用できるストレートエンジンの一覧を出力:
+    `SHOW ENGINES;`
+
+その他
+----------------------------
+
+### mysqlのパスワード・ユーザーを省略する ###
+ホームディレクトリに.my.cnfファイルを作成し、
+ユーザー名・パスワード・ホスト名などを設定すれば`mysql`コマンドだけで
+mysqlのターミナルに入れるようになる。
+
+.my.cnf の例）
+
+    [client]
+    user=admin
+    password=adminpass
+    host=localhost
+    port=3306
+
+    [mysql]
+    prompt='[\\c] \\u:\\d > '
+    show-warnings
+
+

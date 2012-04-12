@@ -1,0 +1,10 @@
+mogileFS 入門
+============================
+
+
+参考サイト
+----------------------------
+
+* [mogilefs導入検証](https://sites.google.com/a/ts-wg.com/info/Category/oss/mogilefs)
+
+

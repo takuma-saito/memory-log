@@ -1,0 +1,198 @@
+openssl の使い方・暗号化について
+============================
+
+クライアント認証 - CAの構築方法
+----------------------------
+
+### ルート認証局を立ち上げる ###
+
+/etc/pki/tls にCA構築のためのファイルが用意されている
+
+    $ cd /etc/pki/tls
+
+オレオレルート認証局を立ち上げるには v3_req の CA:FALSE を CA:TRUE に変更する
+
+    $ emacs openssl.conf
+    [v3_req]
+    CA:FALSE  ⇒ CA:TRUE
+
+miscディレクトリの中にあるCAを起動させる
+
+    $ cd /etc/pki/tls/misc
+    $ sudo ./CA -newca
+
+この時点でCAの構築は完了している。
+CAの秘密鍵とパスフレーズは厳重に守ること。
+v3_req の CA:TRUE を CA:FALSE を直す
+
+    $ emacs openssl.conf
+    [v3_req]
+    CA:TRUE  ⇒ CA:FALSE
+
+### クライアント証明書を作成する ###
+
+署名リクエスト要求を作成する
+
+    $ openssl req -new -keyout cert.key -out newreq.pem
+
+作成した署名リクエスト要求に先ほど構築したCAで署名を行う
+
+    $ openssl ca -in newreq.pem -out cert.pem
+
+
+pkcs12の形式にエンコードしてクライアントのブラウザへインストールする
+
+    $ openssl pkcs12 -export -inkey cert.key -in  -certfile /etc/pki/CA/cacert.pem -out client.p12
+
+パスワードを入力して、作成されたclient.p12と
+CAの公開鍵cacert.pemをクライアントにインストールする。
+
+
+### apacheの設定を行う ###
+
+詳しくはhttpd.txtのクライアント認証を参照のこと
+
+
+SSL/TLS認証の確認方法
+----------------------------
+
+### openssl s_client の使い方 ###
+
+
+基本的には`openssl s_client`を用いて接続テストを行う。
+
+    $ openssl s_client -connect サーバー名:ポート名
+    // 設定が正しければ、この後に証明書が表示される
+
+各オプションの意味については以下を参照。
+
+* `-starttls プロトコル`:
+    TLSが始まる前に`STARTTLS`コマンドを実行する。
+    利用できるプロトコル：smtp pop3 imap ftp xmpp
+    
+* `-showcerts`:
+    公開鍵証明書の連鎖を全て辿り表示する
+
+* `-crlf`:
+    ターミナルからのLFコードをCRLFに変更する
+
+* `-CApath`:
+    承認しているCAファイルを入れたディレクトリを指定する
+
+### gmail の pop に接続してメールを見る ###
+openssl でgmailのpopサーバーに接続します。
+
+    $ openssl s_client -crlf -connect pop.gmail.com:995
+    CONNECTED(00000003)
+    depth=1 /C=US/O=Google Inc/CN=Google Internet Authority
+    verify error:num=20:unable to get local issuer certificate
+    verify return:0
+    
+    // この後に証明書とかいろいろ出る。
+
+`unable to get local issuer certificate` というエラーメッセージが発生しています。
+ローカルの証明書を認識しなていないために、検証が失敗しているためです。
+`-showcerts`オプションで、全ての証明書を表示させます。
+
+    $ openssl s_client -crlf -connect pop.gmail.com:995 -showcerts
+    
+    ----- BEGIN CERTIFICATE -----
+    ...
+    ...
+    ----- END CERTIFICATE -----
+
+公開鍵証明書をルートまで辿って全て表示してくれます。
+BEGIN ~ END でくくられた領域を別ファイル保存します。
+
+    $ mkdir certs
+    $ cd certs
+    // gmailのpop3公開鍵証明書をgmail.pop.pemに保存
+    $ emacs gmail.pem
+    // googleの公開鍵証明書をgoogle.pemに保存
+    $ emacs google.pem
+
+また、google.com に対して署名しているequifaxの署名もないので、
+MACの場合はキーチェーンから書き出しを行います。
+equifax.pemという形でcertsディレクトリに保存を行います。
+その後`c_rehash`でそれぞれの公開鍵の検証に必要なhash値を算出させます。
+
+    $ cd ../
+    $ c_rehash certs
+    doing certs
+    equifax.pem => 594f1775.0
+    google.pem => d9b7a851.0
+    gmail.pem => 34ceaf75.0
+
+openssl 起動時に -CApath というオプションを新しく追加して作成したディレクトリの名前を入れます。
+
+    $ openssl s_client -crlf -CApath ./certs/ -connect pop.gmail.com:995 
+
+これでPOPサーバーに接続できるはずです。
+接続後のコマンドはpop3.txtのコマンド一覧を参照して下さい。
+（ちなみにRETRのコマンドは小文字で行うこと、大文字だとなぜかエラーになる）
+
+### gmail の stmp に接続してメールを送る ###
+
+先ほど作成した公開鍵証明書ディレクトリへのパスを入れる。
+
+    $ openssl s_client -crlf -CApath ./certs/ -connect smtp.gmail.com:465
+
+接続後のコマンドはsmtp.txtのコマンド一覧を参照すること。
+
+
+openssl に関する逆引きリスト
+----------------------------
+
+* 暗号化している秘密鍵をテキスト形式で表示させる: 
+    `openssl rsa -in file -text`
+    
+* テキスト形式の秘密鍵に暗号を掛ける:
+    `openssl rsa -in 秘密鍵 -aes256 -out 暗号化された秘密鍵`
+
+* RSA秘密鍵から公開鍵を作成:
+    `openssl rsa -in 秘密鍵 -pubout -out 公開鍵`
+
+* 鍵を発行する: 
+    `openssl -rand （ファイル名）-des3 （キー長）`
+
+* CSR（公開鍵証明書リクエスト）を発行する: 
+    `openssl req -new -keyout (出力される秘密鍵) -out (CSRファイル名)`
+    
+* 秘密鍵からCSRを発行する: 
+    `openssl req -new -key （入力される秘密鍵ファイル名） -out （CSRファイル名）`
+
+* 暗号化されている秘密鍵のパスワードを外す:
+    `openssl rsa -in 暗号化されている秘密鍵 -out 暗号化されていない秘密鍵`
+    
+* PEMフォーマットで、DERフォーマットへの変更:
+    `openssl x509 -in PEM形式の秘密鍵 -outform DER -out DER形式の秘密鍵`    
+    * **pem形式** - Base64で符号化された証明書の形式
+    * **der形式** - DER（ASN.1によって記述された、バイナリ形式のファイル）形式で符号化された証明書      
+
+* CSRにCA署名を行い、公開鍵証明書を作成する:
+    ``openssl ca -out公開鍵証明書m -infiles証明書リクエストファイル`
+    ※ `failed to update database` というエラーが発生する場合
+    `/etc/pki/CA/index.txt` を一旦削除し空のファイルを作成するとうまくいく
+
+* 公開鍵証明書をテキスト形式で表示する:
+    `openssl x509 -in 公開鍵署名書 -text`
+    
+* pkcs12形式で保存する:
+    `openssl pkcs12 -export -inkey 秘密鍵 -in 公開鍵証明書 -certfile CAの公開鍵 -out pkcs12形式のファイル`
+
+* pkcs12形式をpem形式へ変換:
+    `openssl pkcs12 -in pkcs12形式のファイル -out 秘密鍵・証明書`
+    * 秘密鍵だけ取り出す: `openssl pkcs12 -nocerts -in pkcs12形式のファイル -out 秘密鍵`
+    * ユーザー証明書だけ取り出す:`openssl pkcs12 -nokeys -in pkcs12形式のファイル -out 公開鍵証明書`
+    * CA証明書のみを取り出す:`openssl pkcs12 -cacerts -in pkcs12形式のファイル -nokeys -out CA署名書`
+    * CA証明書を除いたユーザー証明書・秘密鍵を取り出す:`openssl pkcs12 -clcerts -in pkcs12形式のファイル -out ファイルの名前`
+
+
+
+参考サイト
+----------------------------
+
+* ** [openssl 暗号化・復号化・公開鍵などを扱うツール] **(http://x68000.q-e-d.net/~68user/unix/pickup?openssl)
+* [ファイルを暗号化するあれこれ](http://ameblo.jp/itboy/entry-10484615897.html)
+* [Webサーバーでクライアント認証](http://www.fireproject.jp/feature/uzumi/ssl/client-cert.html)
+* [openSSL でオレオレ認証局を立ち上げる](http://www.tietew.jp/2007/01/30/how-to-setup-ca-using-openssl)

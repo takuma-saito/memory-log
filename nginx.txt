@@ -1,0 +1,34 @@
+
+# nginxとは
+nginxとはapacheよりも高性能なHTTP サーバー。
+静的なファイルをキャッシュするリバースプロキシやロードバンサーとして主に利用されている
+
+
+# nginxの初期設定
+
+・php5-fpm がインストールできるレポジトリを設定
+% wget http://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
+% sudo rpm --import IUS-COMMUNITY-GPG-KEY
+% wget http://dl.iuscommunity.org/pub/ius/stable/Redhat/5/x86_64/ius-release-1.0-10.ius.el5.noarch.rpm
+% sudo rpm -Uvh ius-release-1.0-10.ius.el5.noarch.rpm
+
+・php5-fpmをインストールする
+% yum install php53u-fpm php53u-pecl-apc
+
+
+# nginxの設定
+・php5-fpmの設定を変更する
+
+unixソケットの方がスループットが高いため変更
+;listen = 127.0.0.1:9000
+↓
+listen = /tmp/php.socket
+
+fastcgiを利用するユーザーをapacheからnginxに変更
+user = apache
+group = apache
+↓
+user = nginx
+group = nginx
+
+

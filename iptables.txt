@@ -1,0 +1,23 @@
+
+iptables の設定
+============================
+
+iptables 逆引きリスト
+----------------------------
+
+* ローカルLanのサーバーをポートフォワーディングで公開サーバーに設定:
+    持っているIPアドレスは一つだけで、**HTTPサーバーはローカルネットワーク**にあるとする。
+    * $INET_IP: ファイヤーウォールの外部アドレス
+    * $INET_PORT: ファイヤーウォールの外部向けポート
+    * $HTTP_IP: HTTPサーバーの持つ内部向けアドレス
+    * $HTTP_PORT: HTTPサーバーの待ち受けポート
+    * $LAN_IP: ファイヤーウォールの内部向けアドレス
+
+    $ iptables -t nat -A PREROUTING --dst $INET_IP -p tcp --dport $INET_PORT -j DNAT --to-destination $HTTP_IP:$HTTP_PORT
+    $ iptables -t nat -A POSTROUTING -p tcp --dst $HTTP_IP --dport $HTTP_PORT -j SNAT --to-source $LAN_IP
+
+
+参考サイト
+----------------------------
+
+* [DNATターゲット](http://www.asahi-net.or.jp/~aa4t-nngk/ipttut/output/dnattarget.html)

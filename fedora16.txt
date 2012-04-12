@@ -1,0 +1,7 @@
+
+# fedora 14 のsshd起動方法
+
+% sudo systemctl restart sshd.service
+chkconfig がなくなりsystemctl から起動できるようになった
+
+% systemctl enable sshd.service

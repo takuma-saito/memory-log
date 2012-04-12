@@ -1,0 +1,109 @@
+jasmine の使い方
+============================
+
+jasmine のインストール方法
+----------------------------
+
+### javascript単体で利用する場合 ###
+jasmine-standalone-(バージョン).js を下記の[URL](http://pivotal.github.com/jasmine/download.html)よりインストールする。ディレクトリを展開。
+
+・Ruby 単体で利用する場合
+gemからjasmineをインストールする
+
+    $ gem install jasmine
+
+テストしたいディレクトリ上に移動する。
+テスト用のディレクトリを作成
+
+    $ jasmine init
+
+rake jasmine とコマンドを打つことで、ブラウザを起動しテスト結果を確認できる
+
+    $ rake jasmine
+
+
+jasmine の使い方
+----------------------------
+
+    $ jsamine init
+    $ tree
+    .
+    ├── Rakefile
+    ├── public
+    │   └── javascripts
+    │       ├── Player.js
+    │       └── Song.js
+    └── spec
+        └── javascripts
+            ├── PlayerSpec.js
+            ├── helpers
+            │   └── SpecHelper.js
+            └── support
+                ├── jasmine.yml
+                ├── jasmine_config.rb
+                └── jasmine_runner.rb
+
+
+6 directories, 10 files
+
+ディレクトリ構造は上記。
+
+public/javascripts 中にテストするべきファイルを入れる。
+spec/javascripts 中にテストコードスクリプトを入れる。
+例えば Player.js をテストしたい場合
+spec/javascripts 中に PlayerSpec.js を作成してテストする。
+
+テストコードの書き方
+----------------------------
+テストコードのフォーマット
+
+    describe("テストクラスの名前", function(){
+        it("テストメソッドの名前", function() {
+            // テストメソッドを用いた
+            expect("何らかの処理を実行")."期待している動作の戻り値";
+        });
+    });
+
+"期待している動作の戻り値" には以下のメソッドが利用できる
+
+* toEqual: 一致しているかどうかを調べる
+* toContain: 含まれているかを調べる
+* toBeNull: nullが返却される場合
+* toMatch: 正規表現で調べる
+* beforeEach: it の前に実行される
+* afterEach: it の後に実行される
+
+
+titnitaum mobile との連携
+----------------------------
+
+vendor 以下にjsmine-titaniumを入れる。
+
+    $ cd Resources
+    $ mkdir spec lib vendor
+    $ cd vendor
+    $ git clone https://github.com/ikeike443/jasmine-titanium
+    $ cd jasmine-titanium
+    $ git submodule init
+    $ git submodule update
+
+その後下記の記述を.gitmodulesファイルを作って追加する
+
+    [submodule "jasmine-titanium"]
+        path=Resources/vendor/jasmine-titanium
+        url=git://github.com/i43/jasmine-titanium.git
+
+基本的にテストはアプリケーションコードはlibの中,
+対応するアプリケーションコードはspecの中に書く。
+※ ** 現在は動いていない模様 **
+
+
+jasmine のAPIドキュメント
+----------------------------
+
+
+http://pivotal.github.com/jasmine/jsdoc/index.html
+
+
+
+

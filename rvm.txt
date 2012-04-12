@@ -1,0 +1,90 @@
+rvm 導入方法
+============================
+
+
+最新版のRVM をインストール
+----------------------------
+port でもインストールできるが、
+curlでスクリプトをダウンロードしてbashで直接実行する。
+
+    bash -s stable < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
+    
+この時bash, zshのパスも書き換わる。
+
+* curl がない場合は別途パッケージ管理ソフトでcurlをインストールする
+* https通信でエラーが発生する場合あり。その場合はルート証明書を更新すればよい:
+   * ルート証明書の更新方法（CentOS編）
+   
+        sudo curl http://curl.haxx.se/ca/cacert.pem -o /etc/pki/tls/certs/ca-bundle.crt
+
+
+
+基本的な使い方
+----------------------------
+
+* rvm use (Rubyのバージョン）:
+特定のRubyバージョンを利用する。
+シェル起動時にデフォルトで使うバージョンを指定したい場合は --default オプションを付ける。
+
+* rvm list:
+インストールされているRubyのバージョンが全て見れる
+
+* rvm install (rubyのバージョン):
+特定バージョンのRubyをインストールできる。
+（もしエラーがある場合は、ログを確認し rvm pkg install で依存関係のあるパッケージをインストールする）
+  * installでエラーが発生する場合ログを確認する。
+  * ほとんどの場合, 依存パッケージがないだけ。
+  * 下記のようにpkgコマンドを利用して依存パッケージをインストールする必要あり
+  
+        rvm pkg install autoconf
+        rvm pkg install readline
+        rvm pkg install iconv
+
+※Mac Lion で1.9.3をインストールできない場合あり, その場合は以下のようにCCを設定する
+    
+    export CC=/opt/local/bin/gcc-apple-4.2 or export CC=gcc-4.2
+
+ruby requirements には以下のようにその理由を説明している。
+
+> ライオンでは、rubyはgccではなくなく、llvm-gccを使ってコンパイルされるべきだ。
+> /usr/bin/gccは現在/usr/bin/llvm-gcc-4.2にリンクされているので、シェルの初期ファイルに上記の文を追加して下さい。
+> （妙訳）
+
+* rvm gemset:
+  gemset を用いると複数のgemを使い分けることができる。
+  * create - gemsetの作成
+  * list - 現在作成したgemsetの一覧が見れる
+  * use - 利用するgemsetを決める
+  * delete - gemsetを削除する
+
+
+
+rvm の主なコマンド簡易リファレンス
+----------------------------
+
+* rvm version
+インストールされたRVMのバージョンを表示する
+
+* rvm use (version)
+指定されたRubyのバージョンに変更する
+  * rvm use system でシステムのシェルを使う
+  * --default オプションを追加することでデフォルトバージョンを指定できる
+
+* rvm install (version):
+Ruby(version)をインストールする
+
+* rvm uninstall (version):
+Ruby(version)をアンインストールする
+
+* rvm upgrade:
+gemset をアップグレードする
+
+* rvm list:
+インストールされているRubyのバージョンを表示する
+
+* rvm pkg:
+依存関係のあるパッケージをインストールできる（特にインストールに失敗した場合に有効）
+
+* rvm requirements:
+インストールに必要な環境を表示
+

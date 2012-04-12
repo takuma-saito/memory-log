@@ -1,0 +1,124 @@
+apache webサーバーの設定, 入門
+============================
+
+httpd.conf の解説
+----------------------------
+httpd.conf をきちんと設定できるうようになるには
+各ディレクティブ（ServerRoot, Timeout...などの設定値）がどのような意味を持つか理解することである。
+これから、それぞれのディレクティブの解説をする。
+
+また設定完了の際には `apachectl configtest` を使って文法エラーがないか確認する。
+
+* `ServerRoot "/etc/httpd"`:
+    apacheの設定ファイルがある場所を指定する
+    基本的にデフォルトでOK
+
+* `Timeout 秒数`:
+    クライアント接続要求を受け取ってから、
+    コンテンツを提供するまでの連続してパケットを送信する時間の最大値を指定する。
+    ここで設定した時間が過ぎてもサーバーから返答がない場合にブラウザはユーザーにエラーメッセージを表示させる。
+
+* `ServerTokens [ Full | OS | Minor | Minimal | Major | Prod ]`: 
+    推奨：Prod
+    クライアントに送り返す Server 応答ヘッダ内に、
+    サーバの一般的な OS 種別や
+    コンパイルされて組み込まれているモジュールの情報含めるかどうかを指定する
+    セキュリティのためこのディレクティブはProdに設定する
+
+* `KeepAlive ( Off | On )`: 
+    推奨：On
+    基本的にHTTPの仕組みはステートレスなので、1リクエストごとに接続（TCPセッション）を切る.
+    しかし、現在は1つのwebページを表示する際複数のファイルを読み込むことが標準で、
+    1リクエストごとに接続を切っていたのでは効率が悪い。
+    そこで考え出されたのがKeepAliveであり、一度接続したらある条件を満たすまで接続を保持する.
+    （KeepAlive はHTTPレベルの仕組み）
+
+* `KeepAliveRequest 50 ~ 200`: 
+    推奨：100
+    接続してから切断するまでに受け付けるリクエストの数。
+    ここで設定したファイル数を超えた場合にKeepAliveで設定していたセッションを切る
+    ページ辺りの平均ファイル数 + α を指定するのがベスト。
+
+* `KeepAliveTimeout 3 ~ 15`: 
+    推奨：5
+    接続しているセッションからのリクエストが来なくなってから切断するまでの待ち時間 。
+
+* `DocumentRoot "ドキュメントのディレクトリ"`:
+    webサーバーのドキュメントを保持するディレクトリ
+
+* `ServerSignature [ Off | On | Email ]`: 
+    推奨：Off
+    エラーページ時に表示されるフッター情報の有無。
+
+* `AllowOverrite [None | ALL]`: 
+    .htaccess でディレクティブの上書きを許容するかどうか。
+    .htaccess を多用する場合はALLを指定する。
+    ディレクトリをrootに向かって再帰的に検索するので、
+    AllowOverrideを指定すると、apacheのパフォーマンスがかなり落ちる。
+
+* `Alias リクエストURL 実際のディレクトリ`:
+    アクセスしたURL がサーバー上のどのディレクトリに対応するかを指定する
+
+
+クライアント認証の設定
+----------------------------
+パッケージ管理ソフトで、mod_sslをインストールする
+
+    $ sudo yum install -y mod_ssl
+
+mod_ssl をインストールしたときにインストールされる SSL の設定ファイルは読み込まない。
+下記のクライアント証明書に関する設定をhttpd.confに新しく追記する。
+（または、`/etc/httpd/conf.d/` に新しくファイル追加する）
+
+SNI（SSLでバーチャルホストが行える）
+の設定には下記の要件を満たす必要がある
+
+* OpenSSL 0.9.8f以降で、TLS拡張オプション付きでビルドされていること
+* apache 2.2.12以降のバージョン
+* apacheがOpenSSL付きでビルドされていること
+
+    # SNI 非対応ブラウザのとき、
+    # 複数あるバーチャルホストコンテナの最初のコンテナへアクセスさせるような設定
+    # 2.2.x 系でないと有効にならない
+    SSLStrictSNIVHostCheck off
+    
+    <VirtualHost *:443>
+        # SSL Engine on でSSLの機能を有効にします
+        SSLEngine on
+    
+        # サーバー証明書を指定します
+        SSLCertificateFile サーバー署名書のパス
+    
+        # サーバーの秘密鍵を指定します
+        SSLCertificateKeyFile サーバーの秘密鍵へのパス
+    
+        # CAの公開鍵が存在するディレクトリへのパスを指定
+        SSLCACertificatePath CAの公開鍵が存在するディレクトリへのパス
+    
+        # CAの公開鍵のパスを指定
+        SSLCACertificateFile CAの公開鍵のパス
+    
+        # クライアント認証の形式
+        # require の場合は SSLCACertificateFile で指定されたCAが
+        # 承認した公開鍵証明書を持つユーザーのみがアクセス可能になる
+        SSLVerifyClient require
+    </VirtualHost>
+
+テンプレートはtemplate/ssl.confに置いておく。
+
+*  `_default_ VirtualHost overlap on port 443, the first has precedence` というエラーが出る時:    
+    `NameVirtualHost *:443` の設定を追加する。
+
+Proxy の設定
+----------------------------
+
+    ProxyPass /foo http://foo.example.com/bar
+    ProxyPassReverse /foo http://foo.example.com/bar 
+
+
+参考サイト
+----------------------------
+
+* [httpdの設定（ssl.conf）](http://www.nina.jp/server/slackware/httpd/ssl.conf.html)
+* [Apacheにサーバー証明書とクライアント証明書を指定する](http://safe-linux.homeip.net/web/linux-ssl_web-05.html)
+

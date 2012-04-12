@@ -1,0 +1,16 @@
+
+# capistrano のインストール方法
+
+標準のcapistranをgemからインストール
+gem install capistrano
+
+capistranoのコマンドを色付けしてくれるパッケージ
+gem install capistrano_colors
+
+環境に応じてcapistrano設定を差分ファイルで上書きできる
+gem install capistrano-ext
+
+
+# capistrano の使い方
+
+

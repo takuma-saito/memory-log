@@ -1,0 +1,6 @@
+
+# autoconf系
+
+* [簡単にautoconfのビルド環境を作りたい時](http://blog.broomie.net/index.cgi?id=46)
+
+* [autoreconfを使って簡単にビルド環境を作る](http://d.hatena.ne.jp/emergent/20081106/1225896312)

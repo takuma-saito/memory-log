@@ -1,0 +1,153 @@
+amazon Ec2始め方
+============================
+
+1, 証明書の取得
+----------------------------
+
+・左上の[サインアップ](https://aws.amazon.com/jp/) からアカウントにログイン
+
+アカウント / コンソール > 証明書の取得 よりセキュリティ設定画面を開く。
+
+アクセス証明書のアクセスキーのタブより
+・アクセスキーID
+・シークレットアクセスキー
+の2つを取得。ステータスが有効になっていることを確認する。
+
+また、同タブのX.509証明書より
+* Private Key File（pk-...）
+* X.509 Certificate （cert-...）
+の2ファイルをダウンロードする。
+
+さらに、アカウント識別子のAWSアカウントIDメモする。
+
+上記6つの項目をそれぞれ以下の環境変数として.bashrc, .zshrcに追加する。
+
+    EC2_CERT=ダウンロードしたCertファイルの場所
+    EC2_PRIVATE_KEY=ダウンロードしたPrivate Key Fileの場所
+    AWS_ACCESS_KEY_ID=アクセスキーID
+    AWS_SECRET_ACCESS_KEY=シークレットアクセスキー
+    USER_ID=AWSアカウントID
+
+これらの変数を追記した初期スクリプトを再読込する。
+ここまでで初期証明書の取得・設定は完了。
+
+
+2, 各種APIのセットアップ
+----------------------------
+
+amazon AWS で提供している各種APIをセットアップする必要ある。
+Developer toolsのURLから必要そうなものをダウンロードする。
+
+・[Developer tools](http://aws.amazon.com/developertools/)
+・[Amazon EC2 API Tools](http://aws.amazon.com/developertools/368)
+
+EC2 API Toolsを上記URLよりダウンロードし、適当なディレクトリに展開する。
+
+EC2_HOME を設定する。
+
+    $ export EC2_HOME=<EC2 API Toolsのパス>
+
+EC2インスタンスを利用する地域を選択し設定する。
+
+    $ ec2-describe-regions
+    REGION  eu-west-1       ec2.eu-west-1.amazonaws.com
+    REGION  sa-east-1       ec2.sa-east-1.amazonaws.com
+    REGION  us-east-1       ec2.us-east-1.amazonaws.com
+    REGION  ap-northeast-1  ec2.ap-northeast-1.amazonaws.com
+    REGION  us-west-2       ec2.us-west-2.amazonaws.com
+    REGION  us-west-1       ec2.us-west-1.amazonaws.com
+    REGION  ap-southeast-1  ec2.ap-southeast-1.amazonaws.com
+
+    $ export EC2_URL=https://ec2.ap-northeast-1.amazonaws.com
+
+
+### EC2 API の使い方 ###
+
+サーバーにログインするための鍵を作る
+
+    $ ec2-add-keypair 鍵の名前
+    $ ec2-describe-keypairs
+
+ec2用のファイヤーウォールを作成
+
+    $ ec2-create-group グループの名前 -d "グループの説明"
+    $ ec2-describe-groups
+
+groupの作成が完了したら, ec2-authorizeでファイヤーウォールの設定を行う
+
+  * グループに認証を作成する場合 
+    ec2-authorize グループの名前 \
+       -P (--protocol) プロトコルの名前（tcp | udp | icmp | all） \
+       -p 許可ポート範囲（0-65535, -1を設定した場合は全てのポート） \
+       -i icmp_type_code \
+       -s CIDER IP アドレスの範囲（0.0.0.0/0）
+
+  * 認証を削除する場合
+    ec2-revoke オプションは上記と一緒
+
+  * グループを削除する場合
+    ec2-delete-group グループの名前
+              
+  * ウェブサーバーのポートのみを開ける場合: 
+    ec2-authorize グループ名 -P tcp -p 80 -s 0.0.0.0/0
+    
+  * sshサーバーのポートのみを開ける場合:
+    ec2-authorize グループ名 -P tcp -p 22 -s 0.0.0.0/0
+    
+  * ネームサーバーのポートのみを開ける場合:
+    ec2-authorize グループ名 -P upd -p 53 -s 0.0.0.0/0
+    
+  * 自分のIPアドレスだけ全ポート許可する場合:
+    ec2-authorize グループ名 -P all -p 0-65535 自分のIPアドレス/32
+
+CentOS 用のEC2インスタンスを作成する。
+まず公開イメージの一覧を表示, rightscale社のCentOSを探す。
+
+    $ ec2-describe-images -x all | grep rightscale
+
+xオプション ... `--execute-by user_id` amiのオーナー・instanceIDを表示する.
+                allを選択した場合は全ての公開AMIが表示される。
+
+    $ ec2-run-instances AMI_ID \
+        -n インスタンスの数 \
+        -k 先ほど追加した鍵の名前 \
+        --instance-type インスタンスタイプ（m1.small | m1.large | m1.xlarge） \
+        -g グループ名 \
+        （--monitor ClowdWatchを有効にする場合）
+
+    $ ec2-describe-instances
+
+    $ ssh -i (-kで設定した鍵のパス）ec2-user@IPアドレス
+
+この後は普通のサーバーと同様にログインして作業を行います。
+サーバーを止める場合やリスタートする場合はそれぞれ下記のコマンドを打ちます。
+
+ * ec2-stop-instance インスタンスID: インスタンスを止める
+ * ec2-start-instance インスタンスID: インスタンスをスタートする
+ * ec2-reboot-instance インスタンスID: インスタンスをリブートする
+ * ec2-terminate-instance インスタンスID: インスタンスを終了する場合
+
+
+AMI の種類について
+----------------------------
+
+・Fedora14
+ami-f22094f3 ... i386
+ami-16219517 ... x86_64
+
+
+API などのツールダウンロード先
+----------------------------
+
+・[Amazon EC2 API Tools](http://aws.amazon.com/developertools/368)
+・[EC2 Instance Metadata Query Tool](http://aws.amazon.com/code/1825)
+・[Amazon EC2 AMI Tools](http://aws.amazon.com/developertools/351)
+・[Auto Scaling Command Line Tool](http://aws.amazon.com/developertools/2535)
+・[Elastic Load Balancing API Tools](http://aws.amazon.com/developertools/2536)
+・[Bootstrapping Applications using AWS CloudFormation](http://aws.amazon.com/developertools/4026240853893296)
+・[AWS CloudFormation Command Line Tools](http://aws.amazon.com/developertools/2555753788650372)
+・[Amazon CloudWatch Command Line Tool](http://aws.amazon.com/developertools/2534)
+・[Amazon RDS Command Line Toolt](http://aws.amazon.com/developertools/2928)
+・[Command-Line Tool for Amazon S3](http://aws.amazon.com/developertools/2127)
+
+

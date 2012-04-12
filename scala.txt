@@ -1,0 +1,17 @@
+scala 言語入門
+============================
+
+### 参考サイト ###
+
+* [Scala で圏論入門](https://github.com/scalajp/introduction-to-category-theory-in-scala-jp/wiki)
+* [圏論デザインパターン](http://modegramming.blogspot.jp/2012/03/blog-post_05.html)
+
+
+
+
+
+
+
+
+
+

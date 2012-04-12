@@ -1,0 +1,15 @@
+
+# DNS の仕組み
+
+# DNS に関係するコマンド
+
+% host <domain>
+domain の正引きを行う
+
+% host -v -t <type> <domain>
+検索対象のリソース・レコード（RR）のタイプを指定して, domainを検索する.
+その際に詳細な出力を行うようにする.
+<type> - CNAME, NS, MX, ANY が設定できる
+
+% dig <domain> <type>
+リスソースレコード（<type> ）を指定して, domainを検索する

@@ -1,0 +1,104 @@
+mod_rewriteの法
+============================
+
+基本ディレクティブの解説
+----------------------------
+
+- ifModule "モジュール名":
+    "モジュール"が有効になっていた場合にディレクティブの中身を実行する
+
+- RewriteEngine "on|off":
+    on でRewrite を有効にする
+
+- RewriteCond "condition" "正規表現":
+    condition の変数が"正規表現"にマッチした場合
+    RwriteRuleを適用する（RewriteCondは if 式）
+    RewriteCond を複数指定する場合 and マッチになる
+  
+- RewriteRule "正規表現" rewrite先URL:
+    "正規表現" でマッチしたURLを"rewrite先URL"で書き換える
+
+基本的にはRewriteCond で条件を指定し、RewriteRule で書き換えを行う
+
+RewriteCond で利用できる変数
+----------------------------
+
+* %{REQUEST_FILENAME}:
+    リクエストにマッチしたファイルまたはスクリプトの、 
+    完全なローカルファイルシステムのパス。
+
+* %{THE_REQUEST}:
+    ブラウザからサーバに送られた 
+    HTTP リクエストの完全なもの（すなわち、"GET /index.html HTTP/1.1")
+
+* %{REQUEST_URI}:
+    HTTP リクエスト行でリクエストされたリソース（"/index.html")
+
+* %{REMOTE_ADDR}: リモートIP
+
+* %{REMOTE_HOST}: リモートホスト
+
+* %{REMOTE_USER}: リモートユーザーが仕様しているブラウザ
+
+オプションで利用できる変数
+----------------------------
+
+* !（条件） - 条件にマッチしないパターンを指定できる
+
+* -f - ファイルが存在する場合
+
+* -d - ディレクトリが存在する場合
+
+* NC - 大文字小文字を区別しない
+
+* OR - OR検索を指定する（通常はAnd検索）
+
+* L（Last） - RewriteRule で使用。Lが付いていた場合、この先のパターンマッチは行わない
+
+* R（Redirect） - Redirect コードを指定する（特にR=301で転送設定が行える）
+
+* QSA（Query String Append） - 置換文字列の中にあるクエリ文字列部分を置き換えるのではなく、追加させる。
+これは、rewriteルールを通してクエリ文字列にデータを追加したい場合に使用する。
+  ** 注意: index.php?url=$1 の様にGETメソッドを利用する場合は必須
+
+mod_rewrite テンプレート
+----------------------------
+
+    <ifModule mod_rewrite.c>
+        RewriteEngine on
+        RewriteBase ベースとなるURL
+        RewriteCond condition 正規表現 [オプション]
+        RewriteRule 正規表現 rewrite先URL [オプション]
+    </ifModule>
+
+mod_rewriteの例
+----------------------------
+
+* 全てのhtml, ruby, cgi, php ファイルを maintenaceに飛ばす
+
+    RewriteCond %{REQUEST_URI} !.*/maintenance/index\.html$
+    RewriteRule ^.*\.(html|php|rb|cgi)$ /maintenance/index.html [L,QSA]
+
+* hoge, を fugaに飛ばす
+    
+    RewriteRule ^/hoge/(.*)$ /fuga/$1
+
+* /index.html を / へ301転送する
+
+    RewriteRule ^(.*)index\.html /$1 [R=301,L]
+
+* /index.html と /index.php を / へ301転送する
+
+    RewriteRule ^(.*)index\.(html|php) /$1 [R=301,L]
+
+* mobileの場合 /m/ に飛ばす
+    
+    RewriteCond %{HTTP_USER_AGENT} ^(DoCoMo|UP.Browser|KDDI|SoftBank|Vodafone|J-PHONE|MOT-) [NC]
+    RewriteRule !^/m/ /m/ [L]
+
+* スマートフォンの場合 /smart/ に飛ばす
+
+    RewriteCond %{REQUEST_URI} !^/smart/.*$
+    RewriteCond %{HTTP_USER_AGENT} (iPhone|iPod|Android|BlackBerry|Windows.Phone) [NC]
+    RewriteCond %{HTTP_USER_AGENT} !iPad [NC]
+    RewriteRule ^(.*)$ /smart/$1 [L]

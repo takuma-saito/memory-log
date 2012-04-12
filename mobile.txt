@@ -1,0 +1,31 @@
+mobile サイトの作り方
+============================
+
+モバイルサイトを作る時に注意すること
+----------------------------
+
+* 文字コードはShift_JIS
+* 端末にキャッシュが残っている可能性があるので、metaタグにキャッシュを消す設定を入れる
+   * <meta http-equiv="Pragma" content="no-cache" />
+   * <meta http-equiv="Cache-Control" content="no-cache" />
+* font-size は -2
+* CSSはインラインで指定（タグに直接style属性を追加する）
+* 画像を含むページは容量は100KB以内
+* 画像はgifかjpg
+* 基本は.html
+  *  .htaccessに左記の表記を追記する AddType application/xhtml+xml .html
+
+参考サイト
+----------------------------
+
+* 永久保存版！？携帯コーディング、これだけ読めばすぐできる！:
+    http://design.kayac.com/topics/2010/09/mobile-template.php
+
+* ケータイサイトのtableタグの特徴と、5つのデザイン例＆ソース:
+    http://blog.livedoor.jp/ld_directors/archives/51504303.html
+
+* 手っ取り早く携帯サイトを作成する時のhtmlテンプレート:
+    http://d.hatena.ne.jp/moba13/20100916/128465317
+
+* 携帯サイトを作る前に確認しておきたいチェック項目:
+    http://sakaki0214.com/2009/10/30022723.html

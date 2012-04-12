@@ -1,0 +1,110 @@
+cmake 入門
+============================
+
+cmake とは
+----------------------------
+cmake とはビルド環境を作るためのツール。
+autotoolsの強化バージョン。
+
+CMakeFiles.txt にビルド条件を記述しておけば、
+環境に応じてビルド環境を自動生成してくれる。
+CMakeFiles.txt は`autotools`の`configure.ac`に対応する。
+
+### 基本的なコマンド ###
+サードパーティーのプロダクトをcmakeを使ってコンパイルする場合
+
+    1, (CMakeFiles.txt を作成する)
+    2, $ cmake .
+    3, $ make
+
+で基本的にコンパイルできる。
+
+### CMakeFiles.txtに記述する項目 ###
+
+* `cmake_minimum_required(VERSION <version>)`:
+    cmake のバージョンを記述
+    
+* `project(プロジェクト名)`:
+    プロジェクトの名前
+    
+* `add_subdirectory(ディレクトリ名)`:
+    <directory> に対して再帰的にcmakeを行う
+    
+* `add_executable(実行ファイル名 リンクさせるファイル)`:
+    gcc -o main main.c var.c int.c と同じことをcmakeで行うには
+    add_executable(main main.c var.c int.c)
+    
+* `include(ファイル名)`:
+    別のファイルを読み込む
+
+* `set(変数名 名前)`:
+    "変数名"に"名前"を設定する
+
+* `set(配列 arg1 arg2 ...)`:
+    配列を arg1, arg2, ... に設定する。
+    変数へは ${変数} でアクセスできる。
+    例） MESSAGE(${VAR}) など
+
+* `message(文字列)`:
+    文字列を画面に出力させる
+    
+* `IF(式) 
+     IFの中の式がTRUEだった場合に実行する式
+   ENDIF(式)`:
+    cmake でのIF文 endifの中でも最初の条件式を書かなければならない
+    
+* `foreach(変数名 配列)
+    ${変数名} を使って式を作る
+  endforeach(変数名)`:
+    配列の中の変数に対して一括で処理を行える。
+    ${変数名} で変数を使用できる。
+
+* `option(WITH_KEY "表示される文字列" [ON | OFF])`:
+    cmake -DWITH_KEY . でWITH_KEYを有効にさせる。
+    optionの第3引数はON,OFFでデフォルトの有効・無効を設定できる。
+    IF (WITH_KEY) .... ENDIF(WITH_KEY) として条件振り分けを行う
+
+* `function(関数名 引数)
+     関数で実行する処理
+   endfunction(関数名)`:
+    関数を使って処理をしたい場合functionで定義できる。
+    関数を使用する場合は 関数名(引数) として呼び出せばよい。
+    
+* `add_library(ライブラリ名 [STATIC | SHARED | MODULE] source1 source2 ...)`:
+    source1, source2, .... をライブラリに追加する。
+    その時リンクの種類もSTATIC,SHARED,MODULEで設定できる。
+
+* `target_link_libraries(ターゲット ライブラリ)`:
+    ターゲットにライブラリをリンクさせる
+    
+* `find_package(パッケージ名)`:
+    パッケージを検索して様々な設定を読み込んでくれる。
+    現在利用しているcmakeでどのパッケージが使えるか調べるには`--help-module-list`のオプションを指定すればよい。
+    また、`--help-module パッケージ名`で追加されるパッケージの変数・設定が確認できる。
+    例)
+    
+        cmake_minimum_required(VERSION 2.8)
+        project(helloworld)
+        add_executable(helloworld hello.c)
+        find_package (BZip2)
+        if (BZIP2_FOUND)
+            include_directories(${BZIP_INCLUDE_DIRS})
+            target_link_libraries (helloworld ${BZIP2_LIBRARIES})
+        endif (BZIP2_FOUND)
+
+
+例
+----------------------------
+
+
+
+参考サイト
+----------------------------
+
+* [cmake コマンド一覧](http://www.cmake.org/cmake/help/cmake-2-8-docs.html)
+* [cmakeのチュートリアル](http://wiki.livedoor.jp/eruvasu/d/cmake1)
+* [cmake最初の一歩](http://d.hatena.ne.jp/torutk/20081005/p1)
+* [cmake examples](http://www.cmake.org/cmake/help/examples.html)
+* [CMake/Language Syntax](http://www.cmake.org/Wiki/CMake/Language_Syntax)
+
+

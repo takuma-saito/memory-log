@@ -1,0 +1,49 @@
+php 入門
+============================
+
+php のインストール
+----------------------------
+Fedora, CentOSの場合はyumでインストールする。
+Mac の場合はportでインストール。
+
+    sudo yum install -y php \
+        php-xml \
+        php-mysql \
+        php-mbstring \
+        php-pdo \
+        php-pear \
+        php-fpm \
+        php-oauth \
+        php-mcrypt \
+        php-dba
+
+ソースコードからコンパイルする場合。
+まずはソースコードを[phpの公式サイト](http://php.net/downloads.php)から取得する。
+
+    $ wget http://php.net/get/php-5.4.0.tar.bz2/from/a/mirror
+
+php.ini の設定方法
+----------------------------
+設定する項目は日時と文字エンコードの２つ。
+基本的にエンコーディングはUTF-8で統一する。
+
+* `;date.timezone` .... `date.timezone = Asia/Tokyo`:
+    タイムゾーンの設定, 日本の場合はAsia/Tokyoにする
+
+* `;mbstring.language = Japanese` ... `mbstring.language = Japanese`:
+    mbstring.language をコメントアウト。値はJapaneseに設定する
+    
+* `;mbstring.internal_encoding = EUC-JP` ... `mbstring.internal_encoding = UTF-8`:
+    内部エンコーディングをUTF-8に設定する
+
+* `mbstring.http_input = auto` ... `mbstring.http_input = UTF-8`:
+    webサーバーからの読込をUTF-8に設定する
+
+* `mbstring.http_output = SJIS` ... `mbstring.http_output = UTF-8`:
+    webサーバーからの出力をUTF-8に設定する
+
+
+apache との連携
+----------------------------
+Fedora の場合、apacheをインストールすると
+`conf.d/php.conf`に初期設定がされているのでデフォルトでphpが利用できる。

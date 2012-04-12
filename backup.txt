@@ -1,0 +1,7 @@
+backup 方法
+============================
+
+参考サイト
+----------------------------
+
+* [自動バックアップ運用(tar+GnuPG+rsync/ftp)](http://centossrv.com/backup.shtml)

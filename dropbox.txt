@@ -1,0 +1,75 @@
+Dropbox の同期
+============================
+
+Linux で Dropbox のCLI環境を構築
+----------------------------
+
+### Dropbox cli をインストール ###
+official Dropbox CLI をインストール
+
+    $ mkdir ~/bin
+    $ wget -O ~/bin/dropbox.py "http://www.dropbox.com/download?dl=packages/dropbox.py"
+    $ chmod a+x ~/bin/dropbox.py
+
+認証を実行し、デーモンをインストールする
+
+    $ dropbox.py start -i
+    To link this computer to a dropbox account, visit the following url:
+    https://www.dropbox.com/cli_link?host_id=bfb2e1f7762bc62a5b413ec390aa7006&cl=ja
+
+リンクが示されるので、アカウントにログインしてリンクにアクセスする
+
+    $ dropbox.py start
+    Starting Dropbox...Dropbox isn't running!
+    Done!
+
+### Dropbox cli の使い方 ###
+
+* `status`:
+    dropboxd デーモンの状態を表示
+    
+* `help`:
+    ヘルプを表示
+    
+* `puburl`:
+    Dropboxの公開ファイルURLを取得する
+    
+* `stop`:
+    dropboxdを停止させる
+    
+* `running`:
+    dropboxdが起動しているかどうかを確認する
+    
+* `filestatus`:
+    ファイルの同期状態を表示する
+    
+    $ dropbox.py filestatus *
+    app:                  syncing
+    app_baskup:           syncing
+    appli:                syncing
+    bijokaku:             syncing
+    
+* `ls`:
+    同期先のファイル一覧を取得する
+
+* `autostart [y | n]`:
+    `autostar y` の場合、ログイン時に自動起動させる
+    現在はUbuntuでしか動作しないらしい
+
+* `exclude`:
+    同期させるディレクトリを登録・解除する
+    
+    # Works ディレクトリを同期対象外にする
+    $ dropbox.py exclude add Works
+    
+    # Works 同期対象外にしているディレクトリを同期対象にする
+    $ dropbox.py exclude remove Works
+
+
+参考サイト
+----------------------------
+
+* [DropboxをLinuxで利用する方法](http://www.maruko2.com/mw/Dropbox%E3%82%92Linux%E3%81%A7%E5%88%A9%E7%94%A8%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95)
+* [CUI環境のLinuxでDropboxを動作させる方法](http://dailynewsagency.com/2010/12/21/linux-cui-dropbox/)
+* [DropboxをCentOSのCUIで利用する](http://d.hatena.ne.jp/deeeki/20110102/dropbox_centos_cui)
+* [Dropbox](http://www.hpcs.cs.tsukuba.ac.jp/~yonemoto/pukiwiki/index.php?Dropbox)

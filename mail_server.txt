@@ -1,0 +1,614 @@
+メールサーバーの構築
+============================
+
+
+送信メールサーバーの設定（postfix）
+----------------------------
+
+### 設定ファイルの修正 ###
+
+まず必要なパッケージをインストールする
+
+* postfix: 送信メールサーバー
+* mailx: mailコマンドなどテストに必要なパッケージが入っている
+* cyrus-sasl-plain: saslで暗号化する時に使用
+* procmail: メールフィルタリングソフト
+
+    $ sudo yum install -y postfix
+    $ sudo yum install -y mailx
+    $ sudo yum install -y cyrus-sasl-plain cyrus-sasl-md5
+    $ sudo yum install -y procmail
+    
+`/etc/postfix/main.cf` の設定ファイルを編集する
+
+* `myhostname = mail.domain.com`:
+    myhostname はメールサーバー名
+    （例：mail.my-domain.com）
+    
+* `mydomain = domain.com`:
+    mydomain に自ドメインを追加
+    
+* `myorigin = $mydomain`:
+    ユーザー名@myoriginでメールが届く。
+    基本的には$myhostnameではなく、$mydomainの方が望ましい。
+    （$mydomainは基本的にmail.domain.com の形式でdomainの前にmailが入るから）
+    
+* `inet_interfaces = all`:
+    メールを受信するネットワークインターフェイス。
+    デフォルトはローカルのみ有効だが、allとして外部からのメールを許可する
+    
+* `mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain`:
+    自分が最終目的地みなすドメインのリストを設定する。
+    mydestination に$mydomainを追加。
+    自ドメイン宛メールも受信できるようにする。
+
+* `home_mailbox = Maildir/`:
+    メールボックスディレクトリの設定。
+    
+* `stmpd_banner = $myhostname ESMTP unknown`:
+    メールソフトの隠蔽化。
+    SMTPプロトコルで自分のメールサーバーのバージョンなどを知らせない
+    
+一番最後に認証・受信メールサイズの制限設定を入れる。
+
+    # 以下を最終行へ追加(SMTP-Auth設定)
+    smtpd_sasl_auth_enable = yes
+    smtpd_sasl_auth_client = yes
+    smtpd_sasl_local_domain = $mydomain
+    smtpd_recipient_restrictions =
+        permit_mynetworks
+        permit_sasl_authenticated
+        reject_unauth_destination
+                
+    # 以下を最終行へ追加(受信メールサイズ制限)
+    # 追加(受信メールサイズを10MB=10*1024*1024に制限)
+    message_size_limit = 10485760
+
+全ての設定を終えたら文法エラーがないかをチェックする。
+何も値が返ってこない場合は成功。
+
+    $ sudo postfix check
+
+### STMP-Authの設定 ###
+
+SMTP-Auth用ユーザー、パスワードにシステムのユーザー名とパスワードを使用する場合。
+
+    $ sudo /etc/init.d/saslauthd start
+    $ sudo chkconfig saslauthd on
+
+### Maildir形式のメールボックス作成 ###
+Maildir形式のメールボックを作成する
+
+    $ sudo mkdir -p /etc/skel/Maildir/{new,cur,tmp}
+    $ sudo chmod -R 700 /etc/skel/Maildir
+
+### Postfixを起動させる ###
+デフォルトで起動しているsendmailを停止させる
+    
+    $ sudo /etc/init.d/sendmail stop
+    $ sudo chkconfig sendmail off
+
+alternatives で利用するmtaをpostfixにする
+
+    $ sudo alternatives --config mta
+
+    2 プログラムがあり 'mta' を提供します。
+
+      選択       コマンド
+      -----------------------------------------------
+      *+ 1           /usr/sbin/sendmail.sendmail
+         2           /usr/sbin/sendmail.postfix
+     
+     Enter を押して現在の選択 [+] を保持するか、選択番号を入力します:2
+
+※ alternative: 
+    同時にインストールされた同機能を提供するソフト・バージョンの異なるソフトを管理するためのユーティリティ。
+    `ls /var/lib/alternatives/` で管理しているソフトが分かる
+
+postfix を起動
+
+    $ sudo /etc/init.d/postfix start
+    $ chkconfig postfix on
+
+### SMTPのテスト方法 ###
+telnet でSMTPに接続しテストを行う。
+telnet 後に何も起動しない場合はsaslの認証設定でエラーが発生している可能性あり。
+main.cf のsmtp_sasl_* の設定をコメントアウトし、再起動させる。
+
+    $ telnet localhost smtp
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    
+    // 220 はサーバーの準備が出来たことを表す
+    220 ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com ESMTP unknown
+    
+    // SMPTセション開始。自ホスト名を入力する
+    EHLO localhost
+    
+    250-ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    250-PIPELINING250-SIZE 10485760
+    250-VRFY
+    250-ETRN
+    
+    // AUTH文がある場合はSASLが動作している
+    250-AUTH PLAIN LOGIN
+    
+    250-ENHANCEDSTATUSCODES    
+    250-8BITMIME250 DSN
+    
+    // メールの差出人を指定
+    MAIL FROM: <hoge@localhost>
+    250 2.1.0 Ok
+    
+    // メールの宛先を指定
+    RCPT TO: <admin@localhost>
+    250 2.1.5 Ok
+    
+    // メール本文のはじまりであることを知らせる
+    data
+    
+    354 End data with <CR><LF>.<CR><LF>
+
+    // メールの題名（Subject）を記述します。
+    SUBJECT: MAIL TEST
+    
+    // メールの本文を記述します。
+    This is test message of smtp.
+    // メッセージの終了を知らせるにはドット"."で表現する
+    .
+    
+    250 2.0.0 Ok: queued as 80B008340B
+    
+    // セッションを閉じる
+    quit
+    221 2.0.0 Bye
+    Connection closed by foreign host.
+
+smtp のsasl認証の設定確認。
+smtp-auth はbase64でエンコード化されたパスワードとユーザー名を表示させる自作プログラム。
+"ユーザー名\0ユーザー名\0パスワード" をbase64でエンコード化させただけ。
+
+    // perlで書いた独自スクリプト
+    $ stmp-auth -u admin -p adminpass
+    
+    // ユーザー名とパスワードをbase64でエンコード
+    YWRtaW4AYWRtaW4AYWRtaW5wYXNz
+    
+    // telnet でsmtp サーバーにアクセス
+    $ telnet localhost 25    
+    Trying 127.0.0.1...Connected to localhost.
+    Escape character is '^]'.
+    220 ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com ESMTP unknown
+    
+    // 自サーバーのホスト名を入力
+    EHLO localhost    
+    250-ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    250-PIPELINING
+    250-SIZE 10485760
+    250-VRFY
+    250-ETRN
+    250-AUTH PLAIN LOGIN
+    250-ENHANCEDSTATUSCODES
+    250-8BITMIME
+    250 DSN
+    
+    // エンコード化されたパスワード・ユーザー名を入力
+    AUTH PLAIN YWRtaW4AYWRtaW4AYWRtaW5wYXNz
+    
+    // 成功の場合は successful 表示
+    235 2.7.0 Authentication successful
+    
+    // 脱出する
+    quit
+    221 2.0.0 Bye
+    Connection closed by foreign host.
+
+### 広告フィルタリング設定 ###
+main.cf に procmailとの連携設定を追加する
+
+    # mailbox_command = /some/where/procmail -a "$EXTENSION"
+    # procmail へのパスを追加, mailbox_commandをコメントアウト
+    mailbox_command = /usr/bin/procmail
+    
+/etc/procmailrc にメールフィルタリング設定を入れる。
+"未承諾広告"という文言が入っているメールは削除する。
+（TODO: nkf -mzZ2 の意味を調べる。procmailの書き方を調べる。）
+
+    SHELL=/bin/bash
+    PATH=/usr/bin:/bin
+    DROPPRIVS=yes
+    MAILDIR=$HOME/Maildir
+    DEFAULT=$MAILDIR/
+    LOGFILE=$MAILDIR/.procmail.log
+    
+    # 未承諾広告メール削除
+    :0
+    * ^Subject:.*iso-2022-jp
+    * ^Subject:\/.*
+    * ? echo"$MATCH" | nkf-mwZ2 | sed's/[[:space:]]//g' | egrep '未承諾広告※'
+    /dev/null"
+
+postfixの再起動し、メールフィルタリング設定を適用させる
+
+    $ sudo /etc/init.d/postfix restart
+
+
+### メール不正中継拒否テスト ###
+
+[RBL.JP](http://www.rbl.jp/svcheck.php)で｢ホスト名｣に自宅サーバーのホスト名(例:mydomain.com)
+を入力して｢Check｣ボタンを押下する。
+19種類のテストが行われ、ページ最後尾にno relays accepted.と表示されればOK。
+
+
+
+受信メールサーバーの構築（Dovecot）
+----------------------------
+
+### 必要なパッケージをインストール ###
+
+必要なパッケージをインストールします。
+
+    $ sudo yum install -y dovecot
+    $ sudo yum install -y dovecot-pigeonhole
+
+### dovecotの設定 ###
+
+メールボックス形式をMaildir形式とする設定（10-mail.conf）
+
+    $ admin@ip-10-152-255-82:~ $ 
+    sudo emacs /etc/dovecot/conf.d/10-mail.conf
+    mail_location = maildir:~/Maildir
+
+`/etc/dovecot/dovecot.conf` についても同様の設定を行う
+
+    $ sudo yum install -y 
+    # protocols = imap imaps pop3 pop3s
+    protocols = imap imaps pop3 pop3s
+    
+    # mail_location =
+    mail_location = maildir:~/Maildir
+    
+文法確認を行う何も表示されなければ成功
+
+    $ doveconf check
+
+設定が完了後は、dovecot を再自動起動設定
+
+    $ /etc/init.d/dovecot start
+    $ sudo chkconfig dovecot on
+
+### dovecotの接続テストを行う ###
+
+telnet で110番にアクセス正常に受信メールが表示されるかテストする
+
+    $ telnet localhost 110                  
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    +OK Dovecot ready.
+    
+    // ユーザー名を入力
+    ** USER admin **
+    +OK
+    
+    // ユーザーのパスワードを入力
+    PASS adminpass
+    +OK Logged in.
+    
+    // 受信しているメールの件数とバイト数を通知する
+    STAT
+    +OK 7 11825
+    
+    // 一覧を表示する
+    LIST 
+    +OK 7 messages:
+    1 769
+    2 777
+    3 766
+    4 2546
+    5 3070
+    6 3129
+    7 768
+    .
+    RETR 1
+    +OK 769 octets
+    Return-Path: <admin@ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com>
+    X-Original-To: admin
+    Delivered-To: admin@ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    Received: by ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com (Postfix, from userid 1001)
+    id 6A94E8340B; Sun,  8 Apr 2012 04:23:44 -0400 (EDT)
+    Date: Sun, 08 Apr 2012 04:23:44 -0400
+    To: admin@ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    Subject: hello
+    User-Agent: Heirloom mailx 12.5 7/5/10
+    MIME-Version: 1.0
+    Content-Type: text/plain; charset=us-ascii
+    Content-Transfer-Encoding: 7bit
+    Message-Id: <20120408082344.6A94E8340B@ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com>
+    From: admin@ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    hello world
+    .
+    
+    QUIT
+    +OK Logging out.
+    Connection closed by foreign host.
+
+
+** ・pop3コマンド一覧 **
+
+* `USER ユーザー名`:
+    受信するメールのユーザー名をメールサーバーに認識させる
+ 
+* `PASS パスワード`:
+    受信するメールのパスワードをメールサーバに認識させる
+    
+* `STAT`:
+    受信しているメールの番号とバイト数を通知する
+
+* `LIST`:
+    受信しているメールアドレス一覧を表示する
+
+* `RETR メッセージ番号`:
+    指定したメッセージ番号のデータを受信する    
+
+* `QUIT`:
+    メールの受信を終了する
+
+
+メールサーバーの暗号化（OpenSSL + Postfix + Dovecot）
+----------------------------
+
+### mail用の公開鍵署名を作成 ###
+
+`/etc/pki/tls/certs` に移動メールに関する公開鍵証明書を作成する
+
+    $ cd /etc/pki/tls/certs
+    $ sudo make mail.pem
+
+
+### postfix にtls設定を追加 ###
+
+`/etc/postfix/main.cf` にtls暗号化の設定を追加
+
+    # tls を有効化させる
+    smtpd_use_tls = yes
+    
+    # 公開鍵証明のパスを指定
+    smtpd_tls_cert_file = /etc/pki/tls/certs/mail.pem
+    
+    # 秘密鍵のパスを指定
+    smtpd_tls_key_file = /etc/pki/tls/certs/mail.pem
+    
+    # TLSセッションキャッシュデータベースの指定
+    smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_scache
+
+`/etc/postfix/master.cf` postfix設定ファイル(master)編集
+
+    # 下記の3行をコメントアウト
+    smtps     inet  n       -       n       -       -       smtpd
+      -o smtpd_tls_wrappermode=yes
+      -o smtpd_sasl_auth_enable=yes
+
+    # tlsmgr行をコメントアウト
+    tlsmgr    fifo  -       -       n       300     1       tlsmgr
+
+### 送信メールサーバーの暗号化を確認 ###
+telnet でsmtpサーバーに接続。
+`STARTTLS` コマンドで `220 2.0.0 Ready to start TLS` が返却されれば設定OK。
+
+    $ telnet localhost 25
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    220 ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com ESMTP unknown
+    
+    // 自分のサーバードメインを知らせる
+    EHLO localhost
+    250-ec2-175-41-219-196.ap-northeast-1.compute.amazonaws.com
+    250-PIPELINING
+    250-SIZE 10485760
+    250-VRFY
+    250-ETRN
+    250-STARTTLS
+    250-AUTH PLAIN LOGIN
+    250-ENHANCEDSTATUSCODES
+    250-8BITMIME
+    250 DSN
+    
+    // TLSを始める
+    STARTTLS
+    
+    // ready to start が返却されれば成功
+    220 2.0.0 Ready to start TLS
+
+その他にもopenssを使った確認方法も存在する、。
+下記の通り465（smpts）にopensslコマンドを使ってアクセスし、証明書が表示されれば成功。
+
+    $ openssl s_client -connect 127.0.0.1:465 -state
+    // この後に設定した公開鍵証明書が表示されれば成功
+
+### dovecotの設定確認 ###
+`/etc/dovecot/conf.d/10-ssl.conf` を編集してsslを有効化させる
+
+    # コメントアウトを外す
+    # ssl = yes
+    ssl = yes
+
+    # 先ほど作成した公開鍵署名と秘密鍵のパスを入れる
+    ssl_cert = </etc/pki/tls/certs/mail.pem
+    ssl_key = </etc/pki/tls/private/mail.pem
+
+dovecot を再起動する
+
+    $ sudo /etc/init.d/dovecot restart
+
+### 受信メールサーバーの暗号化を確認 ###
+imaps(993), pops(995)にopensslのコマンドを使ってアクセスし、証明書が表示されれば成功
+
+    $ openssl s_client -connect 127.0.0.1:993 -state
+    // この後に設定した公開鍵証明書が表示されれば成功
+
+
+バーチャルホスト設定
+----------------------------
+
+### postfixのバーチャルホスト設定 ###
+
+システムアカウントを利用せず個別のメールで受信する設定を行う。
+
+    $ sudo emacs /etc/postfix/main.cf
+    
+    // 受信するドメイン一覧を記したファイルへのパスを設定
+    virtual_mailbox_domains = /etc/postfix/virtual_domains
+    
+    // 受信したメールを保存する仮想メールボックスを指定
+    // 受信したメールはこのディレクトリを基点に保存される: /var/spool/vmail/mydomain.com 
+    virtual_mailbox_base = /var/spool/vmail
+    
+    // メールボックスをメールアドレスの関連付けを行う
+    virtual_mailbox_maps = hash:/etc/postfix/virtual
+    
+    $ sudo emacs /etc/postfix/virtual_domains
+    // 受信するバーチャルドメインを追加する
+    mydomain.com
+    mydomain2.com
+    
+    # バーチャルユーザーのUID, GIDを設定
+    virtual_minimum_id = 100
+    virtual_uid_maps = static:5000
+    Virtual_Gid_maps = static:5000
+    
+    $ sudo mkdir /var/spool/vmail
+    
+    $ sudo emacs /etc/postfix/virtual
+    // ユーザー名         ディレクトリ名
+    info@mydomain.com     mydomain.com/info/Maildir/
+    info@mydomain2.com    mydomain2.com/info/Maildir/
+    
+    $ sudo emacs /etc/postfix/virtual_domains
+    mydomain.com
+    mydomain2.com
+
+ユーザーデータベースの作成する
+postmap コマンドを実行すると、
+`/etc/postfix/virtual.db` が作成される
+
+    $ sudo postmap /etc/postfix/virtual
+
+設定したユーザー名とディレクトリが正しいかを確認する
+
+    $ sudo postmap -q ユーザー名 /etc/postfix/virtual
+    // ユーザー名に対応するディレクトリが表示されれば成功
+    ディレクトリ名
+
+設定ファイルの文法チェックを行い、再起動する。
+
+    $ postfix check
+    $ sudo /etc/init.d/postfix reload
+
+バーチャルボックスユーザーを作成する。
+
+    $ sudo useradd -u 5000 -s /bin/false -M vmail
+    $ sudo gpasswd -a 管理者名 vmail
+    $ sudo chown vmail:vmail -R /var/spool/vmail
+    
+
+### saslauthdの設定 ###
+
+saslのチェック形式をUnixアカウント紐付けから
+専用DBのauxpropに変更する
+
+    $ sudo emacs /etc/sasl2/smtpd.conf
+    pwcheck_method: saslauthd
+    mech_list: plain login
+    ↓
+    pwcheck_method: auxprop
+    mech_list: cram-md5 digest-md5 plain login
+
+ドメインとユーザー名を追加する。
+
+    $ sudo saslpasswd2 -u ドメイン名 -c ユーザー名
+    Password: 
+    Again (for verification): 
+    
+* 作成したユーザーを削除する:
+    `sudo saslpasswd2 -u ドメイン名 -d ユーザー名`
+
+* 作成したユーザー修正:
+    `saslpasswd2 -u ドメイン名 ユーザー名`
+
+* ユーザーの一覧表示:
+    `sudo sasldblistusers2`
+
+### Dovecotの設定 ###
+`/etc/dovecot/conf.d/10-auth.conf` ファイルを編集する
+
+    $ sudo emacs /etc/dovecot/conf.d/10-auth.conf
+    
+    // auth-passwdfile.conf.ext を読み込む
+    #!include auth-passwdfile.conf.ext
+    ↓
+    !include auth-passwdfile.conf.ext
+    
+    // PaintTextの認証を有効にする
+    #disable_plaintext_auth = yes
+    ↓
+    disable_plaintext_auth = no
+
+`/etc/dovecot/conf.d/auth-passwdfile.conf.ext` を編集する
+
+    $ sudo emacs /etch/dovecot/conf.d/auth-passwdfile.conf.ext
+    args = scheme=CRYPT username_format=%u /etc/dovecot/users
+    ↓
+    args = /etc/dovecot/passwd
+
+`doveadm pw`コマンドを使い、パスワードの設定を行う
+
+    // 利用できるパスワードの形式を一覧で表示
+    $ doveadm pw -l
+    CRYPT MD5 MD5-CRYPT SHA SHA1 SHA256 SHA512 SMD5 SSHA SSHA256 SSHA512 PLAIN 
+    CLEARTEXT CRAM-MD5 HMAC-MD5 DIGEST-MD5 PLAIN-MD4 PLAIN-MD5 LDAP-MD5 LANMAN 
+    NTLM OTP SKEY RPA SHA256-CRYPT SHA512-CRYPT 
+    
+    // パスワード出力
+    $ doveadm pw -s HMAC-MD5 -u ユーザー名@ドメイン名
+    {HMAC-MD5}e648e3366ef035eb2296514a6b183b430e256071250d6b1e8abbc9dcf0347c58
+    
+`/etc/dovecot/passwd` ファイルを作成し、
+`(ユーザー名):{HMAC-MD5}abcdefg123456....:(uid):(gid):::::(メールボックスへのパス)`
+の形式で追記していく
+
+### メールアドレスを追加する場合 ###
+
++ `/etc/postfix/virtual` にユーザーとディレクトリを追加していく。
+
++ `/etc/postfix/virtual_domains` にドメインを追加する。
+
++ 
+
+
+メーリングリストの作成（Postfix + Mailman）
+----------------------------
+
+### 管理パスワードの設定 ###
+
+
+
+ウェブメール閲覧方法
+----------------------------
+
+
+
+参考サイト
+----------------------------
+
+* ** [メールサーバー構築(Postfix+Dovecot)] **(http://fedorasrv.com/postfix.shtml)
+* ** [メールサーバー間通信内容暗号化(OpenSSL+Postfix+Dovecot)] ** (http://centossrv.com/postfix-tls.shtml)
+* ** [メーリングリストサーバー構築(Postfix+Mailman編)] ** (http://fedorasrv.com/postfix-mailman.shtml)
+* [Procmail でメールフィルタ](http://www.miloweb.net/procmail.html)
+* [オープンソースのウェブメールまとめ](http://blog.96q.org/2008/09/24/php-webmail/)
+* [Postfixで複数ドメインの管理](http://linux.kororo.jp/cont/server/postfix_virtual.php)
+* [Postfix 検索テーブルの概要](http://www.postfix-jp.info/trans-2.2/jhtml/DATABASE_README.html)
+* [メールサーバの設定（バーチャルメールボックス編）](http://tech.ckme.co.jp/mailv.shtml)
+* [SMTP認証とSASL2の設定](http://omnioo.com/omnioolab/ubuntu-910/smtpsasl2.php)

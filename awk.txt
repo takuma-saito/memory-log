@@ -1,0 +1,47 @@
+awk 入門
+============================
+
+
+awk とは
+----------------------------
+
+
+awk コマンドリファレンス
+----------------------------
+
+* `gensub()`:
+
+
+組み込み変数
+----------------------------
+
+* `FS`: Field Separetor
+    フィールドセパレーター, 正規表現を指定できる（標準は ","）
+    
+* `RS`: Record Separetor
+    入力セパレーター（標準は改行）
+    
+* `NF`: Number of Field
+    現レコード中のフィールド数
+
+* `NR`: Number of Record
+    現レコード番号
+
+
+awk の例
+----------------------------
+カレントディレクトリ以下のUTF-8形式のファイルを
+Shift_JIS形式のファイルに変換する。
+
+    nkf -g **/*.php | grep UTF-8 | 
+      gawk '{print gensub(/(.*):(.*)/, "\\1", "")}' | 
+        While Read File; do
+          nkf --overwrite -Ws $file;
+        done
+
+
+参考サイト
+----------------------------
+
+* [awk sed 入門](http://itref.fc2web.com/unix/awk.html)
+

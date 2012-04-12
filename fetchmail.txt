@@ -1,0 +1,81 @@
+fetchmail の導入・設定
+============================
+
+fetchMailのインストール
+----------------------------
+Macの場合はportでインストールできる
+
+    $ sudo port install fetchmail
+
+fetchmailの設定
+----------------------------
+.fetchrcに設定を書く
+    
+    # ログの送信先
+    set logfile "fetchmail.log"
+
+    # メールのチェック間隔(秒)
+    set daemon 300
+
+    # デフォルト設定
+    defaults
+
+        # メールをサーバー上から削除しない
+        keep
+
+        # メールヘッダの書き換えをしない
+        no rewrite
+
+        # 8ビットデータに変換しない    
+        no mimedecode
+
+        # 全てのメールを取り込む
+        # fetchall
+    
+        # smtpサーバーのホストを設定
+        smtphost localhost
+    
+        # 振り分けコマンド
+        mda "/usr/bin/procmail"
+
+    # pop3を利用する場合（今回はgmailの運用の場合を想定）
+    poll imap.gmail.com proto IMAP
+        # ユーザー名を入力する    
+        username "takuma.saitou1"
+        
+        # パスワードを入力する
+        password "saitaku115"
+        
+        # ssl接続でメールを読み込む
+        ssl
+        
+        # sslで検証を行うための公開鍵認証を入れたフォルダを指定
+        sslcertck
+        sslcertpath "/Users/saitoutakuma/.certs"
+
+ステータスチェック（文法エラーがないかどうかを調べます）
+
+    $ fetchmail -c
+
+その次にダウンロードしたメールの振り分け設定を.procmailrcに書く
+
+    PATH=/usr/bin:/usr/local/bin:/opt/local/bin
+    LOCKFILE=$HOME/.lockmail
+    MAILDIR=$HOME/Maildir
+    DEFAULT=$MAILDIR
+    LOGFILE=$MAILDIR/procmail.log
+    LOCKFILE=$HOME/.lockmail
+
+fetchmailの起動。
+`-v` でメール読込の詳細まで表示できる。
+
+    $ fetchmail -v
+
+
+参考サイト
+----------------------------
+
+* [fetchmailを使ってGmailのメールをダウンロードする](http://d.hatena.ne.jp/mteramoto/20091115/p1)
+
+
+

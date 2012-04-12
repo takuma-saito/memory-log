@@ -1,0 +1,9 @@
+
+# value domain の設定方法
+
+基本的に下記のリソースレコードを追加設定すればよい。
+IPアドレスにはユーザーのIPアドレスを入れる。
+
+a @ IPアドレス
+
+http://faq.saratan.com/wi/wi.cgi?ValueDomain%A4%C7%A4%CE%A5%C9%A5%E1%A5%A4%A5%F3%C0%DF%C4%EA%CE%E3

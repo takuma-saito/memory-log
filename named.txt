@@ -1,0 +1,253 @@
+value domain のネームサーバー変更
+============================
+
+ドメインのDNS設定, ネームサーバーを変更する
+----------------------------
+
+ログイン > ドメイン操作 > ネームサーバーの変更 > ドメイン名
+をクリック。
+その後ネームサーバーの変更画面が出てくるので、
+"このドメインでネームサーバーを作成" をクリック。
+ネームサーバーの名前を ns1.ドメイン名, ns2.ドメイン名 に設定する。
+また、IPアドレスには取得済みのサーバーIPアドレスを入力。
+（まずネームサーバーを作成しないと、ネームサーバーの変更はできない）
+
+その後、ネームサーバー1, 2にそれぞれ先ほど作成したネームサーバードメイン名を入力し、保存。
+正常に登録できれば、その旨が表示される。
+ネームサーバー自体はおそらく1日程度浸透に時間が掛かる。
+
+正しく設定されているかどうかはwhois検索で、
+新しく設定したネームサーバーに変更されているかどうかで分かる。
+
+自分のパソコンのresolv.confに
+手動で以下の設定を追加することでもネームサーバーを変更可能。
+（その場合は自分のパソコンのみしかドメインの検索ができない）
+nameserver ネームサーバーのIP
+
+bind のインストール
+----------------------------
+
+bind-chroot はセキュリティ対策のために必要
+
+    $ sudo yum install -y bind bind-chroot bind-devel bind-utils
+
+・ログ用とステータス用のディレクトリを作成する
+
+    $ sudo chown -R named:named /var/named
+    $ mkdir /var/named/chroot/var/named/{status,log}
+    $ sudo chown named:named /var/named/chroot/var/named/{status,log}
+
+### 文法チェックコマンド ###
+
+* named-checkconf: named.conf の構文チェックを行う
+* named-checone <domain_name> <zone_file>: zoneファイルのチェックを行う
+
+named.conf の設定
+----------------------------
+ /etc/named.conf でネームサーバーの設定を行います。
+ optionsディレクティブには全体の基本情報を設定します。
+
+    # -------- start named.conf --------
+    options {
+    
+        # bind のバージョン情報を非表示化にする
+            version "unknown";
+
+            # 主命令文のキーワード "zone" の記述で相対パスで記述できるように
+            # ベースとなるディレクトリを指定する
+            directory       "/var/named";
+    
+            # ダンプファイル, 統計ファイルを指定する
+            # rndcの統計情報の出力先の設定（rndcを使わない場合は関係なし）
+            dump-file       "/var/named/data/cache_dump.db";
+            statistics-file "/var/named/data/named_stats.txt"; 
+            memstatistics-file "/var/named/data/named_mem_stats.txt";
+    
+            # 公開用のDNSサーバーには必要なし
+            # 自分が管理しているゾーンファイルに情報がなければ、forwardersで設定されているIPアドレスに転送する
+            # forwardersにはプロバイダから通知されたDNSアドレスを設定する
+            forwarders{
+                    XXX.XXX.XXX.XXX;
+                    XXX.XXX.XXX.XXX;
+            };
+
+            # 再帰検索を許可するネットワーク
+            # 外部には基本的に再帰検索を許可しない
+            allow-recursion {
+                    127.0.0.1; # localhost (IPv4) からは許可
+                    ::1; # localhost (IPv6) からは許可
+            };
+    };
+
+logging ディレクティブを追加することで様々なログ出力を設定できる。channelはログの出力先。
+categoryでどのログをどのchannelを使うか設定することでログを行う。
+
+    logging {
+            # 指定したファイルにログを出力する
+            # channel はそれぞれの出力先の名前になる
+            # channel を指定しただけでは、何も起こらない
+            # category でアクションを指定し, どのchannelで出力するか設定する必要がある
+            channel log {
+
+                # file "ファイル名" versions 世代数 size サイズ
+                file "log/named.log" versions 7 size 10m;
+
+                # 出力するログレベルを設定できる
+                # severity - 重症度
+                # debug   デバッグ情報
+                # info            情報
+                # notice          通知
+                # warn            警告
+                # err             一般的なエラー
+                # crit            致命的なエラー
+                # alert           緊急に対処すべきエラー
+                # emerg           システムが落ちるような状態
+                # dynamic         ログレベルに合わせる
+                severity info;
+
+                # ログファイル中の日時、ログカテゴリの表示・非表示を切り替える
+                print-time yes;
+                print-category yes;
+        };
+
+        # セキュリティクエリは別に設定する
+        channel security {
+                file "log/security.log" versions 7 size 10m;
+                severity info;
+                print-time yes;
+                print-category yes;                
+        };
+
+        # 問い合わせクエリを全てログに残す
+        channel queries {
+                file "log/queries.log" versions 3 size 3m;
+                severity info;
+                print-time yes;
+                print-category yes;
+        };
+
+        # category でログを行うカテゴリーレベルを設定する
+        # category に対してchannel（つまり出力先）を設定することでログを行う
+        # ** categoryで設定できる値 **
+        # database   ゾーン情報やキャッシュ情報など、データベースに関連する記録
+        # security           要求の承認／否認の記録
+        # config             構成ファイルの構文解析と処理の記録
+        # resolver           クライアントに代わって実行されるキャッシュサーバの動作に代表される、再帰検索のようなDNS解決の記録
+        # xfer-in            サーバが受信したゾーン転送の記録
+        # xfer-out           サーバが送信したゾーン転送の記録
+        # notify             NOTIFY（通知）プロトコルの記録
+        # client             クライアント要請の処理記録
+        # networ             ネットワーク操作の記録
+        # update             DDNSの記録
+        # queries            問い合わせクエリーの記録
+        # dispatch           サーバモジュールへ入ってくるパケットを処理するCPU割り当て（ディスパッチ）の記録
+        # dnssec             DNSSECやTSIG処理の記録
+        # lame-servers       DNS解決の際にほかのサーバで見つけた設定ミス（lame）の記録
+        # general            上記以外の多くのログはカテゴリが未分類であり、それらはgeneralに分類される
+        # default            categoryで意図的に指定された以外のカテゴリがここで定義される
+        
+        # デフォルトログを設定
+        category default { "log"; };
+
+        # セキュリティ用のログを設定
+        category security { "security"; };
+
+        # 問い合わせクエリのログを設定
+        category queries { "queries"; };
+
+        # lame-servers - DNS解決の際にほかのサーバで見つけた設定ミス（lame）の記録
+        # これからの記録は行わない
+        category lame-servers { null; };
+
+    };
+
+wan 環境のアドレス設定。
+
+    view "external" {
+         # 問い合わせに答えるホスト
+         # match-clients { ホストのIPアドレス, もしくはaclステートメントで設定したACLの名前 }
+         match-clients { any; };
+     
+         # 問い合わせ先のIPアドレス
+         # match-destinations { ホストのIPアドレス, もしくはaclステートメントで設定したACLの名前 }
+         match-destinations { any; };
+
+         # 再帰的な問い合わせを許可するかどうか
+         # wan側にはセキュリティのため再帰的な問い合わせは許可しない
+         recursion        no;
+
+         # 可変部分は全てzonesにまとめる
+         # includeステートメントを用いれば
+         # 指定したファイルに設定を読み込むことができる
+         include "/etc/zones";
+    };
+
+ /etc/zones  で今後運用でドメイン名を設定し直す
+（myzones.zone と named.conf を別ける理由は運用時named.confの設定を変更を避けるため）
+
+    ---------- start zones ----------
+    # 以下テンプレ
+
+    # 下記の設定でドメイン名.zoneをドメイン名に設定することができる
+    # 正引きの場合
+    zone "ドメイン名" {
+         type master;
+         file "data/ドメイン名.zone";
+    };    
+
+    # 逆引きの場合
+    zone "IPアドレス.in-addr.arpa"{
+         type master;
+         file "data/ドメイン名.rev";
+    };
+
+ zoneファイルのテンプレ
+----------------------------
+
+    ---------- start zone file ----------
+    ;; 外部のDNSが自分のドメイン情報を参照してキャッシュする際に、
+    ;; どれくらいの期間情報を保持するかを指定するもの
+    $TTL 86400
+
+    ;; SOAレコード
+    ;; ドメイン名からそのドメインに関する権威を持つホスト、管理者、現在のシリアル番号など
+    ;; に変換するためのレコード
+    ;; SOA = Start of authority
+    @       IN SOA ns1.ドメイン名. root.ドメイン名. (
+
+            ;; Serial 番号
+            2012033001  ; Serial
+
+            
+            ;; 以下の3つの情報は全てセカンダリネームサーバーに対して適用される
+            
+            ;; ゾーンの情報をリフレッシュするまでの時間
+            3600          ; 1 hours Refresh
+
+            ;; REFRESHでゾーン情報の更新ができなかった場合に、
+            ;; RETRYで指定された時間後に再度リフレッシュを試みる
+            900         ; 15 mintutes Retry
+
+            ;; 何らかの理由でゾーン情報のリフレッシュができない状態が続いた場合、
+            ;; セカンダリネームサーバが持っているデータをどれだけの時間利用してもよいかを示す
+            604800      ; 1 weeexpire
+
+            
+            ;; キャッシュサーバーの挙動を制御
+            
+            ;; 存在しないドメイン名をプライマリーサーバに問い合わせた場合の保持時間
+            3600)       ; Minimum
+        
+        IN NS ns1.ドメイン名.
+        IN A ホストIPアドレス
+
+    ; サブドメインの設定
+    ns1    IN A 49.212.54.172
+    www    IN CNAME ns1
+
+rndc の設定
+----------------------------
+
+rndc.txtを参照
+
+

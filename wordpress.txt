@@ -1,0 +1,17 @@
+wordpress 入門
+============================
+
+wordpress で本番サーバーへdeployする場合
+----------------------------
+
+- SQLをエクスポート, 本番サーバーへインポート
+- wp-config.php の項目を修正
+    * ユーザー名
+    * パスワード
+    * ホスト名
+    * データベース名
+- データベースのsiteurl, homeを更新
+
+    UPDATE wp_options SET option_value = 'インストール先アドレス' WHERE option_name IN ('siteurl', 'home);
+
+

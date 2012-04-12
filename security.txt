@@ -1,0 +1,9 @@
+
+# CentOS で行うセキュリティ設定
+
+
+
+## 元ネタサイト
+
+* [CentOS で行なっておきたいセキュリティ設定](http://fnya.cocolOg-Nifty.com/blog/2012/03/centos-6aa8.html)
+* [不正アクセス検知システム](http://centossrv.com/snort-base.shtml)

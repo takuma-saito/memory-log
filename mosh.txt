@@ -1,0 +1,31 @@
+mosh 導入方法
+============================
+
+mosh とは
+----------------------------
+ssh より高度なリモートシェル。
+認証についてはsshの設定がそのまま使える。
+一度切れたセッションを自動で回復してくれる。
+
+mosh のインストール方法
+----------------------------
+さくらVPSのインストールする場合の設定方法。
+まず必要なパッケージをインストール。
+
+    $ sudo yum install -y boost-devel \
+        zlib-devel \
+        ncurses-devel \
+        protobuf-devel \
+        paco
+
+moshをgitレポジトリから取得し、ソースからビルドします。
+
+    $ cd src
+    $ git clone git://github.com/keithw/mosh.git
+    $ cd mosh
+    $ ./autogen.sh
+    $ ./configure
+    $ make
+    $ sudo paco -D make install
+    
+

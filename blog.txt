@@ -1,0 +1,12 @@
+ブログポスト
+============================
+
++ [Modegramming Style](http://modegramming.blogspot.jp/2012/03/dsl_23.html):
+    関数型言語に関するブログポスト。レベル高い。おもしろい。
+    
++ [labunixのゆにっくす](http://d.hatena.ne.jp/labunix/archive):
+    レベルの高いインフラ構築がいろいろ書かれている。
+
+* [tototoshiの日記](http://d.hatena.ne.jp/tototoshi/archive):
+    scalaの話とか書いてる。scala勉強する時に読む
+

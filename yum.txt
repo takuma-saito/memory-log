@@ -1,0 +1,28 @@
+yum の使い方
+============================
+
+yumとは
+----------------------------
+CentOS や Fedora で使えるパッケージ管理ソフト。
+既にコンパイル済みのプログラムがリモートレポジトリというサーバーに置かれており、
+そこからダウンロードするだけで簡単にソフトウェアをインストールできる。
+プログラマーをコンパイルエラーから救った救世主。
+
+
+レポジトリの追加
+----------------------------
+レポジトリの情報をwgetで取得、rpmでインストールする
+CentOSの場合epel, Fedoraの場合rpmのレポジトリを追加する。
+
+* rmp: http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-stable.noarch.rpm
+* epel: http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+
+    $ wget http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm 
+    $ rpm -ivh epel-release-6-5.noarch.rpm
+    $ sed -i -e "1,/enabled=0/s/enabled=0/enabled=1/" /etc/yum.repos.d/epel.repo
+
+
+
+コマンドリファレンス
+----------------------------
+
