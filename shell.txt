@@ -1,0 +1,73 @@
+SHELL tips
+============================
+
+zsh に関するtips
+----------------------------
+
+### Oh My zsh ###
+oh my zsh は zsh の設定を管理するフレームワーク。
+GitHubで管理されている。いろいろ便利なプラグインが揃っている。
+
+・インストール方法
+
+    $ wget http://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
+    
+### auto-fu.zsh ###
+
+非常にレベルの高い自動補完ツール。
+
+    $ git clone git://github.com/hchbaw/auto-fu.zsh.git
+    $ cp auto-fu.zsh/auto-fu.zsh ~/.zsh/
+    $ emacs ~/.zshrc
+    #=============================
+    # source auto-fu.zsh
+    #=============================
+    if [ -f ~/.zsh/auto-fu.zsh ]; then
+        source ~/.zsh/auto-fu.zsh
+        function zle-line-init () { 
+            auto-fu-init
+        }
+        zle -N zle-line-init
+        zstyle ':completion:*' completer _oldlist _complete
+    fi
+
+### zsh syntax highlighter ###
+
+コマンドラインに色を付けてくれる。
+
+    $ git clone git://github.com/zsh-users/zsh-syntax-highlighting
+
+
+### Cent OS上でzsh日本語が文字化けする ###
+
+Cent OSでyumを使ってzshをインストールした場合
+これはzshのバージョンは4.2.6になる。
+このバージョンでは日本語などのマルチバイトに対応していないために文字化けが起こる。
+最新のバージョンにアップデートすれば文字化けは起こらない。
+
+
+    $ wget "http://downloads.sourceforge.net/zsh/zsh-4.3.9.tar.gz?modtime=1225708695&big_mirror=0"
+    $ tar zxvf zsh-4.3.9.tar.gz
+    $ cd zsh-4.3.9
+    $ ./configure --enable-multibyte --enable-locale
+    $ make install
+    $ echo /usr/local/bin/zsh >> /etc/shells
+    $ chsh -s /usr/local/bin/zsh
+
+
+
+shell に関するtips
+----------------------------
+
+* シェルスクリプトでランダムな数字を得る:
+    $RANDOMを使用する。
+    bash や zsh には $RANDOM という変数が用意されており、
+    このパラメーターは参照される旅に 0 〜 32767 までのランダムな整数が生成される
+    例) *1 〜 100 までのランダムな数値を得たい場合*
+    echo $(($RANDOM % 100 + 1))
+
+* 拡張子を変更する:
+    mv $file ${file%.txt}.doc;
+    
+* 
+

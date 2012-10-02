@@ -1,0 +1,9 @@
+scheme 
+============================
+
+その他
+----------------------------
+
+・[遅延プログラミングと遅延評価](http://www.ibm.com/developerworks/jp/linux/library/l-lazyprog.html)
+
+

@@ -1,0 +1,66 @@
+service 
+============================
+
+CentOS 
+----------------------------
+
+* iscsi
+* iscsid
+* netconsole
+* netfs
+* nfs
+* nfslock
+* rdisc
+* restorecond
+* rpcbind
+* rpcgssd
+* rpcidmapd
+* rpcsvcgssd
+* udev-post
+
+・rsyslogd
+・udevd
+・fcoemon
+⇒ Lan + ファイバーチェネル
+・dbus-daemon
+・auditd
+⇒ 特定のシステムコールをフックして、syslog に記録したり、ポリシーに反する動作を遮断するといったことをしているモジュール。
+⇒ su, sudo, login などのログを記入している
+・lldpad
+⇒ データリンク層の接続を検出、管理するプロトコルでIEEE802.1abで標準化されている。単にTCP/IP情報を設定するDHCP/BOOTPと異なり、LANに接続された機器を検出して各種の設定や管理を行うことができる。IP電話やネットワーク端末での利用が期待されている。
+・mingetty
+⇒ コンソールでログインプロンプトを表示するプログラム
+⇒ tty コマンドでコンソールを確認できる
+⇒ tty で /dev/pts/1 と返って場合は 1番目の仮想端末にアクセスしていることを示す
+⇒ /etc/sysconfig/init の ACTIVE_CONSOLES でtty数を変更することで、ACTICVEな端末の数を減らせる
+・lvm2-monitor
+
+ネットワークルータディスカバリーデーモン。ルータとして動作させないのであれば不要。
+
+DNSを使わずにIPマルチキャストで名前やアドレスを参照するサービス
+・avahi-daemon・rdisc
+
+
+Debian
+----------------------------
+
+* rmnologin
+* single
+* udev
+* udev-mtab
+* umount
+* urandom
+* console-setup
+* bootlogd
+* atd
+* dbus
+* exim4
+* halt
+* killprocs
+* nfs-common
+* portmap
+* procps
+* reboot
+* sendsigs
+
+

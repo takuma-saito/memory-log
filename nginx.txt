@@ -1,34 +1,137 @@
+nginx の導入
+============================
 
-# nginxとは
+nginx とは?
+----------------------------
 nginxとはapacheよりも高性能なHTTP サーバー。
-静的なファイルをキャッシュするリバースプロキシやロードバンサーとして主に利用されている
+静的なファイルをキャッシュするリバースプロキシや
+ロードバンサーとして主に利用されている
+
+nginx のインストール
+----------------------------
+php5-fpm がインストールできるレポジトリを設定
+
+    $ wget http://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
+    $ sudo rpm --import IUS-COMMUNITY-GPG-KEY
+    $ wget http://dl.iuscommunity.org/pub/ius/stable/Redhat/5/x86_64/ius-release-1.0-10.ius.el5.noarch.rpm
+    $ sudo rpm -Uvh ius-release-1.0-10.ius.el5.noarch.rpm
+
+php5-fpmをインストールする
+
+    $ yum install php53u-fpm php53u-pecl-apc
 
 
-# nginxの初期設定
+nginx のコンパイル方法
+----------------------------
+ngx_openresty を使ってサードパーティ性のモジュールも一緒にインストールする。
+SAIを使いたいので、まずtls拡張を有効にしたopensslをコンパイルする
 
-・php5-fpm がインストールできるレポジトリを設定
-% wget http://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
-% sudo rpm --import IUS-COMMUNITY-GPG-KEY
-% wget http://dl.iuscommunity.org/pub/ius/stable/Redhat/5/x86_64/ius-release-1.0-10.ius.el5.noarch.rpm
-% sudo rpm -Uvh ius-release-1.0-10.ius.el5.noarch.rpm
+    $ cd ~/src      
+    $ wget http://www.openssl.org/source/openssl-1.0.1c.tar.gz
+    $ tar zxvf ./openssl-1.0.1c.tar.gz
+    $ cd ./openssl-1.0.1c.tar.gz    
+    $ ./config enable-tlsext
+    $ make
+    $ make install
+    $ cd ..
 
-・php5-fpmをインストールする
-% yum install php53u-fpm php53u-pecl-apc
+./configure するときに`enable-tlsext`オプションを指定するのがキモ
+gitからngx_openrestyを取得する。
+
+    $ git clone git://github.com/agentzh/ngx_openresty.git
+    $ cd ngx_openresty
+    $ make
+    $ cd ngx_openresty_version
+    $ ./configure \
+        --prefix=/usr/local \
+        --sbin-path=/usr/local/sbin/nginx \
+        --conf-path=/etc/nginx/nginx.conf \
+        --error-log-path=/var/log/nginx/error.log  \
+        --pid-path=/var/run/nginx.pid  \
+        --lock-path=/var/lock/nginx.lock \
+        --with-http_realip_module  \
+        --with-http_addition_module \
+        --with-http_xslt_module \
+        --with-http_image_filter_module \
+        --with-http_geoip_module \
+        --with-http_sub_module \ 
+        --with-http_dav_module \    
+        --with-http_flv_module \      
+        --with-http_stub_status_module \
+        --with-http_random_index_module \
+        --with-http_secure_link_module \
+        --with-pcre \
+        --with-luajit \ 
+        --with-http_iconv_module \
+        --with-mail_ssl_module \
+        --with-openssl=/home/admin/src/openssl-1.0.1c \
+        --user=nginx \
+        --group=nginx \
+        --conf-path=/etc/nginx/nginx.conf \
+        --with-md5=/usr/lib \
+        --with-sha1=/usr/lib \
+        --with-http_ssl_module \
+        --http-log-path=/var/log/nginx/access.log \
+    $ gmke
+    $ gmake install
+
+`--with-openssl`のパスはopensslをコンパイルしたパスを指定する
+
+webdavを有効にしたい場合は
+(NGINX WebDAV missing commands support)[https://github.com/arut/nginx-dav-ext-module]もgitで取得し、
+--add-moduleで指定する必要がある。 
 
 
-# nginxの設定
-・php5-fpmの設定を変更する
+nginxの設定
+----------------------------
 
+php5-fpmの設定を変更する
 unixソケットの方がスループットが高いため変更
-;listen = 127.0.0.1:9000
-↓
-listen = /tmp/php.socket
+
+    ;listen = 127.0.0.1:9000
+    ↓
+    listen = /tmp/php.socket
 
 fastcgiを利用するユーザーをapacheからnginxに変更
-user = apache
-group = apache
-↓
-user = nginx
-group = nginx
 
+    user = apache
+    group = apache
+    ↓
+    user = nginx
+    group = nginx
+
+変更結果を反映させる。
+
+    $ sudo nginx -s reload
+
+モジュールについて
+----------------------------
+
+nginxのモジュールは少ないので、bundlerをインストールする。
+[ngx_openresty bundle](https://github.com/agentzh/ngx_openresty)
+
+基本的にgitからcloneしてそのままmakeすればOK。
+
+
+トラブルシューティング
+----------------------------
+
+Proxy Cacheを使ってベンチマークを使っている時
+`netstat -anl` でTIME_WAITが異常に多発している場合がある。
+
+sysnctl.confのtimeout値の設定を変更すれば対策できる。
+
+    $ sudo emacs /etc/sysnctl.conf
+    
+    # 使えるポートレンジの数を増やす
+    net.ipv4.ip_local_port_range = 32768 65000
+    
+    # time out をリサイクルする
+    net.ipv4.tcp_tw_recycle = 1
+    
+    # time out 値を 10秒に設定
+    net.ipv4.tcp_fin_timeout = 10
+    
+    $ sudo sysctl -p 
+    # 設定を反映させる
 

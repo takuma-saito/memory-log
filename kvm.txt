@@ -1,0 +1,258 @@
+kvm
+============================
+
+KVM が利用できるかを確認
+----------------------------
+
+cpu が仮想化支援機能をサポートしているかどうか調べる
+
+    $ cat /proc/cpuinfo | grep -m 1 vmx
+    flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx lm constant_tsc arch_perfmon pebs bts rep_good nopl aperfmperf pni dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr pdcm sse4_1 xsave lahf_lm dtherm tpr_shadow vnmi flexpriority
+
+intel CPU の場合 vmx フラグが入っていれば仮想化が行える.
+
+次にカーネルが kvm をサポートするモジュールを読み込んでいるか調べる.
+Arch Linux の場合下記のように CONFIG_KVM が y か m に設定されていればよい.
+
+    $ zcat /proc/config.gz | grep KVM
+    CONFIG_KVM_CLOCK=y
+    CONFIG_KVM_GUEST=y
+    CONFIG_HAVE_KVM=y
+    CONFIG_HAVE_KVM_IRQCHIP=y
+    CONFIG_HAVE_KVM_EVENTFD=y
+    CONFIG_KVM_APIC_ARCHITECTURE=y
+    CONFIG_KVM_MMIO=y
+    CONFIG_KVM_ASYNC_PF=y
+    CONFIG_HAVE_KVM_MSI=y
+    CONFIG_KVM=m
+    CONFIG_KVM_INTEL=m
+    CONFIG_KVM_AMD=m
+    CONFIG_KVM_MMU_AUDIT=y
+
+現在 kvm カーネルモジュールがロードされているかを調べる.
+
+    $ lsmod | grep kvm_intel
+
+もしロードされていない場合は下記のコマンドで kvm_intel モジュールをロードする.
+
+    $ modprobe kvm_intel
+
+
+KVM コマンドを用いたセットアップ方法
+----------------------------
+
+ゲスト OS のイメージを作成する.
+
+    $ qemu-img create -f qcow2 <Image_Name> <size>
+
+インストーラーを用いてゲスト OS に OS をインストールする
+
+    $ qemu-kvm -hda <Image_Name> -m 512 -cdrom /path/to/the/ISO/image -boot d -vnc :0  -virtioconsole stdio -curses
+
+qemu-kvm で利用できるオプションは以下.
+
+* `-hda <img-path>`: qemu-img で作成したゲストOSイメージ
+* `-m <size>`: ゲストOSのメモリ容量
+* `-cdrom <path>`: OSインストーラーへのパス
+* `-boot <boot-type>`: ブートタイプを指定.
+   * `d`: インストーラーからインストールする場合は d を指定する（Dドライブから起動）
+   * `c`: ハードディスク
+* `-vga <vga-type>`: VGA タイプを選択. 通常は std でOK
+* `-vnc <display>`: VNC 接続で起動する. 
+   host:port で起動するポート, 許可するホストを指定できる. （5900 を基準に1つずつポートは増えていく）
+   /etc/libvirt/qemu.conf でVNCのパスワードやセキュリティの設定が行える
+* `-monitor <monitor>`: 監視タイプを選べる
+   * `stdio`: 標準出力
+   * `telnet:port [,server][,nowait]`: port で待受, telnetから操作できる. 
+     また server, nowait オプションを付けることでクライアントからの接続を待ち受けることができる
+* `-curses`: 起動コンソールモード
+* `-daemonize`: デーモン化
+* `-k ja`: キーマップを指定
+* `-net nic,macaddr=52:54:00:00:00:03,model=e1000`: ネットワークアドレスなどを指定
+
+
+libvirt を用いたセットアップ方法
+----------------------------
+libvirt 仮想化に関する一般的なインターフェイス定義した抽象化ラッパー.
+Xen, KVM, VMware などを操作する際 libvirt を用いれば同じコマンドで操作を行うことができる.
+
+Arch Linux では下記のパッケージをインストールすること.
+
+    $ yaourt -S libvirt virtinst bridge-utils qemu-kvm dnsmasq
+
+まず libvirt グループを作成し, libvirt を操作するメンバーを加える
+
+    $ groupadd libvirt
+    $ gpasswd -a root libvirt
+    $ gpasswd -a admin libvirt
+
+libvirt を起動する
+
+    $ rc.d start libvird
+    :: Starting libvirtd
+    2012-10-01 14:04:21.860+0000: 1806: info : libvirt version: 0.10.2
+    2012-10-01 14:04:21.860+0000: 1806: warning : virGetHostname:2265 : getaddrinfo failed for 'gateway': Name or service not known
+
+ホスト名の逆引きに失敗すると上記のようなエラーが発生してしまい, 起動が出来ない.
+/etc/hosts ファイルにホスト名のアドレスを入れる
+
+    $ emacs /etc/hosts
+    127.0.0.1    localhost gateway
+
+libvirt を起動する.
+
+    $ rc.d start libvird
+    :: Starting libvirtd     [OK]
+
+avahi-daemon が起動していない場合ソケットの接続に失敗するので avahi-daemon をスタートさせる
+
+    $ rc.d start avahi-daemon
+    Start dbus first.
+
+dbus が起動していないと avahi-daemon が起動できないので、最初に dbus を起動させてから avahi-daemon を起動させる
+
+    $ rc.d start dbus
+    $ rc.d start avahi-daemon
+    $ rc.d restart libvirtd
+
+ハイパーバイザーに接続できるかどうか確認する
+
+    $ virsh connect qemu:///system
+
+何も表示が出ない場合上手く接続されている.
+
+設定が完了したのでゲスト OS をインストールする
+
+    $ virt-install --connect qemu:///system \
+    --name centos \
+    --ram 512 \
+    --disk path=vm.img,size=2 \                                        
+    --vnc \
+    --cdrom CentOS-6.2-x86_64-minimal.iso    
+    ERROR    ネットワークデバイスのパラメーターにエラーがあります: 仮想ネットワーク 'default' が開始されていません。
+
+ネットワーク関連でエラーが発生する.
+まず default ネットワークを有効にさせないといけない
+
+    $ virsh net-start default 
+    Network default started
+
+その後再度インストールを行う.
+
+    $ virt-install --connect qemu:///system \
+    --name centos \
+    --ram 512 \
+    --disk path=vm.img,size=2 \
+    --vnc \
+    --cdrom CentOS-6.2-x86_64-minimal.iso \
+    --graphics none --extra-args "console=ttyS0,115200 text headless"
+    
+    Starting install...
+    Creating domain...
+    WARNING  Unable to connect to graphical console: virt-viewer not installed. Please install the 'virt-viewer' package.
+    Domain installation still in progress. You can reconnect to 
+    the console to complete the installation process.
+    
+    $ virsh list
+    Id    Name                           State
+    ----------------------------------------------------
+     1     centos                         running
+
+virt-install の各オプションの意味は下記.
+
+* `--connect <hypervisor>`: 
+* `--name`: 
+* `--disk`: 
+* `--vnc`: 
+* `--cdrom`: 
+* `-x console=ttyS0,115200`
+
+テキストモードでインストールする場合
+
+    $ virt-install --connect qemu:///system \
+    --name <name> \
+    --ram 512 \
+    --disk=/var/lib/libvirt/images/centos.img,size=5 \
+    --graphics none \
+    --os-variant=virtio26 \
+    --extra-args "console=ttyS0,115200 text headless" \
+    --os-type=Linux \
+    --location http://ftp.riken.jp/Linux/centos/6.3/os/x86_64/ 
+
+"--location <url>" にてインストールディスクのURLを指定する.
+
+**"--location" の指定にローカルファイルを指定をすることも出来るが基本的に難しい.**
+
+virt-install を --location 指定でインストールする場合
+<url>.treeinfo というファイルを確認し, ネットワークインストールを行う.
+しかし, 普通に ISO をマウントしただけでは、一部セクションが抜けているので独自に修正する必要がある.
+この時点で既に面倒くさいが, ISO ファイルは ISO9660 という形式でファイルシステムが管理されており
+*マウントしたファイルは直接編集できない.*
+
+よって, マウントしたファイルを一旦別の場所へコピーしないといけない.
+
+このようにネットワークではなくローカルで --location 指定する場合非常に手間が掛かる.
+
+注1）
+.treeinfo は ini ファイル形式で管理されている. 
+virt-install には [images-arch] セクションの boot.iso の指定が必要だが、
+普通に ISO ファイルをダウンロードしただけではこの指定が存在しないため編集が必要.
+
+boot.iso にはネットワークインストール用のメディアを指定する.
+
+注2）
+qemu-kvm コマンドから ISO ファイルを直接インストールする場合 -curses オプションでテキストインストールが出来る.
+よって virsh-install も将来のバージョンではまず間違いなく curses オプションがサポートされるだろう.
+
+注3)
+
+* debian: "http://ftp.riken.jp/Linux/debian/debian/dists/squeeze/main/installer-amd64/""
+* centos: "http://ftp.riken.jp/Linux/centos/6.3/os/x86_64/"
+
+リブートするので, ゲスト OS を一旦シャットダウンする.
+
+    $ shutdown -h now
+
+その後バックグランドでスタートさせると virsh console で接続できるようになる.
+
+    $ virsh start <name>
+    $ virsh console <name>
+
+コンソールから抜けるには Ctrl + ] を同時押し.
+
+virsh による各種操作
+----------------------------
+
+仮想マシンに対する操作一覧
+
+* 状態一覧: `virsh list --all`
+* 詳細情報: `virsh dominfo <name>`
+* 設定ファイルの編集: `virsh edit <name>`
+* 起動: `virsh start <name>`
+* 一時停止: `virsh suspend <name>`
+* 再開: `virsh resume <name>`
+* 停止: `virsh shutdown <name>`
+* 再起動: `virsh reboot <name>`
+* 電源オフ: `virsh destroy <name>`
+* 削除: `virsh undefine <name>`
+
+ディスクイメージ
+
+* 一覧: `virsh pool-list`
+* ストレージプール一覧: `virsh pool-list <name>`
+* ストレージプール削除: `virsh vol-delete <path>`
+
+CPU 
+----------------------------
+
+ネットワーク
+----------------------------
+
+ストレージ
+----------------------------
+
+メモリ
+----------------------------
+
+
+

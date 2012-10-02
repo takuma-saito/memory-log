@@ -1,0 +1,97 @@
+ハックリスト
+============================
+
+todo
+----------------------------
+
+* schemeの字句解析器を作る
+* オートマンをHaskellで作る(lexer, スクレイピングソフトに使う）
+* logoの処理系
+* gauche でmixiの仕組みを作る
+* [本]コンピュータプログラミングの概念・技法・モデル
+* [本]計算理論の基礎 [原著第2版] 1.オートマトンと言語
+* [本]ゲーデル,エッシャー,バッハ―あるいは不思議の環
+* [本]圏論による論理学
+
+新技術
+----------------------------
+
+* Xen: 仮想化ソフトを入れる
+* cobbler: OS自動インストール
+* openflow: ネットワークプログラム
+* hubpot: githubで利用されているボット
+* meteor: javascript で作成されたモダンフレームワーク, node.js上で稼働する
+* heroku: デプロイツール
+* linux3.4のビルド: ソースコードからビルドして、自作PCに入れる！
+* Coq: 定理証明支援系言語 Coq
+* openwrt: ルーターをlinux化
+* supervisor: イベント監視
+* openldap: 統合認証ツール
+* unixBench: unix のベンチマークを計る
+* octpress: ブログ管理ツール
+* KyotoTycoon: 永続化キーバリューストア
+* Sphinx: 検索エンジン
+* pig: KVS。 Hadoopと連携して大規模分散処理が行える
+* jasmine: javascript のテストフレームワーク
+* HAProxy: High Availability Load Balancing（高可用性プロキシー）
+* apid: ファイル改竄検知ソフト
+* yomico: markDown viewer
+* Alloy Analyzer、Isabell/HOL、Coq、Agda: モデル発見器、定理証明系
+* play Framework: scala で作られたwebフレームワーク
+* ghc, prolog, mozart: 論理プログラミング言語, どれか一つをマスターする
+* Dart: Google が作ったプログラミング言語, javascriptの代価
+* nodebrew: node.js の環境管理ツール
+* task_warrier: コンソールベースのタスク管理ソフト
+* Django: Python制のフレームワーク Viewの継承
+* d3js: Data-Driven Documents(http://d3js.org/)
+* D言語: モダンな言語
+
+知っている技術
+----------------------------
+
+* iptables: セキュリティソフト（ファイヤーウォール）
+* nginx: HTTPキャッシュサーバー
+* unbound: モダンなDNSキャッシュサーバー
+* jenkins: jenksin
+* Thrift: 言語バインディング用のフレームワーク
+* Casandra: NoSQLの一つ
+* Memcached: オンメモリキャッシュサーバー
+* NSD: モダンなDNSコンテンツサーバー
+* autoconf: 自動化ビルドツール）
+* capistrano: デプロイツール
+* chef-solo: 運用自動化ツール
+* zsh: 最強のbash
+* php: php言語
+* mysql: データベース
+* emacs: エディター
+* yacc: 構文解析器
+* lex: 字句解析器
+* gpref: hash構築ツール
+* make: ビルドツール
+* m4: プリプロセッサー
+* Kerberos: セキュリティー認証ソフト（ケルベロス認証）
+* redis: 非常に高速なKVS。様々なデータ構造をvalueに設定できる
+* CouchDB: Erlangで書かれたDB
+* mongoDB: NoSQLの一つ
+* twitter Bootstrap: CSSを簡単に掛ける
+* SELinux: Linuxのセキュリティモジュール
+    ⇒ 使い方分からなくていつもdisabledしているので...
+
+TODO
+----------------------------
+
+* 論理型言語を一つマスターする
+* 制約型プログラミング言語を一つマスターする
+* scalaをマスターする
+
+
+購入検討
+----------------------------
+
+* 抽象によるソフトウェア設計−Alloyではじめる形式
+* (cubox)[http://www.solid-run.com/products/cubox] 小型Linux
+* C++の設計と進化
+
+
+
+

@@ -1,0 +1,7 @@
+
+configure がmacosxで上手くいかない時
+----------------------------
+
+ライブラリエラーの可能性あり。
+
+    env CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib" ./configure

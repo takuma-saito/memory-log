@@ -1,0 +1,75 @@
+monit の導入方法
+============================
+
+monit とは
+----------------------------
+ユニックスのファイルシステムやプロセスなどを監視するツール。
+プロセスの再起動や状況に応じて様々なアクションが設定できる。
+
+基本的な使い方
+----------------------------
+デフォルトで設定ファイルは`/etc/monit.conf`に入っている。
+コマンドラインから指定してmonitを起動する場合は以下のようにする。
+
+     $ monit -c /var/monit/monitrc
+
+文法が合っているかどうかを確認する
+
+     $ monit -t
+     Control file syntax OK
+     
+文法が合っている場合次のようにしてmonitを起動させる
+    
+    $ monitor
+
+起動オプション
+----------------------------
+
+* `start all`: 全てのサービスをスタートする
+* `start name`: nameサービスをスタートする
+* `monitor name`: nameサービスのモニタリングをオンにする
+* `unmonitor name`: nameサービスのモニタリングをオフにする
+* `status`: それぞれのサービスの状況を表示する
+* `summary`: それぞれのサービスの統計情報を表示する
+* `quit`: サービスを全て停止させる
+
+monit自身の自動再起動設定について
+----------------------------
+monit.conf に`set init`を追加する
+
+設定ファイル`/etc/inittab`に追加で以下を設定する。
+
+    mo:2345:respawn:/usr/local/bin/monit -Ic /etc/monitrc
+
+一旦monitを落としてinittabから起動させる。
+
+    $ /etc/init.d/monit stop # monit プロセスを落としておく
+    $ sudo telinit q
+
+monitを強制的に終了させる
+
+    $ sudo pkill monit
+
+監視するべきサービスなど
+----------------------------
+* moonitor自身
+* httpd
+* vsftpd
+* named
+* mysql
+* sshd
+* CPU異常
+* ディスク異常
+* httpd + ssl
+* dropboxの監視
+* postfix
+* dovecot
+
+その他
+----------------------------
+SSLの証明書チェックなどには`crypto-utils`などを用いる。
+
+参考URL
+----------------------------
+
+* [monitのサンプル](http://mmonit.com/wiki/Monit/ConfigurationExamples#apache)

@@ -1,0 +1,165 @@
+LVM について
+============================
+
+初期HDD から LV を複数作成するまでの流れ
+----------------------------
+
+0. HDDのパーティションを作る
+HDDのパーティションを作成し、パーティションIDをLVM (8e) に設定する.
+パーティションIDが LVM (8e) でないとLVMの物理ボリュームが作れない.
+
+    # fdisk /dev/sda
+    Command (m for help) : n  -> 新しいパーティションを作る
+    Command (m for help) : t  -> パーティションのID を LVM に設定する
+
+
+1. 物理ボリュームを作成する
+
+    # pvcreate /dev/sda1
+    Physical volume "/dev/sda1" successfully created
+
+pvdisplay で確認する
+
+    # pvdisplay
+    "/dev/sda1" is a new physical volume of "30.00 GiB"
+    --- NEW Physical volume ---
+    PV Name       /dev/sda5
+    VG Name
+    PV Size       30.00 GiB
+    Allocatable   No
+    PE Size       0
+    Total PE      0
+    Free PE       0
+    Allocated PE  0
+    PV UUID       b4bF9R-QvEA-wzCG-X10q-isJZ-uim2T-UTYZew
+    
+この時点で物理ボリュームはボリュームグループに関連付けられていないので
+PE Size などは0である. また、 "new physical volume" といった注釈が付く.
+
+
+2. ボリュームグループを作る
+物理ボリュームを束ねてボリュームグループを作る.
+ボリュームグループはOSから見るとハードディスクをエミュレートしている.
+
+物理ボリュームを作成する際にPE （Physical Extent）を設定しなければならない.
+PE とはLVを作成する際に割り当てるブロックのこと.
+PE サイズずつしかLVに割り当てることができない.
+また、ひとつのLVに与えられるPE数には限界（65536ブロック）があるのでPEサイズを変化させることでLV総量が変化する.
+
+4MB:  250G
+8MB:  500G
+16MB: 1T
+24MB: 1.5T
+36MB: 2.0T
+
+実際にボリュームグループを作成する.
+
+    # vgcreate -s 32m VolGroup /dev/hda3
+
+-s でPEサイズを指定する.
+今回の場合は 32MB でPEを作成する.
+
+その後に ボリュームグループの名前, 物理ボリュームの名前をそれぞれ入れる.
+
+vgdisplay で実際に作成したボリュームグループを確認する.
+
+    # vgdisplay
+    --- Volume group ---
+    VG Name       VolGroup
+    ....
+
+ちなみに既にあるボリュームグループに物理ボリュームを追加する場合は以下のようにvgextendを使う.
+
+    # vgextend VolGroup00 /dev/sdb1
+
+
+3. 論理ボリュームを作成する
+
+最後のプロセス, 論理ボリュームを作成する.
+論理ボリュームはハードディスクのパーテションをエミュレートしている.
+
+    # lvcreate -L 1.53G -n lv_swap VolGroup
+    
+各オプションの説明は以下の通り.
+
+* `-L`: 
+    論理ボリュームに割り当てるサイズを決める
+    60%VG のようにボリュームグループの比率で指定もできる.
+     
+* `-n`: 論理ボリュームの名前
+
+論理ボリュームを増やす場合は下記のようにlvresizeを使う.
+
+    # lvresize -L +1G /dev/VolGroup/lv_swap
+
+論理ボリュームが増えただけでは、ファイルシステムの容量は増えないので
+ファイルシステムもリサイズしなければならない.
+
+    # resize2fs /dev/VolGroup/lv_swap
+
+
+/dev 以下にボリュームグループが存在しない場合
+----------------------------
+
+モジュールがロードされていない場合ロードする.
+
+     $ modprobe dm_mod
+
+lvscan で状態を確認
+
+     $ lvscan
+
+もし inactive の項目があれば vgchange で active ボリュームグループの状態をアクティブに変更する
+
+     $ vgchange -ay VolGroup
+
+LV を追加, 縮小する場合
+----------------------------
+
+### 論理ボリュームの追加 ###
+
+まず残っているフリースペースを確認する.
+
+    $ vgdisplay
+    --- Volume Group ---
+    ...
+    Free PE / Size     12847 / 50.18GiB
+    ...
+
+残りスペースを確認後, 論理ボリュームにディスクスペースを割り当てる.
+
+    $ lvresize -L +50G /dev/VolGroup/root
+
+ファイルシステムの容量を増やす
+
+    $ resize2fs /dev/VolGroup/root
+
+
+### 論理ボリュームの縮小 ###
+
+論理ボリュームを縮小する場合は
+**最初にファイルシステムを小さくしてから, 論理ボリュームをを縮小させる**ことが重要.
+
+先に論理ボリュームを小さくファイルシステムが壊れてしまうので注意する.
+
+まずファイルシステムの整合性をチェックする.
+（この段階を踏まないと先に進めない）
+
+    $ e2fsck -f /dev/VolGroup/storage
+    ...
+    Pass 1: Checking inodes, blocks, and sizes
+    Pass 2: Checking directory structure
+    Pass 3: Checking directory connectivity
+    Pass 4: Checking reference counts
+    Pass 5: Checking group summary information
+    ...
+
+ファイルシステムをを縮小する.
+
+    $ resize2fs -p /dev/VolGroup/storage 115G
+
+-p オプションでプログレスpバーが表示される.
+次に論理ボリュームを縮小する.
+
+    $ lvreduce -L 115G /dev/VolGroup/storage
+

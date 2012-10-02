@@ -1,0 +1,79 @@
+udev の使い方
+============================
+
+udev の概要
+----------------------------
+
+基本手順.
+
+udevadm にて情報を取得する.
+
+    $ udevadm info -a -n /dev/sdx
+
+udevadm info にて下記のように udev のルールを書くのに必要な情報は全て分かる.
+
+    $ udevadm info -a -n /dev/sdx
+    ...
+    looking at device '/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0/block/sda':
+      KERNEL=="sda"
+      SUBSYSTEM=="block"
+      DRIVER==""
+      ATTR{ro}=="0"
+      ...
+      
+udevadm のルールには適合値と代入値の2つの種類がある.
+適合値はキーとバリューがペアになった値で, この値にデバイスの属性がマッチした場合に代入値が適用される.
+代入値にはそのデバイスの属性, 権限, 名前, シンボリックリンクなどが指定できる.
+
+適合値は上記の udevadm で表示される内容をそのままコピペすればよい.
+通常複数の適合値をルールに記述する. その場合は適合値同士を "," で区切って記入すること.
+
+適合値で利用できる値は以下に挙げる.
+
+* `NAME`: デバイスの名前
+* `SYMLINK`: シンボリックリンク
+* `OWNER, GROUP, MODE`: パーミッション
+* `RUN`: このデバイスが読み込まれた時に実行するプログラムパス
+
+適合値と代入値はそれぞれ "==", "=" で表す.
+
+**特に注意すべきは udevadm info で表示された最初のフィールドを適合値として採用すること**
+また、異なるフィールド同士は同じ行に書けないので注意する.
+
+
+利用できるコマンド
+----------------------------
+
+* ルールの再読み込み: `udevadm control --reload-rules`
+* ルールの読込順序をテスト: `udevadm test <device_name>`
+* デバイスの状態を監視: `udevadm monitor`
+* カーネルからデバイスイベントを要求する: `udevadm trigger`
+    特にコールドプラグを処理するために実行される
+* udev イベントキューを監視する: `udevadm settle`
+
+
+ルールの記述方法
+----------------------------
+
+### ネットワーク設定編 ###
+
+ネットワーク設定は ATTR{address} に設定したいインターフェイスのネットワークアドレスを入れる.
+また NAME で設定したいインターフェイス名を入力する.
+
+    $ udevadm info -a -p /sys/class/net/eth0
+    ...
+    $ emacs /etc/udev/rules.d/10-network.rules
+    SUBSYSTEM=="net", ATTRS{address}=="00:25:11:1a:35:4a", NAME="net100bps"
+
+### ストレージ設定編 ###
+
+ストレージの場合, NAME はデフォルトのルールによって固定されているので
+SYMLINK に指定したいパスを入れる.
+また KERNEL 指定に * を入れることでパーティションの設定一気に指定できる.
+
+    $ udevadm info -a -p /dev/sda
+    ...
+    $ emacs /etc/udev/rules.d/20-storage.rules
+    KERNEL=="sda*", SUBSYSTEM=="block", SYMLINK="storage/main%n"
+
+

@@ -1,0 +1,30 @@
+cpan の使い方・導入方法
+============================
+
+cpan の使い方
+----------------------------
+
+最初にすること
+
+    # 最初にcpanコマンドを叩いた時にプロンプトに従って設定をした後に
+    cpan> install Bundle::CPAN
+    cpan> reload cpan
+
+### cpanの設定 ###
+
+* 設定確認: `o conf init`
+* 書込: `o conf commit`
+* 設定確認: `o conf`
+* 個別設定: `o conf item $value`
+
+### 検索・更新・インストール ###
+
+* 検索: `i /検索語/`
+* モジュール検索: `m /モジュール名/`
+* 作者の検索: `a /Author/`
+* 更新モジュール一覧: `r`
+* 特定モジュール: `r $module`
+* 更新: `upgrade`
+* 特定モジュール更新: `upgrade $module`
+* インストール: `install $module`
+

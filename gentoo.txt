@@ -1,0 +1,445 @@
+gentoo
+============================
+
+gentoo のインストール方法
+----------------------------
+
+1. LiveCD をCDに焼く
+
+http://www.gentoo.org/main/en/where.xml
+
+ISOメディアをダウンロードし、LiveCDをCDに焼く.
+
+
+2. LiveCD から起動させる
+
+LiveCDをパソコンに入れ, Boot Media でCDを選択し gentoo LiveCD を起動させる.
+この時キーマップを聞かれるので, jp を選択する.
+
+もし英字キーボードになっていたば場合は下記のコマンドで日本語キーボードに変更できる
+
+    # loadkeys jp106
+
+
+3. ネットワーク設定
+
+1) dhcpcd を利用する場合
+
+    # dhcpcd eth0
+
+2) 固定アドレスを利用する場合.
+まずIPアドレスを設定を行う.
+
+    # ip addr add broadcast 192.168.1.255 192.168.1.6 dev eth0
+    # ip addr
+
+次にルーターの設定を行う.
+    
+    # ip route add default via 192.168.1.1 dev eth0
+    
+最後にリゾルバの設定を行う.
+
+    # echo "nameserver 192.168.1.1" > /etc/resolv.conf
+    
+3) net-setup を使う場合
+gentooには net-setup というツールが付いているので、これを使い設定することもできる.
+
+    # net-setup eth0
+
+ネットワーク設定が完了したら疎通確認を行う
+
+    # ping googole.co.jp
+    
+
+4. パーティションの設定
+
+省略.
+今回は以下のような構成でインストールを行う.
+
+root (LVM, ext4): /dev/VolGroup/gentoo_root   4G
+swap (LVM, ext4): /dev/VolGroup/gentoo_swap   1G
+boot (ext2):      /dev/sda7                   100M
+
+LVM を利用している場合はボリュームグループを全て ACTIVE にさせる
+
+    # vgchange -ay
+    7 logical volume(s) in volume group "VolGroup" now active
+
+
+5. ファイルシステムを作成し, マウントさせる
+
+まず各パーティションまたはLVにファイルシステムを作成する.
+
+    # mkfs.ext4 /dev/VolGroup/gentoo_root
+    # mkfs.ext2 /dev/sda7
+    # mkswap /dev/VolGrouep/gentoo_swap
+    # swapon /dev/VolGroup/gentoo_swap
+    # swapon -s
+
+マウントさせる
+
+    # mount /dev/VolGroup/gentoo_root /mnt/gentoo
+    # mkdir /mnt/gentoo/boot
+    # mount /dev/sda7 /mnt/gentoo/boot
+
+
+6. Gentooインストールファイルのインストール
+
+マウントポイントに移動し、以下のサイトから stage3 の tarball と portage をダウンロードする
+
+    # links http://www.gentoo.org/main/en/mirrors.xml
+ 
+上記コマンドを実行するとミラーサイト一覧にアクセスできる。
+この時 /japan として日本のダウンロード先を探す.
+
+**links の使い方**
+
+* `ESC`: ヘルプメッセージを表示
+* `z`: 前へ戻る
+* `d`: リンク先をダウンロード
+* `q`: ブラウザを閉じる
+
+この時くれぐれもダウンロードファイルに対して**ENTER を押さない**こと. バイナリーが表示されてしまう.
+また念のためそれぞれの DIGESTS, md5sum のファイルもインストールしておく.
+
+* /pub/linux/gentoo/release/$ARCH/current-stage3/stage3-$(version).tar.bz2
+* /pub/linux/gentoo/release/$ARCH/current-stage3/stage3-$(version).tar.bz2.DIGESTS
+* /pub/linux/gentoo/snapshots/portabe-$(date).tar.bz2
+* /pub/linux/gentoo/snapshots/portabe-$(date).tar.bz2.md5sum
+
+正しくダウンロードされているかチェックを行う.
+(stage3-i686-(date).tar.bz2.DIGESTS のファイルには必要のないチェックサムがあるので該当部分以外は削除する)
+
+    # md5sum -c portage-(date).tar.bz2.md5sum
+    portage-(date).tar.bz2 : OK
+    
+    # grep -A 1 -m 1 SHA512 stage3-i686-(date).tar.bz2.DIGESTS > stage3-i686-(date).tar.bz2.DIGESTS.NEW
+    # sha512sum -c stage3-i686-(date).tar.bz2.DIGESTS.NEW
+    stage3-i686-(date).tar.bz2: OK
+    
+OK であることを確認したらそれぞれのチェックサムファイルは削除する
+
+    # rm portage-(date).tar.bz2.md5sum
+    # rm stage3-i686-(date).tar.bz2.DIGESTS
+
+ファイルを展開する.
+
+    # tar jxvf stage3-i686-(date).tar.bz2
+    # tar jxvf portage-(date).tar.bz2 -C /mnt/gentoo/usr
+    # rm stage3-i686-(date).tar.bz2 portage-(date).tar.bz2
+
+portage 用のミラーを選択する.
+
+手動)
+手動で設定する場合 -i オプションを入れる
+
+    # mirrorselect -i -o >> /mnt/gentoo/etc/make.conf
+
+自動)
+
+ミラーを自動選択する場合
+  
+    # mirrorselect -s3 -b10 -o -D | tee -a /mnt/gentoo/etc/make.conf
+
+* `-sNumber`: 上位 Number までのミラーサイトを取得する
+* `-bBlock`: Block * 10kB のチャンクを送る
+* `-D`: 自動でミラーを設定する
+* `-i`: 手動でミラー設定する
+* `-o`: 標準出力に結果を出す
+
+次に CFLAGS の最適化オプションなどの設定を行う.
+
+    # emacs /mnt/gentoo/etc/make.conf
+    CFLAGS="-O2 -march=i686 -pipe"
+    CXXFLAGS="#{CFLAGS}"
+    MAKEOPTS="-j2"
+
+* `-march`: には適切なCPUアーキテクチャを入れる
+* `-O2`: は最適化レベルの2つ目.(-O3 まで行うとバグが発生する可能性が高くなるので推奨しない）
+* `-pipe`: コンパイル時のやり取りにテンポラリファイルではなく、パイプを使う
+* `-j2`: 並行コンパイルの数, 通常はプロセッサの数を入れる
+    
+
+7. gentoo ベース環境に入る
+
+DNS 情報をコピーする
+
+    # cp /etc/resolv.conf /mnt/gentoo/etc/resolv.conf
+    
+ファイルシステムのマウント
+
+    # mount -t proc none /mnt/gentoo/proc
+    # mount --bind /sys /mnt/gentoo/sys
+    # remount --bind /dev /mnt/gentoo/dev
+    # chroot /mnt/gentoo
+
+chroot で新しい環境に入る.
+この時必ずシステム環境変数を更新するコマンド`env-update`を行い, これらの変数を`source`で読み込ませる
+
+    # env-update
+    # source /etc/profile
+
+またこの時 `df -T` で  "Cannot read table of mounted file systems."  となる場合は mtab を更新する
+
+    # grep -v rootfs /proc/mounts > /etc/mtab
+
+*******
+*注意*
+
+この部分はオリジナルスクリプトの chroot-main を利用すると
+わずらわしい /dev, /sys などのマウントを行わずに済む.
+
+    # chroot-main /mnt/gentoo
+    # grep -v rootfs /proc/mounts > /etc/mtab
+
+*******
+
+
+8. portage システムの設定
+
+portage ツリーの更新.
+
+    # emerge --sync
+    
+（必要であれば）適切なプロファイルの選択.
+
+    # eselect profile list    
+    # eselect profile set 2
+
+portage で必要なファイルをインストールする.
+（かなり長い時間掛かるので注意!）
+
+    # emerge \
+       gentoo-sources \
+       genkernel \
+       gentoolkit \
+       zsh \
+       iproute2 \
+       emacs \
+       vim \
+       pciutils \
+       openssl \
+       syslog-ng \
+       vixie-cron \
+       mlocate \
+       dhcpcd \
+       grub \
+       lvm2
+    # emerge system
+
+いくつかのデーモンをOS起動時に起動させるようにする
+
+    # rc-update add sshd boot
+    # rc-update add syslog-ng boot
+    # rc-update add vixie-cron boot
+
+glibc の locale を選択
+
+    # nano /etc/locale.gen
+    en_US ISO-8859-1
+    en_US.UTF-8 UTF-8
+    ja_JP.EUC-JP EUC-JP
+    ja_JP.UTF8 UTF-8 
+    
+    # locale-gen
+
+タイムゾーンの設定
+
+    # cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+9. カーネルのコンパイル
+
+1) genkernel を利用する
+genkernel をインストールする
+LVM を利用する場合は --lvm オプションを付ける.
+
+    # emerge genkernel
+    # genkernel --lvm all
+    
+
+2) 直接コンパイルする
+
+デフォルトの .config ファイルを生成する
+
+    # cd /usr/src/linux
+    # make defconfig ARCH=i686
+
+lspci で現在読み込んでいるモジュールをメモ
+
+    # lspci -k | grep Kernel
+
+読み込んでいるモジュールを make nconfig の F8 で検索し、１つずつオンにしていく
+モジュールの内容が気になる場合は modinfo で調べる
+
+    # modinfo module_name
+    # make nconfig
+
+make nconfig では 
+"/" で現在のウインドウから選択, 
+"F8" で全てのモジュールから検索を行える.
+
+設定が完了したらコンパイルを実行
+
+    # make -j2 all
+
+モジュールをインストール, カーネルを所定の場所へ移動
+
+    # make modules_install
+    # cp arch/i386/boot/bzImage /boot/kernel-$(uname -r)
+
+どうしも上手くいかない場合は
+現在ロードしているモジュールをカーネル組み込みに設定する.
+
+    # make localyesconfig
+
+または下記のように現在のカーネル設定をそのまま設定することもできる
+
+    # zcat /proc/config.gz > .config
+
+必要のないモジュールを make nconfig で選択しコンパイルし直す
+
+
+10. ブートローダーの設定
+
+ブートローダーは grub2 を使わないのがオススメ.
+
+1) grub でインストールする場合
+gurb のインストール
+
+    # emerge grub
+
+設定ファイルを編集する
+
+    # emacs /boot/grub/grub.conf
+    
+    default 0
+    timeout 5
+    
+    title Gentoo Linux 3.3.8-r5
+    root (hd0,6)
+    kernel /kernel-genkernel-x86-3.3.8-gentoo root=/dev/ram0 real_root=/dev/mapper/VolGroup-gentoo_root dolvm2 udev vga=792
+    initrd /boot/initramfs-genkernel-x86-3.3.8-gentoo
+
+2) grub2 でインストールする場合
+
+まず mask されているので、 unmak する
+（"~" が付いている場合はテストバージョン. テストバージョンのパッケージにはマスクされる）
+
+    # echo "sys-boot/grub:2" >> /etc/portage/package.accept_keywords
+
+emerge で grub2 をインストールする.
+
+    # emerge -av sys-boot/grub:2
+
+*******
+
+注意) LVM をルートパーティションにする場合は以下のように行う
+
+ルートパーティションが LVM な場合 device-mapper USE flag を立てなければならない
+
+    # emerge -av sys-boot/grub:2 device-mapper
+
+LVM の場合だけ事前に読み込むモジュールを /etc/default/grub に付け足す.
+
+    # echo "GRUB_PRELOAD_MODULES=lvm" >> /etc/default/grub
+
+*******
+
+ブートローダーをインストールする.
+`+ exit 0` で完了していない場合エラーが出ているのでデバックを行う.
+
+    # grub2-install --modules="lvm ext2 ext3 part_msdos" --recheck --debug --force /dev/sda7
+
+initramfs を生成する
+
+    # genkernel --lvm initramfs
+
+以下のようにメニューエントリーを作成し、grub.cfg を自動生成する
+
+    # emacs /etc/grub.d/05_gentoo
+    set timeout=5
+    set default=0
+    
+    menuentry "Gentoo Linux 3.3.8" {
+       insmod gzio
+       insmod part_msdos
+       insmod ext2
+       set root="hd0,msdos7"
+       linux /kernel-genkernel-x86-3.3.8-gentoo root=/dev/ram0 real_root=/dev/mapper/VolGroup-gentoo_root dolvm2 vga=792
+       initrd /initramfs-genkernel-x86-3.3.8-gentoo
+    }
+
+    # grub2-mkconfig -o /boot/grub2/grub.cfg
+    # mv /boot/grub{,1}
+    # cd /boot
+    # ln -s grub2 grub
+
+
+11. fstab の設定を行う
+
+proc, swap, などのマウントを設定する
+
+    # emacs /etc/fstab
+    /dev/mapper/VolGroup-gentoo_root / ext4 defaults 1 1
+    /dev/sda7  /boot  ext2   defaults 1 2
+    /dev/mapper/VolGroup-gentoo_swap swap swap defaults 0 0
+    proc   /proc     proc    defaults 0 0
+    sysfs  /sys      sysfs   defaults 0 0
+    tmpfs  /dev/shm  tmpfs   defaults 0 0
+
+
+12. ルートパスワードの設定, 再起動
+
+ルートパスワードを設定し、再起動を行う.
+上手くブートされていればインストール終わり
+
+    # passwd root
+    # reboot
+
+gentoo の初期セットアップ
+----------------------------
+
+1. カーネルモジュールのロード
+
+必要なカーネルモジュールは `/etc/conf.d/modules` に追加する
+
+    $ modprobe e1000e
+    $ emacs /etc/conf.d/modules
+    modules="e1000e"
+
+2. キーマップの設定
+デフォルトはUSキーマップなので、jp106に変更する.
+
+    $ emacs /etc/conf.d/keymaps
+    keymaps="jp106"
+
+3. ネットワークの設定
+
+    $ emacs /etc/conf.d/net
+    # DHCPの例
+    config_eth0="dhcp"
+   
+    # CIDR表記を使用した固定IPの例
+    config_eth0="192.168.1.6/24"
+    routes_eth0="default via 192.168.1.1"
+    
+ネットワークをスタートさせる.
+
+    $ cd /etc/init.d
+    $ ln -s net.lo net.eth0
+    $ /etc/init.d/net.eth0 start
+
+rc-update に登録しデフォルトで起動するように設定する
+
+    $ rc-update add net.eth0 default
+
+
+参照サイト
+----------------------------
+
+LVM をルートパーティションにマウントする際に参考にした記事
+
+* [HOWTO_Install_Gentoo_on_an_LVM2_root_partition](http://www.gentoo-wiki.info/HOWTO_Install_Gentoo_on_an_LVM2_root_partition)
+* [Root filesystem over LVM2, DM-Crypt and RAID - Gentoo Linux Wiki](http://en.gentoo-wiki.com/wiki/Root_filesystem_over_LVM2,_DM-Crypt_and_RAID#Reboot)
+* [LVMブートのinitramfsをスクラッチから作る - GeekFactory](http://d.hatena.ne.jp/int128/20081130/1228043424)
+

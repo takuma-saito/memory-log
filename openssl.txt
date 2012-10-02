@@ -28,6 +28,11 @@ v3_req の CA:TRUE を CA:FALSE を直す
     $ emacs openssl.conf
     [v3_req]
     CA:TRUE  ⇒ CA:FALSE
+    
+    policy = policy_match 
+    ↓
+    policy = policy_anything
+    
 
 ### クライアント証明書を作成する ###
 
@@ -39,6 +44,9 @@ v3_req の CA:TRUE を CA:FALSE を直す
 
     $ openssl ca -in newreq.pem -out cert.pem
 
+この時`failed to update database TXT_DB error number2`が発生する場合がある。
+この場合はCAディレクトリ中のindex.txtを削除し、index.txtの空ファイルを作成すると上手くいく。
+
 
 pkcs12の形式にエンコードしてクライアントのブラウザへインストールする
 
@@ -49,7 +57,7 @@ CAの公開鍵cacert.pemをクライアントにインストールする。
 
 
 ### apacheの設定を行う ###
-
+~
 詳しくはhttpd.txtのクライアント認証を参照のこと
 
 
@@ -143,6 +151,9 @@ openssl 起動時に -CApath というオプションを新しく追加して作
 openssl に関する逆引きリスト
 ----------------------------
 
+* バージョンの確認（特にtls対応しているかどうかの確認):
+ `openssl version -a`
+
 * 暗号化している秘密鍵をテキスト形式で表示させる: 
     `openssl rsa -in file -text`
     
@@ -164,13 +175,13 @@ openssl に関する逆引きリスト
 * 暗号化されている秘密鍵のパスワードを外す:
     `openssl rsa -in 暗号化されている秘密鍵 -out 暗号化されていない秘密鍵`
     
-* PEMフォーマットで、DERフォーマットへの変更:
-    `openssl x509 -in PEM形式の秘密鍵 -outform DER -out DER形式の秘密鍵`    
+* PEMフォーマットからDERフォーマットへの変更:
+    `openssl rsa -in PEM形式の秘密鍵 -outform DER -out DER形式の秘密鍵`    
     * **pem形式** - Base64で符号化された証明書の形式
     * **der形式** - DER（ASN.1によって記述された、バイナリ形式のファイル）形式で符号化された証明書      
 
 * CSRにCA署名を行い、公開鍵証明書を作成する:
-    ``openssl ca -out公開鍵証明書m -infiles証明書リクエストファイル`
+    ``openssl ca -out 公開鍵証明書 -infiles 証明書リクエストファイル`
     ※ `failed to update database` というエラーが発生する場合
     `/etc/pki/CA/index.txt` を一旦削除し空のファイルを作成するとうまくいく
 

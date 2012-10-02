@@ -1,6 +1,27 @@
 サーバー構築方法
 ============================
 
+サーバー初期設定 TODO
+----------------------------
+
+・パッケージ管理ソフトのアップデート
+
+    $ yum update
+    
+    $ aptitude update
+    
+・sudoの設定
+・emacsのインストール
+・sshの設定
+・zshのインストール
+・zshの環境構築
+・emacsの環境構築
+・pacoのインストール
+・denyhostsのインストール
+・dstatのインストール
+・文字コードの設定
+・Gitのインストール
+・w3m, wget, gcc, make, autconf, mlocate, nmap, bind-utils, lsof のインストール
 
 ・webサーバー: httpd
 ・ftpサーバー: vsftp

@@ -147,12 +147,12 @@ IMAP の例
 gmailのimapサーバーに接続してメッセージのやり取りを行う。
 （CApath に許可するCAの証明書を入れたディレクトリを設定しなければならない。詳しい方法はopenssl.txtにて）
 
-    1$ openssl s_client -crlf -CApath ./.certs/ -connect imap.gmail.com:993
+    $ openssl s_client -crlf -CApath ./.certs/ -connect imap.gmail.com:993
     // 証明書が表示される
     * OK Gimap ready for requests from 180.144.212.1 ww20if2383477pbb.103
 
     // ユーザー名とパスワードを入力してログインを行う
-    $ LOGIN ユーザー名 パスワード
+    ? LOGIN ユーザー名 パスワード
     * CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 UIDPLUS COMPRESS=DEFLATE
     ? OK ユーザー名 authenticated (Success)
 

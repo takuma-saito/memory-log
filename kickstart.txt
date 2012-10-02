@@ -1,0 +1,49 @@
+kickstart の使い方
+============================
+
+kickstartの設定ファイルの書き方
+----------------------------
+
+
+    # インストールを実行
+    install
+    
+    # マウントしたURLを指定
+    url --url http://192.168.10.30/centos
+    
+    # 実行言語, キーボード配列指定
+    lang ja_JP.UTF-8
+    keyboard jp106
+    
+    # クライアントのIPアドレスやホスト名を指定
+    network --device eth0 --bootproto dhcp --hostname hostname
+    
+    # ルートパスワード
+    rootpw rootpass
+    
+    # ファイヤーウォールを無効にする
+    firewall --disabled
+    
+    # 認証に shadow md5 を有効化
+    authconfig --enableshadow --enablemd5
+    
+    # selinux の無効化
+    selinux --disabled
+    
+    # タイムゾーンの指定
+    timezone Asia/Tokyo
+    
+    # ブートローダー
+    bootloader --location=mbr --driveorder=sda
+    
+    # テキストモードでインストールする
+    text
+    reboot
+
+    # インストールするパッケージを列挙する
+    %packages
+    @japanese-support
+    @core
+    @base
+    @development-tools
+

@@ -1,0 +1,20 @@
+color
+============================
+
+色の確認
+----------------------------
+
+現在の表示カラー数を確認する.
+
+    $ tput colors
+
+256colors.pl というスクリプトを使っても確認できる.
+http://www.cs.rice.edu/~scrosby/software/tf256color/src/256colors2.pl
+
+    $ ./256colors2.pl
+
+emacs で確認する.
+
+    $ emacs -nw
+    # M-x list-colors-display
+     

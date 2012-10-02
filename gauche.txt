@@ -1,0 +1,6 @@
+
+
+ユーザーリファレンス
+http://practical-scheme.net/gauche/man/gauche-refj.html#Top
+
+

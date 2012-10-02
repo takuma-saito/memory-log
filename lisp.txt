@@ -1,0 +1,7 @@
+
+
+マニュアルとか
+----------------------------
+
+・[clispの使い方](http://lispuser.net/emacs/lisphacking.html#sec-2)
+

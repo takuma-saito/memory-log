@@ -1,0 +1,109 @@
+multi boot
+============================
+
+各OSの制限
+----------------------------
+
+各パーティションの制限
+
+* FreeBSDは基本パーティションの最後に入れる
+* Window系（Windows 7, Windows XP,  Free DOS）などは全て基本パーティションに入れなければならない
+* Linux はブート領域（/boot 部分）はLVM上で構築できない。
+  厳密に言うとgrubのインストールに失敗する。grub のstage 1.5 がインストールできない。
+  そのため別パーティションに別けなければならない。
+   ⇒ grub2の場合は成功する! insmod を行う
+* Linux PBR へのgrub2インストールは癖がある: 詳しくは "grub.txt" を参照のこと
+* Boot 領域は予め多めに切っておく（ブート領域は拡張パーティションでも大丈夫）
+* Boot部分以外のデータは 各OSごとにパーティションを切るのではなく, LVMで一括管理する.
+  （論理ボリュームとして各OSの root, swap を作成する）
+* Boot 部分には boot flg を予め付けておく
+
+syslinux
+----------------------------
+
+syslinux の起動手順
+
+1. MBR をロードする. (/usr/lib/syslinux/mbr.bin)
+
+2. ボリュームパーティションを探す. ブートフラグが付いたパーティションを探し, そこからブートする
+
+3. Volume Boot Record を実行する: VBR を実行する, grub で考えると stage1.5 の段階.
+ldlinux.sys を実行するために ext2/ext3/ext4, vfat32 などのファイルシステムを理解しなければならない.
+しかし MBR は 512B と限られているためそこに全てのコードを置くことができないので
+VBR 部分にファイルシステムを処理するコードを置く. 
+その後, ext2/3/4, vfat などのファイルシステムを理解し ldlinux.sys を実行する.
+ちなみに VBR 部分はハードコードされており, *ファイルシステムの外に置かれている*.
+
+4. ldlinux.sys を実行する
+
+5. extlinux.conf や syslinux.cfg などの設定ファイルを探し, 読込. 
+（もしファイルが見つからなかった場合 syslinux のプロンプトが出現する）
+
+### Arch Linux を usb ブート ###
+
+Arch Linux のインストールディスクをミラーからダウンロードする.
+archlinux-$(date).iso のようなファイルになっているはず.
+
+iso ディスクと同時に .sig,  md5sum.txt ファイルもダウンロードする
+
+* ダウンロード先: http://www.archlinux.org/download/
+* 日本語ミラー: http://ftp.tsukuba.wide.ad.jp/Linux/archlinux/iso/latest/
+
+md5sum, 署名をチェックする
+
+    $ ls
+    archlinux-2012.09.07-dual.iso archlinux-2012.09.07-dual.iso.sig md5sum.txt
+    
+    $ md5sum -c md5sum.txt
+    archlinux-2012.09.07-dual.iso: OK
+    
+    $ pacman-key -v archlinux-2012.0.07-dual.iso.sig
+    gpg: Signature made Fri 07 Sep 2012 07:59:54 AM UTC using RSA key ID 9741E8AC
+    gpg: Good signature from "Pierre Schmitz <pierre@archlinux.de>"
+
+usb を挿入する.
+この時ホットプラグにより, /dev/sdx にバインドされるので確認する.
+
+    $ dmesg | tail
+    ...
+    [sdb] ...
+
+ファイルシステムは ext2,3,4/vfat 形式でなければならない.
+クリーンインストールする場合, この時点でパーティションとファイルシステムを作る.
+  
+    $ fdisk /dev/sdb
+    $ mkfs.vfat /dev/sdb1
+    $ mkdir /mnt/archlinux    
+    $ mount /dev/sdb /mnt/archlinux
+
+Good signature と出力されていれば成功.
+ISO ファイルをマウントする.
+
+    $ mount -o loop archlinux-2012.09.07-dual.iso /mnt/archlinux
+
+syslinux のブートローダーをインストールする.
+（syslinux のバージョンが 4.0.4 以上を用意すること）
+
+    $ cd /media/archlinux/arch/boot/syslinux 
+    $ extlinux --install .
+
+MBR をインストールする.
+インストール用の MBR は /usr/lib/syslinux/mbr.bin に存在する.
+また, bs=512 とするとパーティション領域まで上書きされてしまうので、 bs=440 として書き込みを行う.
+その後ブートフラグを付ける.
+
+    $ dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/mbr.bin of=/dev/sdx
+    $ parted /dev/sdx toggle 1 boot
+
+UUID でディスクを認識させるために設定ファイルを修正する.
+
+    $ sed -i "s|label=ARCH_2012.*|device=/dev/disk/by-uuid/$(lsblk -no UUID /dev/sdx1)|" archiso_sys{32,64}.cfg
+
+また syslinux.cfg のブート部分
+
+    $ emacs syslinux.cfg
+    # APPEND ../../
+    APPEND /arch
+
+これで usb へのインストールは完了.
+usb を挿したまま再起動し, ブートメニューからusbを選択起動させる.

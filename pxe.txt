@@ -1,0 +1,83 @@
+OSインストール方法
+============================
+
+syslinux を構成する
+----------------------------
+
+syslinux のプロジェクトページより最新のsyslinuxを取得する
+
+[syslinux プロジェクトページ](http://www.syslinux.org/wiki/index.php/Download)
+
+
+debianの場合
+----------------------------
+
+近くのミラーよりファイルを取得する ftp://ftp.nara.wide.ad.jp/debian-cd/current-live/i386/net/
+
+    $ wget ftp://ftp.nara.wide.ad.jp/debian-cd/current-live/i386/net/debian-live-6.0.4-i386-standard.tar.gz
+
+FreeBSDの場合
+----------------------------
+
+ミラーファイルを取得する。
+
+32bit用: ftp://ftp.freebsd.org/pub/FreeBSD/ISO-IMAGES-i386/8.3/FreeBSD-8.3-RELEASE-i386-bootonly.iso
+64bit用: ftp://ftp.freebsd.org/pub/FreeBSD/ISO-IMAGES-ia64/8.2/FreeBSD-8.2-RELEASE-ia64-bootonly.iso
+
+上記ファイルを取得後、マウントしpxebootファイルを抜き出す
+
+
+CentOSの場合
+----------------------------
+
+既にDHCPとTFTPサーバーの起動設定は済ましているものとする。
+pxelinux.0 をsyslinuxから取得する。
+
+    $ wget http://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-4.05.zip
+    $ unzip syslinux-4.05.zip
+    $ cp core/pxelinux.0 /private/tftpboot/centos/
+
+pxeboot 起動イメージを取得する（initrd.img, vmlinux）
+
+    $ mkdir /private/tftpboot/centos/{i386,x86_64}
+    $ cd /private/tftpboot/centos/i386/
+    $ wget http://ftp.riken.jp/Linux/centos/6.2/os/i386/images/pxeboot/initrd.img 
+    $ wget http://ftp.riken.jp/Linux/centos/6.2/os/i386/images/pxeboot/vmlinuz
+    $ cd /private/tftpboot/centos/x86_64/
+    $ wget http://ftp.riken.jp/Linux/centos/6.2/os/x86_64/images/pxeboot/initrd.img 
+    $ wget http://ftp.riken.jp/Linux/centos/6.2/os/x86_64/images/pxeboot/vmlinuz
+
+pxelinux.cfg を用意し、設定を書き込む
+
+    $ cd /private/tftpboot/centos/
+    $ mkdir pxelinux.cfg
+    $ emacs pxelinux.cfg/default
+    label centos_i386
+      kernel i386/vmlinuz
+      append load initrd=i386/initrd.img devfs=nomount
+    label centos_x86_64
+      kernel x86_64/vmlinuz
+      append load initrd=x86_64/initrd.img devfs=nomount
+
+dhcp・tftpサーバーを起動させる
+
+    $ sudo dhcpd -f -d -cf /opt/local/etc/dhcp/dhcpd.conf en0
+
+オプションの説明:
+
+* `-f`: foreground: フォアグランドで起動する
+* `-d`: debug mode: デバックモードで起動する
+* `-cf`: configuration file: 設定ファイルを設定する
+
+    $ sudo tftpd -v -p -L -u username -s /private/tftpboot/centos
+
+オプションの説明:
+
+* `-L`: フォアグランドで起動する
+* `-s`: スタートアップ時のルートディレクトリをデフォルトから変更する
+* `-p`: パーミッションのチェック
+* `-u`: pxe起動時のユーザー名
+参考サイト
+----------------------------
+
+* [トーク:PXEブート用サーバを構築する](http://www.maruko2.com/mw/%E3%83%88%E3%83%BC%E3%82%AF:PXE%E3%83%96%E3%83%BC%E3%83%88%E7%94%A8%E3%82%B5%E3%83%BC%E3%83%90%E3%82%92%E6%A7%8B%E7%AF%89%E3%81%99%E3%82%8B)

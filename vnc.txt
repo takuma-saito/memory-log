@@ -1,0 +1,100 @@
+PCのリモート・コントロール
+============================
+
+vncのセットアップ
+----------------------------
+
+VNCサーバーのインストール。
+
+    $ yum install tigervnc-serverr
+
+設定ファイルの編集。
+
+    $ sudo emacs /etc/sysconfig/vncservers
+    VNCSERVERS="1:VNCでログインしたいユーザ名"
+    VNCSERVERARGS[1]="-geometry 1024x768 -AlwaysShared"
+
+"-AlwaysShared"のオプションを指定することで、画面の共有が出来る。
+VNCでログインしたいユーザー名で`vncpasswd`を実行, パスワードを決定する。
+
+    $ vncpasswd
+    
+デフォルトで起動しても日本語の入力が出来ないので、スタートアップスクリプトを修正する。
+
+    $ emacs ~/.vnc/xstartup
+    export GTK_IM_MODULE=scim
+    export QT_IM_MODULE=scim
+    export XMODIFIERS="@im=SCIM"
+    exec gnome-session &
+    
+サーバーを起動させる。
+
+    $ sudo /etc/init.d/vncserver start
+    
+クライアントを起動させる
+
+    $ vncviwer localhost:1 -fullscreen -passwd ~/.vnc/passwd
+
+きちんと接続できていれば成功。
+
+また、モニタからの映像を他のPCでも共有したい場合は
+以下のように起動スクリプトを作成し、起動時に実行させるようにする。
+
+    $ emacs bin/vnc-client-start.sh
+    #!/bin/sh
+    if [ "$VNCDESKTOP" = "" ]; then
+       vncviewer localhost:1 -fullscreen -passwd $HOME/.vnc/passwd
+    fi
+    
+起動時の登録は以下のようにする。
+
+    $ gnome-session-properties &
+
+ここで上記起動ファイルのパスを入力し、再起動させれば設定完了。
+
+    $ sudo chkconfig vncserver on
+    $ sudo reboot
+
+SSH 経由でVNCを利用する
+----------------------------
+
+サーバー側の設定ファイルを以下のように書き換える
+
+    $ sudo emacs /etc/sysconfig/vncservers
+    VNCSERVERARGS[1]="-geometry 1024x768 -AlwaysShared -nolisten tcp -nohttpd -localhost"
+
+各オプションの説明はそれぞれ以下を参照。
+
+* `-geometry 1280x960`: 画面のサイズを「1280x960」にする。
+* `-nolisten tcp`: TCP経由でVNCサーバーにアクセスすることを禁止。
+* `-nohttpd`: WebベースでのVNCクライアントをサポートしない。
+* `-localhost`: リモート接続のうち、セキュアトンネルを利用してないものを禁止。
+* `-AlwaysShared`: 画面の共有を行う（デフォルトでは新規ユーザーが接続する場合、新しい画面が割り当てられる）
+
+SSH でlocalhostの5901番ポートをサーバーの5901番ポートにフォワーディングさせる（LocalForward）
+
+    $ ssh -L 5901:127.0.0.1:5901 username@hostname
+
+この状態でsshの接続が通ることを確認する。
+
+さらに、バックグラウンド実行(`-f`）, 
+トンネルだけで一切リモートでコマンドを打たない（`-N`）
+の2つのオプションを指定してフォワーディングを行う。
+
+    $ ssh -N -f -L 5901:127.0.0.1:5901 username@hostname
+
+その後通常のVNC Clientで`http://localhost:5901/`を指定し接続を行う
+
+
+MACクライアントからのVNC接続方法
+----------------------------
+
+### 通増の接続を行う場合 ###
+
+Finder を起動し、上記メニューの ウインドウ > サーバーへ接続 にて vnc://IP/ と入力すれば画面共有される。
+
+### ssh 経由で接続を行う場合 ###
+
+(SSH Tunnel Manager)[http://itunes.apple.com/jp/app/ssh-tunnel-manager/id424470626?mt=12]をMACにインストールする。
+
+

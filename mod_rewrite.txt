@@ -71,6 +71,16 @@ mod_rewrite テンプレート
         RewriteRule 正規表現 rewrite先URL [オプション]
     </ifModule>
 
+mod_rewrite のデバック
+----------------------------
+
+下記の2つのディレクティブを定義すれば、rewriteのログを出力することができる。
+
+* RewriteLog "/tmp/rewrite.log"
+* RewriteLogLevel 9
+
+*本番運用時にはこの設定は必ず消す*
+
 mod_rewriteの例
 ----------------------------
 

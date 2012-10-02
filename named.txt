@@ -36,11 +36,12 @@ bind-chroot はセキュリティ対策のために必要
     $ sudo chown -R named:named /var/named
     $ mkdir /var/named/chroot/var/named/{status,log}
     $ sudo chown named:named /var/named/chroot/var/named/{status,log}
+    $ rndc-confgen -a -b 512 -r /dev/urandom -k rndc.key
 
 ### 文法チェックコマンド ###
 
 * named-checkconf: named.conf の構文チェックを行う
-* named-checone <domain_name> <zone_file>: zoneファイルのチェックを行う
+* named-checkzone <domain_name> <zone_file>: zoneファイルのチェックを行う
 
 named.conf の設定
 ----------------------------

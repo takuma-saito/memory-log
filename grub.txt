@@ -1,0 +1,75 @@
+grub
+============================
+
+grub2 のPBRへのインストール
+----------------------------
+
+インストールしたパーティションに /mnt をマウントする
+
+    # mount /dev/sdaXX /mnt
+    
+ブート部分が別のパーティションの場合 /mnt/boot にマウントさせる
+
+    # mount /dev/sdaXX /mnt/boot
+
+次に重要なファイルシステムをマウントする.
+
+    # mount --bind /proc /mnt/proc
+    # mount --bind /dev /mnt/dev
+    # mount --bind /sys /mnt/sys
+
+ファイルシステムのルートを /mnt に切り替える.
+シェルが zsh の場合失敗する可能性があるので bash で行う.
+
+    # chroot /mnt
+    
+アップデートを行い, grub をパーティションにインストールする
+この時 "--force" オプションを付けないと警告が出て失敗する（MBRにgrubをインストールしないため）
+
+    # update-grub
+    # grub-install --force /dev/sdaXX
+
+grub2の場合は grub-config を利用すれば自動でメニューを作成してくれる
+
+    # grub-mkconfig -o /boot/grub/grub.cfg
+
+その後はマウントを外し, 再起動させる
+
+    # exit
+    # reboot
+
+高解像度でコンソールを表示する
+----------------------------
+
+以下のコマンドでサポートしているVGAタイプが分かる
+
+    # hwinfo --vbe | grep -i mode
+
+grub の kernel 部分に vga="数値" を追加する.
+加える数値は以下の表を参考に選ぶ.
+
+* **771** : 800 * 600      256色      8bitカラー
+* **773** : 1024 * 768     256色      8bitカラー
+* **775** : 1280 * 1024    256色      8bitカラー
+* **788** : 800 * 600      6万5000色  16bitカラー
+* **791** : 1024 * 768     6万5000色  16bitカラー
+* **794** : 1280 * 1024    6万5000色  16bitカラー
+* **789** : 800  * 600     1600万色   24bitカラー
+* **792** : 1024 * 768     1600万色   24bitカラー
+* **795** : 1280 * 1024    1600万色   24bitカラー
+
+grub2 の場合は以下のように行う
+
+    # emacs /etc/default/grub
+    GRUB_CMDLINE_LINUX="vga=数値"
+    
+    # update-grub 
+
+update-grub がない場合は直接設定ファイルを生成する
+
+    # grub-mkconfig -o /boot/grub/grub.cfg
+
+注意点
+----------------------------
+
+grub の設定ファイルを追加する際は**実行できるように**しておくこと

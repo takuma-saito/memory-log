@@ -1,0 +1,54 @@
+bios
+============================
+
+bios アップデート方法
+----------------------------
+
+BIOSのプロダクトネームとシリアル番号を調べる
+
+    $ sudo dmidecode --type system 
+    
+    # dmidecode
+    SMBIOS 2.34 present.
+    
+    Handle 0x0001, DMI type 1, 25 bytes
+    System Information
+        Manufacturer: IBM
+        Product Name: ****
+        Version: ThinkCentre XXXX    
+        Serial Number: ****
+        UUID: 8014C63A-EE64-0010-90C0-A8757FEB011A
+        Wake-up Type: Power Switch
+    
+    Handle 0x001F, DMI type 12, 5 bytes
+    System Configuration Options
+        Option 1: JP 7: 1-2 Normal, 2-3 Clear CMOS/Boot Block Recovery
+    
+    Handle 0x0021, DMI type 15, 25 bytes
+        System Event Log
+        Area Length: 224 bytes
+        Header Start Offset: 0x0000
+        Header Length: 16 bytes
+        Data Start Offset: 0x0010
+        Access Method: General-purpose non-volatile data functions
+        Access Address: 0x0000
+        Status: Valid, Not Full
+        Change Token: 0x00000055
+        Header Format: Type 1
+        Supported Log Type Descriptors: 1
+        Descriptor 1: POST error
+        Data Format 1: POST results bitmap
+        Handle 0x002D, DMI type 32, 20 bytes
+        System Boot Information
+        Status: <OUT OF SPEC>
+
+ベンダーのホームページから*Product Name*に合致する
+型番とモデルのBIOSアップデートプログラムをダウンロードする。
+
+その後は下記の通りCDのISOイメージからデータを取り出し, grubを設定して再起動する。
+BIOSアップデートを選択しアップデートを行う。
+この方法でアップデートする場合, *Lenovoなど一部のプログラムがフリーズ*し正常にアップデート出来ません。
+
+http://www.thinkwiki.org/wiki/BIOS_update_without_optical_disk
+
+

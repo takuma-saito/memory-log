@@ -5,6 +5,9 @@ awk 入門
 awk とは
 ----------------------------
 
+実行時のオプション
+
+* `-F`: -Fの後にある文字sを区切りの文字として使用する。 例) -F\: -F\ など
 
 awk コマンドリファレンス
 ----------------------------
@@ -34,7 +37,7 @@ awk の例
 Shift_JIS形式のファイルに変換する。
 
     nkf -g **/*.php | grep UTF-8 | 
-      gawk '{print gensub(/(.*):(.*)/, "\\1", "")}' | 
+      gawk '{print gensub(/(.*):(.*)/, "\\1", "" $0)}' | 
         While Read File; do
           nkf --overwrite -Ws $file;
         done

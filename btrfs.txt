@@ -1,0 +1,14 @@
+btrfs
+============================
+
+btrfs ファイルシステム構築
+----------------------------
+
+ファイルシステムを作成する.
+
+    $ mkfs.btrfs -L root /dev/VolGroup/root
+
+ファイルシステムをマウントする.
+
+    $ mount /dev/VolGroup/root /mnt
+

@@ -1,0 +1,4 @@
+
+* [actindi](http://www.actindi.com/recruit/programmer)
+
+* [Common Lisp Webserver](http://weitz.de/hunchentoot/)

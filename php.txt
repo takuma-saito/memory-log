@@ -42,6 +42,57 @@ php.ini の設定方法
 * `mbstring.http_output = SJIS` ... `mbstring.http_output = UTF-8`:
     webサーバーからの出力をUTF-8に設定する
 
+php便利ツール
+----------------------------
+
+### pear・pecl ###
+
+pear・peclのインストール方法。
+まずは公式サイトからスクリプトをダウンロード・実行する
+
+    $ wget http://pear.php.net/go-pear.phar
+    $ sudo php -d detect_unicode=0 go-pear.phar
+
+選択が促されるので、1を選択し`/usr/lib/pear`と入力。
+リンクを貼ってアップデート。
+
+    $ sudo ln -s /usr/lib/pear/bin/pear /usr/bin
+    $ sudo ln -s /usr/lib/pear/bin/pecl /usr/bin
+    $ sudo pear channel-update pear.php.net
+    $ sudo pecl channel-update pecl.php.net
+    $ sudo pear upgrade-all
+
+あとは必要なモジュールをインストールする
+
+    $ pecl install xdebug
+
+コンパイル
+----------------------------
+ソースからコンパイル時のオプション
+
+    $ ./configure \
+        --with-openssl \
+        --with-pcre-regex \
+        --with-zlib \
+        --with-mhash \
+        --with-xsl \
+        --enable-intl \
+        --enable-mbstring \
+        --with-mcrypt \
+        --enable-pcntl \
+        --with-libedit \
+        --with-readline \
+        --with-pear \
+        --with-apxs2=/usr/bin/apxs \
+        --enable-pdo \
+        --with-mysql \
+        --with-mysql-sock=/var/lib/mysql/mysql.sock \
+        --with-pdo-mysql \
+        --with-curl \
+        --enable-soap \
+        --libdir=/usr/lib64 \
+        --with-config-file-path=/etc
+
 
 apache との連携
 ----------------------------

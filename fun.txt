@@ -1,0 +1,14 @@
+プログラミングに関するおもしろい話
+============================
+
+* ジョークRFC:
+    http://www.imasy.or.jp/~yotti/rfc-joke.html
+
+* hoge を考える会:
+    http://kmaebashi.com/programmer/hoge.html
+
+* telnet でスターウォーズ:
+    `telnet towel.blinkenlights.nl`
+
+* 正確な見積が不可能なこと
+    http://www.aoky.net/articles/leon_bambrick/littlefishes.htm

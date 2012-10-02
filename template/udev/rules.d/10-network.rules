@@ -1,0 +1,3 @@
+
+SUBSYSTEM=="net", ATTRS{address}=="00:25:11:1a:35:4a", NAME="net100bps"
+SUBSYSTEM=="net", ATTRS{address}=="4c:e6:76:d8:37:4c", NAME="net1000bps"

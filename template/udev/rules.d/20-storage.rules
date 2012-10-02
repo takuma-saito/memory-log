@@ -1,0 +1,4 @@
+
+KERNEL=="sda*", SUBSYSTEM=="block", SYMLINK="storage/main%n"
+KERNEL=="sdb*", SUBSYSTEM=="block", SYMLINK="storage/sub%n"
+KERNEL=="sr0", SUBSYSTEM=="block", SYMLINK="dvd"

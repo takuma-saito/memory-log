@@ -1,0 +1,36 @@
+javascript 入門
+============================
+
+注意点
+----------------------------
+・基本型は値渡し, オブジェクト型は参照渡しで引数が渡される
+・javascriptは*関数スコープ*。ブロックスコープではないので注意。
+
+関数リファレンス
+----------------------------
+
+### 配列 ###
+
+**javascript 1.6**
+* `indexOf(number)`: 配列やコレクションに指定された要素があるか調べ、その位置を返す
+* `map(callback)`: 配列の全ての要素に対してcallbackを適用する。（返却値：Array）
+* `forEach(callback)`：mapと挙動は同じ。値を返さないところが異なる（返却値：undefined）
+* `filter(callback)`: 与えられた関数で新になる項目だけ配列を返す（返却値：Array）
+* `every(callback)`: 与えられた関数の戻り値が全てtrueの場合trueを返す（返却値：Boolean）
+* `some(callback)`: 一つでも真を返す項目があれば真を返す（返却値：Boolean）
+
+**javascript 1.8**
+* `reduce(callback)`: 値を積み重ねることができる
+
+### 日付 ###
+
+* 日付を見やすく出力させる: `new Date("yyyy/mm/dd hh:mm:ss")`
+
+
+
+ツールなど
+----------------------------
+
+* [JSON 整形ツール: json beautiful](http://jsbeautifier.org/)
+* [JSON VALIDATOR](http://jsonformatter.curiousconcept.com/)
+

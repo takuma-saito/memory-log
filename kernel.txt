@@ -1,0 +1,154 @@
+カーネル MISC
+============================
+
+カーネルのアップデート方法
+----------------------------
+
+カーネルのソースをパッケージ管理ソフトから取得する.
+
+    # sudo yum install -y kernel
+    
+`/usr/src/kernel` の中にソースコードが入っている.
+現在使用しているデフォルトの設定ファイルをカーネルソースの中へコピーする.
+
+    # sudo cp /boot/config-2.6.32-279.el6.x86_64 /usr/src/kernels/2.6.32-279.5.2.el6.x86_64/.config   
+
+oldconfig を行い新しい設定を行う.
+
+    # make oldconfig
+
+その後は普通にカーネルをコンパイル.
+
+    # make dep
+    # make clean
+    # make bzImage
+
+その後カーネルモジュールをコンパイルする.
+
+    # make modules
+    # make modules_install
+
+全て完了したらインストールを行う. インストールは /boot 以下に保存される
+
+    # make install
+
+### カーネルメニューに目的の項目が見つからない場合 ###
+
+`make nconfig` を行ったがカーネルメニューに目的の項目がない！..
+という場合は F8 で検索行った後 Depends On の項目を探す.
+
+Xen をインストールするために CONFIG_XEN の項目を調査している.
+Prompt で示されているのに、所定のメニューを探しても見つからない.
+そこでもう一度検索, 今度は Depends On に注目してみる
+
+    # X86_PAE の項目が [=n] になっている.
+    # && なので X86_PAE [=y] となっていなければならない
+    Depends on: X86_64 = [n] || X86_32 [=y] && X86_PAE [=n] && !X86_VISWS [=n] ...
+
+そこで、今度は F8 で X86_PAE を検索する
+
+    # HIGH4MEM4G が [=y] となっている
+    # && なので HIGHMEM4G [=n] となっていなければならない
+    Depends on: X86_32 [=y] && !HIGHMEM4G [=y]
+
+そこで、さらに F8 で HIGHMEM4G を探す.
+そうすると今度は Depends on の項目は全て満たされており、メニューに表示されていた!
+
+そこで HIGHMEM4G の項目を off にし、 PAE の項目を on にすると無事 CONFIG_XEN のメニューが表示された.
+
+
+カーネルコンパイルのコマンド解説
+----------------------------
+
+* `make help`: ヘルプメッセージが表示される
+
+### 設定系コマンド ###
+
+* `make kernelrelease`: 現在のカーネルバージョンを表示する
+* `make nconfig`: 設定ファイルの編集 ncurses バージョン
+* `make menuconfig` 設定ファイルの編集 meun base バージョン
+* `make config`: 設定ファイルの編集 CLI バージョン
+* `make localyesconfig`: 現在ロードしているモジュールをカーネル組み込みに設定してくれる
+* `make oldconfig`: 古いバージョンのカーネル設定ファイル（.config）をベースに新しい設定ファイルを生成する
+* `make defconfig ARCH=$ARCH`: arch/$ARCH/defconfigをデフォルトとして、.configを生成します。
+
+### コンパイル系コマンド ###
+
+* `make all`: 全てのターゲットを生成する
+* `make modules`: 全てのモジュールをビルド
+* `make vmlinux`: ベースカーネルのビルド
+* `make mmodules_install`: モジュールをインストール
+* `make install`: カーネルイメージをインストールする
+* `make bzImage`: 圧縮されたカーネルイメージ
+
+### クリーン系コマンド ###
+
+* `make clean`: オブジェクトファイルを削除
+* `make mrproper`: オブジェクトファイル + 設定ファイルを削除（初期状態に戻す）
+
+### マニュアル系 ###
+
+* `make htmldocs`: HTML生成
+* `make mandocs`: man page 生成
+* `make installmandocs`: man page をインストールする
+* `make pdfdocs`: pdf 生成
+
+### make nconfig ###
+
+* `1`: ESC
+* `2`: 説明を表示する
+* `F1`: ヘルプ
+* `/`: 現在のバッファから検索
+* `F6`: 現在の設定を保存
+* `F8`: シンボルサーチ
+* `F9`: 終了
+* `ESC`: 戻る + キャンセル
+
+
+モジュール関連のコマンド
+----------------------------
+
+各 pci がどのカーネルモジュールを読み込んでいるか探す
+
+    # lspci -k | grep Kernel
+
+読み込めるモジュール一覧表示
+
+    # modprobe -l | less
+    # ls /lib/modules/$(uname -r)/**/*.ko
+
+依存関係を考慮しないモジュールの読込
+
+    # insmod module_name
+    
+依存関係を考慮したモジュールの読込
+
+    # modprobe module_name
+    
+現在ロードされているモジュールの一覧
+
+    # lsmod
+    # cat /proc/modules
+
+カーネルの依存リストを作成する
+（カーネル依存関係は `/lib/modules/$(uname -r)/modules.dep` に保存されている)
+
+    # depmod -a
+
+depmod は安易に使用しない。モジュールの依存関係を間違えて壊してしまうことがある。
+その場合, カーネルモジュールを再インストールすれば復活する.
+
+    # cd /usr/src/linux
+    # make modules_install
+
+モジュールの情報を表示する
+
+    # modinfo module_name
+
+modinfo の各オプション
+
+* `-d`: モジュールの説明を表示
+* `-p`: モジュールのパラメーターを表示
+* `-n`: モジュールのファイル名を表示
+
+

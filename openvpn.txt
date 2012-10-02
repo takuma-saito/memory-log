@@ -14,7 +14,7 @@ openVPNとは...（後で書く）
 
 事前共有鍵を生成する
 
-    $ openvpn --genkey --secret /etc/openvpn/openvpn-key.txt
+    $ openvpn --genkey --secret /etc/openvpn/openvpn.key
 
 *各オプションの説明*
 * `--genkey`: 共有秘密鍵を生成する
@@ -24,65 +24,65 @@ openVPNとは...（後で書く）
 
     $ emacs /etc/openvpn/openvpn.conf
     
-    // 仮想ネットワークカーネルドライバを指定する
-    // tap: データリンス層（Ethernet）をシュミレートする
-    // tun: ネットワーク層（IP）をシュミレートする
+    ;; 仮想ネットワークカーネルドライバを指定する
+    ;; tap: データリンス層（Ethernet）をシュミレートする
+    ;; tun: ネットワーク層（IP）をシュミレートする
     dev tun
     
-    // プロトコルを指定
+    ;; プロトコルを指定
     proto udp
     
-    // 待受ポート
+    ;; 待受ポート
     port 1194
     
-    // 秘密鍵を指定する
-    secret secret.key
+    ;; 秘密鍵を指定する
+    secret openvpn.key
     
-    // 自分のアドレス リモートのアドレス をそれぞれ割り当てる
+    ;; 自分のアドレス リモートのアドレス をそれぞれ割り当てる
     ifconfig 192.168.2.1 192.168.2.2
     
-    // ユーザー・グループを設定
+    ;; ユーザー・グループを設定
     user openvpn
     group openvpn
     
-    // ログの出力先を指定
+    ;; ログの出力先を指定
     status server.log
     
-    // ログの詳細レベルを決める
-    // デフォルトの3を使用する
+    ;; ログの詳細レベルを決める
+    ;; デフォルトの3を使用する
     verb 3
     
-    // LZO 圧縮を利用する
+    ;; LZO 圧縮を利用する
     comp-lzo
     
-    // ログの重複を抑制する
+    ;; ログの重複を抑制する
     mute 20
     
-    // 管理インターフェイスを決める
+    ;; 管理インターフェイスを決める
     management localhost 7753
     
-    // ping-restart された時に
-    // key, tunそれぞれのインターフェイスをclose, 再読み込みを行わないで使いまわす
+    ;; ping-restart された時に
+    ;; 再読み込みを行わないで使いまわす
     persist-key
     persist-tun
     
-    //
-    // Dynamic IP を使う場合の設定
-    //
+    ;;
+    ;; Dynamic IP を使う場合の設定（keepalive で代価可能）
+    ;;
     
-    // 60 秒ごとにpingを送信し、生存確認
+    ;; 60 秒ごとにpingを送信し、生存確認
     ping 60
     
-    // 1時間経っても pingの返答がない場合再起動する
+    ;; 1時間経っても pingの返答がない場合再起動する
     ping-restart 1800
     
-    // リモートホストのIP変更を許容する
+    ;; リモートホストのIP変更を許容する
     float
 
 IP フォワーディングを有効にする。
 (Linux をルーター化する場合はIPの書き換え設定をonにしなければならない）
 
-    $ echo "1" > /proc/sys/net/ipv4/ip_forward
+    $ sudo sysctl net.ipv4.ip_forward=1 
     $ sudo emacs /etc/sysctl.conf
     net.ipv4.ip_forward = 0
     ↓
@@ -93,42 +93,78 @@ IP フォワーディングを有効にする。
 
     $ sudo /etc/init.d/openvpn start
 
-tun0の設定確認。
-ping疎通の確認。
+tun0の設定確認。ping疎通の確認。
+またiptablesでudpの1194ポートを空けておく。
 
     $ sudo ifconfig tun0
     $ pring 192.168.2.1
+    $ sudo emacs /etc/sysconfig/iptables
+    ...
+    # VPNクライアントからの受信を許可
+    -A INPUT -p udp --dport 1194 -j ACCEPT
+    -A OUTPUT -p udp --sport 1194 -j ACCEPT
 
 次はクライアント側の設定を行う。
-また同じディレクトリにリモートサーバーに設定した秘密鍵もダウンロードして置いておく。
+また同じディレクトリにリモートサーバーに設定した秘密鍵（`openvpn.key`)もダウンロードして置いておく。
 
-    $ sudo emacs /opt/local/etc/openvpn/server.conf
+    $ sudo emacs /opt/local/etc/openvpn/client.conf
     
-    // リモートのポート番号・IPアドレス・プロトコルを指定
+    ;; リモートのポート番号・IPアドレス・プロトコルを指定
+    dev tun
     port 1194
     proto udp
     remote 49.212.125.20
     
-    // IPアドレスを割り当てる
+    ;; IPアドレスを割り当てる
     ifconfig 192.168.2.2 192.168.2.1
     
-    // ホストネームの逆引きに失敗した時のリトライ回数, ここでは無限に設定している
+    ;; ホストネームの逆引きに失敗した時のリトライ回数, ここでは無限に設定している
     resolv-retry infinite
     
     ; OpenVPNサーバからIPアドレスを受け取るための設定
-    secret /opt/local/etc/openvpn/secret.key
-    status /opt/local/etc/openvpn/client.log
+    secret openvpn.key
+    status vpn.log
     
-    // デバック用
+    ;; デバック用
     verb 3  
     
-    // 全ての接続に対してVPNサーバーを通す場合はコメントアウト
+    ;; 特定のローカルポートにバインドしない
+    nobind
+    
+    ;; LZO 圧縮を行う
+    comp-lzo
+    
+    ;; 全ての接続に対してVPNサーバーを通す場合はコメントアウト
     ; redirect-gateway def1
     
-クライアントからの接続を試みる。
-念のためping, ifconfigで設定を確認する。
+クライアントからの接続を試みる。成功すると以下のようなメッセージが出力される。
+「Initialization Sequence Completed」というメッセージが出たら正常に動作している。
 
     $ sudo openvpn2 /opt/local/etc/openvpn/mac-client.conf
+    Tue Jul 17 21:14:34 2012 OpenVPN 2.2.1 x86_64-apple-darwin11.4.0 [SSL] [LZO2] [eurephia] built on Jul 17 2012
+    Tue Jul 17 21:14:34 2012 NOTE: OpenVPN 2.1 requires '--script-security 2' or higher to call user-defined scripts or executables
+    Tue Jul 17 21:14:34 2012 WARNING: file '/etc/openvpn/openvpn.key' is group or others accessible
+    Tue Jul 17 21:14:34 2012 Static Encrypt: Cipher 'BF-CBC' initialized with 128 bit key
+    Tue Jul 17 21:14:34 2012 Static Encrypt: Using 160 bit message hash 'SHA1' for HMAC authentication
+    Tue Jul 17 21:14:34 2012 Static Decrypt: Cipher 'BF-CBC' initialized with 128 bit key
+    Tue Jul 17 21:14:34 2012 Static Decrypt: Using 160 bit message hash 'SHA1' for HMAC authentication
+    Tue Jul 17 21:14:34 2012 LZO compression initialized
+    Tue Jul 17 21:14:34 2012 Socket Buffers: R=[42080->65536] S=[9216->65536]
+    Tue Jul 17 21:14:34 2012 TUN/TAP device /dev/tun0 opened
+    Tue Jul 17 21:14:34 2012 /sbin/ifconfig tun0 delete
+    ifconfig: ioctl (SIOCDIFADDR): Can't assign requested address
+    Tue Jul 17 21:14:34 2012 NOTE: Tried to delete pre-existing tun/tap instance -- No Problem if failure
+    Tue Jul 17 21:14:34 2012 /sbin/ifconfig tun0 192.168.2.2 192.168.2.1 mtu 1500 netmask 255.255.255.255 up
+    Tue Jul 17 21:14:34 2012 Data Channel MTU parms [ L:1545 D:1450 EF:45 EB:135 ET:0 EL:0 AF:3/1 ]
+    Tue Jul 17 21:14:34 2012 Local Options hash (VER=V4): 'f1c11d0f'
+    Tue Jul 17 21:14:34 2012 Expected Remote Options hash (VER=V4): '42b7cdba'
+    Tue Jul 17 21:14:34 2012 UDPv4 link local: [undef]
+    Tue Jul 17 21:14:34 2012 UDPv4 link remote: 49.212.125.20:1194
+    Tue Jul 17 21:14:44 2012 Peer Connection Initiated with 49.212.125.20:1194
+    Tue Jul 17 21:14:45 2012 Initialization Sequence Completed
+
+一応ifconfig, ping できちんと接続が行えているかどうかを確認する。
+
     $ sudo ifconfig tun0
     $ sudo ping リモートホストのローカルIP
 
@@ -168,7 +204,31 @@ CA公開鍵証明書の必須入力事項を記入し、設定を読込む。
 
     $ sudo ./clean-all
     $ sudo ./build-ca
+    
+※）
+下記のようなエラーが出る場合がある。
+その場合は`source ./vars`を行なっていないか、sudoの設定でパスを引き継ぎが出来ていないために発生する
 
+      Please edit the vars script to reflect your configuration,
+      then source it with "source ./vars".
+      Next, to start with a fresh PKI configuration and to delete any
+      previous certificates and keys, run "./clean-all".
+      Finally, you can run this tool (pkitool) to build certificates/keys.
+
+visudo でsudoでパスの引き継ぎが行えるように設定を見直す。
+
+    $ visudo
+    # 最初の部分に付け足す
+    Defaults    env_reset
+    Defaults    env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR \
+                            LS_COLORS MAIL PS1 PS2 QTDIR USERNAME \
+                            LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION \
+                            LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC \
+                            LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS \
+                            _XKB_CHARSET XAUTHORITY PATH"
+    Defaults:username  !env_reset
+    ....
+    
 `./build-ca`時の項目は全て空でOK。
 証明書をOpenVPN設定ファイル格納ディレクトリへコピー。
 
@@ -200,71 +260,71 @@ TLS認証鍵を設定し、サーバーの設定を行う
     $ sudo cp /usr/share/doc/openvpn-2.1.4/sample-config-files/server.conf .
     $ sudo emacs server.conf
     
-    // 基本設定
+    ;; 基本設定
     dev tun
-    port 1134
+    port 1194
     proto udp
     
-    // ユーザー設定
+    ;; ユーザー設定
     user openvpn
     group openvpn
     
-    //
-    // セキュリティの設定
-    //
+    ;;
+    ;; セキュリティの設定
+    ;;
     
-    // CA証明書のパス
+    ;; CA証明書のパス
     ca ca.crt
     
-    // サーバー証明書のパス
+    ;; サーバー証明書のパス
     cert server.crt
     
-    // サーバー鍵のパス
+    ;; サーバー鍵のパス
     key server.key
     
-    // DH鍵のパス
+    ;; DH鍵のパス
     dh dh1024.pem
     
-    // TLS サーバーであることを示す
+    ;; TLS サーバーであることを示す
     tls-server
     
-    // TLSを有効化する
-    // ta.key の後の0はサーバーであることを示している（クライアントの場合は1）
+    ;; TLSを有効化する
+    ;; ta.key の後の0はサーバーであることを示している（クライアントの場合は1）
     tls-auth ta.key 0 
     
-    //
-    // ネットワークの設定
-    //
+    ;;
+    ;; ネットワークの設定
+    ;;
     
-    // VPNクライアントアドレスとして192.168.10.0を指定
+    ;; VPNクライアントアドレスとして192.168.10.0を指定
     server 192.168.10.0 255.255.255.0
     
-    // VPNクライアントにサブネットを知らせる
+    ;; VPNクライアントにサブネットを知らせる
     push "route 10.66.10.0 255.255.255.0"
     
-    // IPをプールする
+    ;; IPをプールする
     ifconfig-pool-persist ipp.txt
     
-    // Keep alive で生存確認を行う
-    // 10秒ごとにping発信, 20秒経って反応がなかったら再起動
+    ;; Keep alive で生存確認を行う
+    ;; 10秒ごとにping発信, 20秒経って反応がなかったら再起動
     keepalive 10 20
     persist-key
     persist-tun
     
-    //
-    // その他の設定
-    //
+    ;;
+    ;; その他の設定
+    ;;
     
-    // LZO圧縮を有効化する
+    ;; LZO圧縮を有効化する
     comp-lzo
     
-    // サーバーのログを取る
+    ;; サーバーのログを取る
     status server.log
     
-    // ログの詳細度
+    ;; ログの詳細度
     verb 3
     
-    // ログの重複を抑制する
+    ;; ログの重複を抑制する
     mute 20
     
 
@@ -273,10 +333,10 @@ TLS認証鍵を設定し、サーバーの設定を行う
     $ echo "1" > /proc/sys/net/ipv4/ip_forwad
     $ emacs /etc/sysctl.conf
     
-    // ip_forward を有効にする
+    ;; ip_forward を有効にする
     net.ipv4.ip_forward = 0
     ↓
-    net.ipv4.ip_forward = 1
+     net.ipv4.ip_forward = 1
     
     $ sudo sysctl -p
 
@@ -292,8 +352,8 @@ TLS認証鍵を設定し、サーバーの設定を行う
 （ca.crt, client.crt, client.key, ta.key）
 
     $ cd /etc/openvps/easy-rsa/
-    $ sudo source ./vars
-    $ sudo ./build-key-pass client1
+    $ sudo -s source ./vars
+    $ sudo ./build-key-pass client
 
 クライアント側の設定ファイル作成。
 
@@ -312,42 +372,45 @@ TLS認証鍵を設定し、サーバーの設定を行う
     user nobody
     group nogroup
 
-    //
-    // セキュリティの設定, 
-    //
+    ;;
+    ;; セキュリティの設定, 
+    ;;
     
-    // TLSクライアント側であることを示す
+    ;; TLSクライアント側であることを示す
     tls-client
     
-    // 認証に必要なファイルのそれぞれのパスを入れる
+    ;; 認証に必要なファイルのそれぞれのパスを入れる
     ca /opt/local/etc/openvpn/ca.crt
-    cert /opt/local/etc/openvpn/client1.crt
-    key /opt/local/etc/openvpn/client1.key
+    cert /opt/local/etc/openvpn/client.crt
+    key /opt/local/etc/openvpn/client.key
     tls-auth /opt/local/etc/openvpn/ta.key 1
     persist-key
     persist-tun
 
-    // サーバが提示する証明書が"nsCertType = server"でないと受け入れない
+    ;; サーバが提示する証明書が"nsCertType = server"でないと受け入れない
     ns-cert-type server
 
-    // ホスト名が分からない場合は何度でもリトライする
+    ;; ホスト名が分からない場合は何度でもリトライする
     resolv-retry infinite
 
-    // 大半のクライアントは特定なローカルポート番号を
-    // バインドする必要がない．
+    ;; 大半のクライアントは特定なローカルポート番号を
+    ;; バインドする必要がない．
     nobind
 
-    // ログの出力先
+    ;; ログの出力先
     status /opt/local/etc/openvpn/client.log
     
-    // LZO圧縮し、通信を行う
+    ;; LZO圧縮し、通信を行う
     comp-lzo
     
-    // 詳細モードでログを取る
+    ;; 詳細モードでログを取る
     verb 3
 
-    // push リクエストを受け入れる
+    ;; push リクエストを受け入れる
     pull
+    
+    ;; client同士が見れるようにする
+    client-to-client
 
 クライアント側の起動。
 念のためpingやifconfigで設定を確認する。
@@ -355,6 +418,34 @@ TLS認証鍵を設定し、サーバーの設定を行う
     $ sudo openvpn2 /opt/local/etc/openvpn/client.conf
     $ sudo ifconfig tun0
     $ ping リモートホストのローカルIP
+
+
+clinet-to-client で接続を行う場合
+----------------------------
+
+サーバー側の`/etc/openvpn/openvpn.conf`に設定を追加
+
+    $ sudo emacs /etc/openvpn/openvpn.conf
+    
+    ;; client 同士が見えるようにする
+    client-to-client
+    push "route 192.168.3.0 255.255.255.0"
+    
+    ;; config directory を設定する
+    topology subnet
+    client-config-dir /etc/openvpn/ccd
+
+client-config-dir クライアントごとの設定を入れる。
+クライント証明書に付けられたユーニークな名前でファイルを作成し、そこのルーティングの設定を記入する。
+
+    $ sudo mkdir /etc/openvpn/ccd
+    $ sudo emacs /etc/openvpn/ccd/client
+    ifconfig-push 192.168.3.2 255.255.255.0
+
+今回の場合はclientという名前を持つPCに振り分けるアドレスを192.168.3.2に固定した。
+再起動すれば設定が反映される。
+
+    $ sudo /etc/init.d/openvpn restart
 
 
 全ての接続をVPN経由で行う場合
@@ -409,13 +500,17 @@ VPN クライアント
 ----------------------------
 
 * MACの場合: [tunnelblick](http://code.google.com/p/tunnelblick/)
+
+コマンドラインからはtuntaposxを利する。
+MAC用のtuntap ドライバーをインストールする。
+[TUNTAP](http://tuntaposx.sourceforge.net/download.xhtml)
+    
+    $ sudo port install openvpn2
+    $ sudo port install tuntaposx
+    $ sudo launchctl load -w /Library/LaunchDaemons/org.macports.tuntaposx.plist 
+
 * Windowsの場合: [OpenVPN GUI](http://openvpn.se/)
 
-MAC用のtuntap ドライバーをインストールする。
-    
-    $ sudo port install tuntapbox
-
-[TUNTAP](http://tuntaposx.sourceforge.net/download.xhtml)
 
 
 参考サイト

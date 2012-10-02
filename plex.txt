@@ -1,0 +1,14 @@
+^plex メディアサーバーの導入
+============================
+
+その他
+----------------------------
+
+debianのinitスクリプト:
+http://forums.plexapp.com/index.php/topic/32852-plex-media-server-debian-repository/
+
+サーバーにアクセス
+
+    http://<ip-address>:32400/manage
+
+

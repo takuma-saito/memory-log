@@ -7,9 +7,34 @@ rvm 導入方法
 port でもインストールできるが、
 curlでスクリプトをダウンロードしてbashで直接実行する。
 
-    bash -s stable < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
+    $ bash -s stable < <(curl -s https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
     
 この時bash, zshのパスも書き換わる。
+
+インストールできるRuby一覧を調べる。
+
+    $ rvm list known
+
+まずパッケージをインストールする（これはシステムによって異なる）
+
+    $ for pkg in autoconf zlib readline openssl libyaml; echo rvm pkg install $pkg
+
+必要なRubyのバージョンをインストール。
+
+    $ rvm install 1.8.7 
+    $ rvm install 1.9.3
+
+インストールされたかどうかを確認。
+
+    $ rvm list
+
+Rubyのバージョンを切り替える
+
+    $ rvm use 1.8.7
+
+デフォルトで ruby 1.9.3 を常に使う場合
+
+    $ rvm use 1.9.3 --default
 
 * curl がない場合は別途パッケージ管理ソフトでcurlをインストールする
 * https通信でエラーが発生する場合あり。その場合はルート証明書を更新すればよい:
@@ -36,11 +61,19 @@ curlでスクリプトをダウンロードしてbashで直接実行する。
   * ほとんどの場合, 依存パッケージがないだけ。
   * 下記のようにpkgコマンドを利用して依存パッケージをインストールする必要あり
   
-        rvm pkg install autoconf
-        rvm pkg install readline
-        rvm pkg install iconv
+        rvmsudo rvm pkg install autoconf
+        rvmsudo rvm pkg install readline
+        rvmsudo rvm pkg install iconv
+        
+error 1)
+`Error running 'autoreconf -is --force'`のようなエラーが出る場合は, --skip-autoreconfオプションを追加する
+`rvm --skip-autoreconf pkg install パッケージ名`
 
-※Mac Lion で1.9.3をインストールできない場合あり, その場合は以下のようにCCを設定する
+error 2)
+`condition expected: =~` のようなエラーが発生する場合はzshのバージョン不足が原因
+
+error 3) 
+Mac Lion で1.9.3をインストールできない場合あり, その場合は以下のようにCCを設定する
     
     export CC=/opt/local/bin/gcc-apple-4.2 or export CC=gcc-4.2
 
@@ -49,6 +82,21 @@ ruby requirements には以下のようにその理由を説明している。
 > ライオンでは、rubyはgccではなくなく、llvm-gccを使ってコンパイルされるべきだ。
 > /usr/bin/gccは現在/usr/bin/llvm-gcc-4.2にリンクされているので、シェルの初期ファイルに上記の文を追加して下さい。
 > （妙訳）
+
+error 4)
+`rvm use system` などで下記のエラーが出た場合、zshを使用していることげ原因
+
+    RVM is not a function, selecting rubies with 'rvm use ...' will not work.
+    You need to change your terminal settings to allow shell login.
+    Please visit https://rvm.io/workflow/screen/ for example.
+
+.zshrcの以下のスクリプトを削除し、
+
+    PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+
+zsh用の読込スクリプトで設定を読むこむ
+    
+    [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 
 * rvm gemset:
   gemset を用いると複数のgemを使い分けることができる。

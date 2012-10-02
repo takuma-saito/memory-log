@@ -1,0 +1,51 @@
+titanium 入門
+============================
+
+
+titanium のローカルルール（という名のバグ）
+----------------------------
+
+* `getFileListing` がiphoneの本番環境では使えない。
+* **サーバーサイドjavascriptで基本オブジェクトの拡張は行えない**
+* Android の場合はFastDevモードでrequireが使えない
+* JSON.parseでjsonファイルが上手くパースできない
+  （Androidで配列がオブジェクトとして認識されてしまう）
+* androidでスタイルを指定する時に'dp'というsuffixを追加してはならない
+* Androidエミュレーターが起動しない場合: `ユーザのシステムフォルダー/.android` を削除する
+* exitOnClose は思わぬバグを招き入れる
+
+参考サイト
+----------------------------
+
+* [Titanium 2.0 の参考サイト](http://docs.appcelerator.com/titanium/2.0/#!/api)
+* [tiapp.xmlのリファレンス](https://wiki.appcelerator.org/display/guides/tiapp.xml+and+timodule.xml+Reference)
+
+スタックトレース
+----------------------------
+
+com.android.internal.view.IInputMethodClient$Stub$Proxy@43f13880
+W/System.err(  355): at com.alarm.manager.AlarmServiceProxy.cancel(AlarmServiceProxy.java:112)
+W/System.err(  355): at org.appcelerator.kroll.runtime.v8.V8Object.nativeFireEvent(Native Method)
+W/System.err(  355): at org.appcelerator.kroll.runtime.v8.V8Object.fireEvent(V8Object.java:60)
+W/System.err(  355): at org.appcelerator.kroll.KrollProxy.doFireEvent(KrollProxy.java:494)
+W/System.err(  355): at org.appcelerator.kroll.KrollProxy.handleMessage(KrollProxy.java:675)
+W/System.err(  355): at org.appcelerator.titanium.proxy.TiViewProxy.handleMessage(TiViewProxy.java:395)
+W/System.err(  355): at android.os.Handler.dispatchMessage(Handler.java:95)
+W/System.err(  355): at android.os.Looper.loop(Looper.java:123)
+W/System.err(  355): at org.appcelerator.kroll.KrollRuntime$KrollRuntimeThread.run(KrollRuntime.java:104)
+
+D/AlarmReceive(31577): (KrollRuntimeThread) [0,20112] keyLock:null
+W/System.err(31577): java.lang.NullPointerException
+W/System.err(31577):    at com.alarm.manager.AlarmReceiver.releaseWakeLock(AlarmReceiver.java:74)
+W/System.err(31577):    at com.alarm.manager.AlarmReceiver.release(AlarmReceiver.java:55)
+W/System.err(31577):    at com.alarm.manager.AlarmServiceProxy.releaseLock(AlarmServiceProxy.java:137)
+W/System.err(31577):    at org.appcelerator.kroll.runtime.v8.V8Object.nativeFireEvent(Native Method)
+W/System.err(31577):    at org.appcelerator.kroll.runtime.v8.V8Object.fireEvent(V8Object.java:60)
+W/System.err(31577):    at org.appcelerator.kroll.KrollProxy.doFireEvent(KrollProxy.java:494)
+W/System.err(31577):    at org.appcelerator.kroll.KrollProxy.handleMessage(KrollProxy.java:681)
+W/System.err(31577):    at org.appcelerator.titanium.proxy.TiViewProxy.handleMessage(TiViewProxy.java:395)
+W/System.err(31577):    at org.appcelerator.titanium.proxy.TiWindowProxy.handleMessage(TiWindowProxy.java:110)
+W/System.err(31577):    at ti.modules.titanium.ui.ActivityWindowProxy.handleMessage(ActivityWindowProxy.java:93)
+W/System.err(31577):    at android.os.Handler.dispatchMessage(Handler.java:95)
+W/System.err(31577):    at android.os.Looper.loop(Looper.java:123)
+W/System.err(31577):    at org.appcelerator.kroll.KrollRuntime$KrollRuntimeThread.run(KrollRuntime.java:104)

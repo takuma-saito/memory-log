@@ -14,13 +14,30 @@ CentOS や Fedora で使えるパッケージ管理ソフト。
 レポジトリの情報をwgetで取得、rpmでインストールする
 CentOSの場合epel, Fedoraの場合rpmのレポジトリを追加する。
 
-* rmp: http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-stable.noarch.rpm
-* epel: http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+* rmp: 
+   * fedora: http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-stable.noarch.rpm
+   * x86: http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm
+   * i386: http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.i686.rpm  
+   - サードパーティのレポジトリ
 
-    $ wget http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm 
-    $ rpm -ivh epel-release-6-5.noarch.rpm
+* epel: http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm
+   - エンタープライズ Linux 用の拡張パッケージ(EPEL) 
+
+* elrepo: 
+   http://elrepo.org/elrepo-release-5-3.el5.elrepo.noarch.rpm (CentOS 5)
+   http://elrepo.org/elrepo-release-6-4.el6.elrepo.noarch.rpm (centOS 6)
+   - ハードウェア用のドライバなどに特化したレポジトリ
+    
+fedora の場合
+
+    $ wget http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-7.noarch.rpm 
+    $ sudo rpm -ivh epel-release-6-7.noarch.rpm
     $ sed -i -e "1,/enabled=0/s/enabled=0/enabled=1/" /etc/yum.repos.d/epel.repo
 
+Cent OS の場合
+
+    $ rpm --import http://elrepo.org/RPM-GPG-KEY-elrepo.org
+    $ rpm -Uvh http://elrepo.org/elrepo-release-6-4.el6.elrepo.noarch.rpm
 
 
 コマンドリファレンス

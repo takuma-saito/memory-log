@@ -18,6 +18,21 @@ paco とは
     $ sudo make install
     $ make logme
 
+以下のようなaliasを`.zshrc`や`.bashrc`に定義しておくと便利
+
+    # pacoでインストールしたソフトの一覧を表示
+    alias paco-list='paco -1Fdsa'
+    
+    # パッケージの詳細を表示
+    alias paco-pkg='paco -fs'
+    
+    # pacoでソフトをインストールする
+    alias paco-install='sudo paco -D make install'
+    
+    # パッケージをアンインストールする
+    alias paco-remove='sudo paco -r'
+
+
 使い方
 ----------------------------
 

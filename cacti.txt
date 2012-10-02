@@ -1,0 +1,130 @@
+fcacti の導入方法
+============================
+
+インストール方法
+----------------------------
+パッケージ管理ソフトからインストール。
+
+    $ sudo yum install cacti
+
+mysqlで専用ユーザーを作成し、SQLの初期設定をインポートする
+
+    $ mysql -u usernmae -ppassword
+    
+    > DROP DATABASE cacti;
+    Query OK, 0 rows affected (0.00 sec)
+    
+    > CREATE DATABASE cacti;
+    Query OK, 1 row affected (0.00 sec)
+    
+    > GRANT ALL PRIVILEGES ON cacti.* TO `cacti`@localhost IDENTIFIED BY 'cactipass';
+    Query OK, 0 rows affected (0.00 sec)
+    
+    > FLUSH PRIVILEGES;
+    Query OK, 0 rows affected (0.00 sec)
+    
+    $ cd /usr/share/doc/cacti-[version]/
+    $ mysql -u usernmae -ppassword cacti < cacti.sql
+
+先ほど設定したデータベースやユーザー名、パスワードなどをcactiの設定ファイルに記述する
+
+    $ sudo emacs /etc/cacti/db.php
+
+    $database_default = "dbname";
+    $database_hostname = "localhost";
+    $database_username = "username";
+    $database_password = "password";
+
+適切なパーミッションを設定する
+
+    $ cd /var/lib/cacti/
+    $ chown -R cacti rra/ log/
+
+ベーシック認証を掛け、cactiディレクトリにエイリアスを設定する
+
+    $ htpasswd /usr/share/cacti/.htpasswd cacti
+
+    $ sudo emacs /etc/httpd/conf.d/cacti.conf
+
+    Alias /cacti    /usr/share/cacti
+
+    <Directory /usr/share/cacti/>
+        Order allow,deny
+        Allow from all
+        AuthType Basic
+        AuthName "Please input User ID and password"
+        AuthUserFile "/usr/share/cacti/.htpasswd"
+        Require valid-user
+    </Directory>
+
+apacheの再起動後, `/cacti`にアクセスし、正常に表示されていれば成功。
+デフォルトのユーザー名・パスワードはどちらもadmin。
+また、定期的にサーバーから情報を取得しなければならないのでcronを設定する。
+
+    $ sudo emacs /etc/crontab
+    ...
+    */5 * * * * cacti php /usr/share/cacti/poller.php
+
+Percona Monitoring Plugin
+----------------------------
+モニタリングプラグインを導入する。
+percona-monitoring-plugin を本サイトからダウンロードする。
+
+    $ tar zxvf percona-monitoring-plugins-1.0.0.tar.gz
+    $ cd percona-monitoring-plugins-1.0.0/cacti/scripts
+    $ sudo cp ss_get_by_ssh.php ss_get_mysql_stats.php /var/www/cacti/scripts/
+
+テンプレートをインストールする。
+
+    $ /usr/share/cacti/cli/import_template.php --filename=percona-monitoring-plugins-1.0.0/cacti/templates/cacti_host_template_percona_*_server_ht_0.8.6i-sver1.0.0.xml \
+        --with-template-rras
+        
+`cacti/template/`ディレクトリの中に様々なテンプレートファイルが存在しているので、必要なものだけインポートする。
+インポート後、console > New Graph から新しいグラフをインストールすることができるようになる。
+
+### mysql ###
+
+mysql の設定は`/usr/share/cacti/scripts/ss_get_mysql_stats.php`に適切なユーザー名とパスワードを入力すればよい
+
+    $ sudo emacs ss_get_mysql_stats.php
+    $mysql_user = 'cacti';
+    $mysql_pass = 'cactipass';
+
+### apache ###
+
+apacheの設定のためにはまず、/server-status が表示できるようにapacheの設定を追加する。
+（`template/httpd/monitor.conf`を参照のこと）
+その後、以下のようにcactiユーザーでログインできるようにする。
+
+    $ sudo ssh-keygen -t rsa
+    Generating public/private rsa key pair.
+    Enter file in which to save the key (/root/.ssh/id_rsa): /etc/cacti/id_rsa
+    ...
+    
+    $ sudo usermod -G cacti -s /bin/zsh
+    
+    $ ssh-copy-id -i /etc/cacti/id_rsa.pub cacti@localhost
+    
+    $ sudo chown apache /etc/cacti/id_rsa*
+
+上記の設定をcactiのスクリプト（`/usr/share/cacti/scripts/ss_get_by_ssh.php`)に追加する。
+
+    $ emacs ss_get_by_ssh.php
+    $ssh_user   = 'cacti';
+    $ssh_iden   = '-i /etc/cacti/id_rsa';
+
+設定を全て完了したら、正常に接続されていることを確認する。
+
+    $ su - cacti -c 'env -i php /usr/share/cacti/scripts/ss_get_by_ssh.php --type memory --host localhost --items gu,gv'
+    gu:379486208 gv:135012352
+
+エラー対策
+----------------------------
+
+インストール後も表示されない場合は
+console > Settings > RRDTool Utility Version
+でバージョンを1.3や1.2に変更してみる。
+
+
+
+

@@ -1,0 +1,167 @@
+Android 入門
+============================
+
+環境構築
+----------------------------
+
+既にJAVA 1.6などがインストールされていることを前提とする。
+
+### 1. android SDKのインストール ###
+
+下記のURLから最新版のandroid SDKをインストールする
+
+http://developer.android.com/sdk/index.html
+
+パッケージを解凍して適当なディレクトリへ展開する。
+解凍ディレクトリにtoolsというディレクトリがあるので、そこへパスを通す。
+toolsの中にはandroidを開発する際の様々な便利ツールが入っている。
+
+
+### 2. Eclipseのインストール ###
+
+Mac OSX の場合は下記の指示に従えば環境構築できる。
+
+1. [Eclipseのサイト](http://www.eclipse.org/)にアクセス, Eclipseへのダウンロードリンクへ飛ぶ
+
+2. Eclipse Indigo (3.7) Packages for ** を Max OSX に変更
+
+3. Eclipse IDE for Java EE Developers の32bit/64bit を自分の環境に合わせて設定
+
+4. ダウンロード・解凍後、フォルダを/Applications/に移動させる
+
+5. 日本語化環境設定を行う
+  
+  1. [Pleiades - Eclipse 日本語化プラグイン](http://mergedoc.sourceforge.jp/) で下記形式のファイルをダウンロード 
+  **Pleiades All in One Java Standard All in One (JRE なし)**
+  
+  2. ダウンロードしたパッケージを解凍する
+  
+  3. 付属パッケージのコピーを行う
+  
+  4. フォルダの中にdropinsフォルダがあるので、これを本体のEclipseフォルダの中のdropinsフォルダに全てコピーする
+  
+  5. `/Application/eclipse/Eclipse.app/Contents/MacOS/eclipse.ini`に下記の設定を一番最後の行に入れる
+  `-javaagent:../../../dropins/MergeDoc/eclipse/plugins/jp.sourceforge.mergedoc.pleiades/pleiades.jar`
+  
+  6. ここで一旦Eclipse.appを起動させる。
+  エラーが出たらコマンドラインから`-clean`オプションを付けて起動させる。（`/Application/eclipse/Eclipse.app/Contents/MacOSX/eclipse -clean`）
+  それでも失敗する場合は、/Library/Java/Extensionsフォルダを名前変更してから`-clean`オプションを付けて起動させる。
+
+6. 初期環境設定
+  * 更新の確認
+  ヘルプ > 更新の確認 をクリックしてソフトウェアの更新を行う
+  
+  * 文字コードをUTF-8に変更:
+    1. Eclipseの「ウィンドウ」メニューから「設定」を開く
+    2. 「一般」 > 「ワークスペース」 を選択する
+    3. テキスト・ファイルのエンコード」にて「その他」を選択し、「UTF-8」を選択
+    
+  * 行番号の表示:
+    1. Eclipseの「ウィンドウ」メニューから「設定」を開く
+    2. 「エディター」 > 「テキスト・エディター」を選択
+    3. 行番号の追加をクリックする
+
+
+### 3. ADT Plugin for Eclipse をインストール  ###
+
+1. ヘルプ > 新規ソフトウェアのインストール を選択。
+
+2. 左の追加ボタンをクリック、下記のURLを入力する。
+https://dl-ssl.google.com/android/eclipse/
+
+3. そのままOKボタンを押して、規約への認証などを承認するとプラグインのダウンロードが始まる
+
+4. window > Android Manger を選択して必要なパッケージ類をインストールする
+
+
+### 4. Android NDK をインストールする ###
+
+1. 下記のサイトより、自分が使用しているOSのAndroid NDK のバイナリをダウンロードする
+http://developer.android.com/sdk/ndk/index.html
+
+2. 適切なディレクトリに移動し、パスを通せば完了
+
+
+android コマンド リファレンス
+----------------------------
+
+### AVD 関係のコマンド ###
+
+* AVD Manager を起動する: `android avd`
+* 作成したAVDの一覧を表示: `android list avd`
+* 新しくAVDを作成: `android create avd -n デバイス名 -t ターゲットID`
+* インストールしたAPI一覧: `android list target`
+* アプリを起動させる: `adb shell am start -a android.intent.action.MAIN -n パッケージ名/クラス名`
+
+### keytool の使い方 ###
+
+AndroidアプリをAndroid Marketで公開するにはちゃんと署名する必要があります。
+Androidの場合はkeytoolというツールで、署名を行います。
+
+    keytool -genkey -keystore ${HOME}/.android/adamrocker.keystore -validity 10000 -alias adamrocker
+
+* `-genkey`: 非公開鍵&証明連鎖(キーストア)の作成
+* `-keystore`: [file]にキーストアを保存する
+* `-validity`: 鍵の有効期限を[days]とする
+* `-alias`: 証明書の別名を[text]に設定する
+
+
+adb コマンド リファレンス
+----------------------------
+
+* `adb dumpsys alarm`: AlarmMangerの登録状況を確認する
+* `adb pm list packages`: インストールされているパッケージ一覧を表示する
+* `adb uninstall パッケージの名前`: パッケージをアンインストール
+
+
+その他
+----------------------------
+
+### 画面の種類について ###
+
+* HVGA (HalfVGA)          480×320     3:2
+* QVGA (Quarter-VGA)      320×240     4:3
+* WQVGA400 (Wide-QVGA)    400×240     15:9
+* WQVGA432                432×240     16.2:9
+* WVGA (Wide-VGA)         800×480     15:9
+
+### API Level 対応表 ###
+
+* Android 4.0.3:    15
+* Android 4.0.2:         
+* Android 4.0.1:    14
+* Android 3.2:      13
+* Android 3.1.x:    12
+* Android 3.0.x:    11
+* Android 2.3.4:
+* Android 2.3.3:    10
+* Android 2.3.2:
+* Android 2.3.1:
+* Android 2.3:      9
+* Android 2.2.x:    8
+* Android 2.1.x:    7
+* Android 2.0.1:    6
+* Android 2.0:      5
+* Android 1.6:      4
+* Android 1.5:      3
+* Android 1.1:      2
+* Android 1.0:      1
+
+
+エラーリファレンス
+----------------------------
+
+### アプリのインストール時に INSTALL_FAILED_INSUFFICIENT_STORAGE ###
+エミュレーターのストレージ容量が足りていない。
+コマンドをスタートするときに`-partition-size SIZE(MB)`を追加する。
+SIZE(MB)のエミュレーターのメモリ容量を確保するという意味。
+
+もしくは`ユーザーホーム/.android/avd/エミュレーター名.avd/config.ini`に以下の項目を追加する。
+
+    disk.dataPartition.size=SIZE
+
+リファレンス
+----------------------------
+
+* [Android端末各種 AVD設定表](http://genmaicha460.blog27.fc2.com/blog-entry-70.html)
+

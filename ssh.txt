@@ -1,4 +1,27 @@
 ssh 入門
 ============================
 
+mac用の設定
+----------------------------
+
+macでssh-copy-idを使う方法:
+
+    $ sudo curl "http://www.chiark.greenend.org.uk/ucgi/~cjwatson/cvsweb/openssh/contrib/ssh-copy-id?rev=1.8;content-type=text%2Fplain" -o /usr/bin/ssh-copy-id
+
+ssh-copy-idをインストールすると公開鍵の登録を一行で行える
+
+    $ ssh-copy-id username@server
+
+Proxy設定
+----------------------------
+ssh を利用すれば比較的簡単にポートフォワーディングできる
+
+    ssh -N -f -L 5025:localhost:25 user@host
+
+* `-N` トンネルだけでコマンドなし
+* `-f` バックグラウンド実行
+* `-R` 手元のマシンの 5025 番ポートへの接続をサーバーの 25 番ポートに飛ばしてる
+  (.ssh/config ではRemoteForwardで設定する）
+* `-L` リモートの 5025 番ポートへの接続をローカルの25番ポートに飛ばす
+  (.ssh/config ではLocalForwardで設定する）
 

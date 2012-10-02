@@ -577,15 +577,43 @@ saslのチェック形式をUnixアカウント紐付けから
     
 `/etc/dovecot/passwd` ファイルを作成し、
 `(ユーザー名):{HMAC-MD5}abcdefg123456....:(uid):(gid):::::(メールボックスへのパス)`
+＊：フォーマット
+user:password:uid:gid:gecos:home:shell:extra
+    ⇒ ユーザー名・パスワードのみでもOK
+
+* user: メールアドレス
+* password: パスワード
+* uid: ユーザーID, postfixのvmailと同じにする
+* gid: グループID, postfixのvmailと同じにする
+* gecos: ユーザの詳細情報(設定しない)
+* home: ホームディレクトリ
+* shell: デフォルトシェル
+* extra: 予備（何も使われていない）
+
 の形式で追記していく
 
-### メールアドレスを追加する場合 ###
+
+### 運用時のメールアドレス追加方法 ###
 
 + `/etc/postfix/virtual` にユーザーとディレクトリを追加していく。
 
 + `/etc/postfix/virtual_domains` にドメインを追加する。
 
-+ 
++ `postmap /etc/postfix/virtual` でバーチャルメールボックスのデータベースを更新
+
++ `sasldbpasswd2 -u ドメイン名 -p パスワード` でSASLユーザー追加
+
++ `doveadm pw -s HMAC-MD5 -u ユーザー名@ドメイン名` でdovecotのパスワード確認
+  `/etc/dovecot/passwd` にフォーマットへ従いユーザーを追加
+  
++ `sudo /etc/init.d/dovecot restart`
+  `sudo /etc/init.d/postfix restart`
+      それぞれのサーバーをリスタートする
+
+
+LDAPとpostfix・dovecot連携
+----------------------------
+
 
 
 メーリングリストの作成（Postfix + Mailman）

@@ -1,0 +1,20 @@
+
+* [コマンドラインで利用しているツールまとめ](http://qiita.com/items/10a9086de309cef5e185)
+
+* [Command Line で使用しているツールまとめ vol.2](http://qiita.com/items/8fab37433f8b9606f75c)
+
+* [私が使っているCommand Line Apps まとめ](http://pspfour.blog106.fc2.com/blog-entry-1117.html)
+
+* [CentOS でやっておきたいセキュリティ設定](http://fnya.cocolog-nifty.com/blog/2012/03/centos-6aa8.html)
+
+* [Running Network Sniffer With dsniff](http://www.allguru.net/security/running-network-sniffer-dsniff/)
+
+* [tmuxinatorで一瞬で開発環境を起動する](http://qiita.com/items/869b00fdde27c2225989)
+
+* [adsaria mood](http://d.hatena.ne.jp/adsaria/archive)
+
+* [The Typeclassopediaを訳しまし](http://snak.tdiary.net/20091020.html)
+
+* [Haskellと圏論入門](http://d.hatena.ne.jp/Lost_dog/20111211/1323616949)
+
+

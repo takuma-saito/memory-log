@@ -1,0 +1,30 @@
+unbound の使い方入門
+============================
+
+unbound とは
+----------------------------
+高性能なDNSキャッシュサーバー。
+特にローカルキャッシュとして利用するとよい。
+
+
+unbound のインストール方法・設定
+----------------------------
+まずはMacportで unbound をインストールする
+
+    $ sudo port install unbound
+
+インストール後は設定ファイル名前を変更。
+
+    $ sudo mv /opt/local/etc/unbound/unbound.conf.{sample,}
+
+
+unboundの各コマンドの使い方・運用方法
+----------------------------
+
+
+
+参考サイト
+----------------------------
+
+* [Unbound の設定](http://murasaki.cocolog-nifty.com/cloud/2009/07/unbound-1f2d.html)
+* [Unbound 公式サイト](http://unbound.net/documentation/index.html)

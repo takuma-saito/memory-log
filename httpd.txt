@@ -7,7 +7,7 @@ httpd.conf をきちんと設定できるうようになるには
 各ディレクティブ（ServerRoot, Timeout...などの設定値）がどのような意味を持つか理解することである。
 これから、それぞれのディレクティブの解説をする。
 
-また設定完了の際には `apachectl configtest` を使って文法エラーがないか確認する。
+また設定完了の際には `httpd -t` を使って文法エラーがないか確認する。
 
 * `ServerRoot "/etc/httpd"`:
     apacheの設定ファイルがある場所を指定する
@@ -33,7 +33,7 @@ httpd.conf をきちんと設定できるうようになるには
     そこで考え出されたのがKeepAliveであり、一度接続したらある条件を満たすまで接続を保持する.
     （KeepAlive はHTTPレベルの仕組み）
 
-* `KeepAliveRequest 50 ~ 200`: 
+* `MaxKeepAliveRequests 50 ~ 200`: 
     推奨：100
     接続してから切断するまでに受け付けるリクエストの数。
     ここで設定したファイル数を超えた場合にKeepAliveで設定していたセッションを切る
@@ -80,7 +80,7 @@ SNI（SSLでバーチャルホストが行える）
     # SNI 非対応ブラウザのとき、
     # 複数あるバーチャルホストコンテナの最初のコンテナへアクセスさせるような設定
     # 2.2.x 系でないと有効にならない
-    SSLStrictSNIVHostCheck off
+    # SSLStrictSNIVHostCheck off
     
     <VirtualHost *:443>
         # SSL Engine on でSSLの機能を有効にします
@@ -115,6 +115,65 @@ Proxy の設定
     ProxyPass /foo http://foo.example.com/bar
     ProxyPassReverse /foo http://foo.example.com/bar 
 
+.htaccessの設定
+----------------------------
+
+### 認証設定 ###
+
+アクセス制限したいディレクトリのフォルダに.htaccessを下記の内容で作成する
+
+    AuthUserFile パスワードを記入したファイルのパス名
+    AuthGroupFile /dev/null
+    AuthName "認証時のメッセージ"
+    AuthType Basic
+    require valid-user
+
+パスワードファイルの作り方は下記の通り
+
+    htpasswd -c ファイル名 ユーザー名
+
+### アクセス拒否設定 ###
+
+ファイルのアクセス制限はFilesディレクティブを使用する。
+
+    <Files filename>
+      order deny,allow
+      deny from all
+    </Files>
+
+
+apacheのコンパイルオプション
+----------------------------
+
+    ./configure --prefix=/usr \
+       --enable-alias \
+       --enable-so \
+       --enable-ssl \
+       --enable-rewrite \
+       --enable-vhost-alias \
+       --enable-lua \
+       --enable-luajit \
+       --enable-dav \
+       --enable-dav-fs \
+       --enable-authz-host  \
+       --enable-status \
+       --enable-proxy \
+       --with-mpm=worker \
+       --enable-deflate \
+       --enable-mime-magic \
+       --with-lua=/usr
+       
+*httpd*コマンドのオプション
+
+* `-L`: 利用できるディレクティブ一覧
+* `-l`: ロードしたモジュール
+* `-t`: 文法チェック
+
+### rpaf モジュール ###
+
+最新版にrpafモジュールをインストールする場合パッチを当てなければならない
+
+http://dev.portalaces.com/tag/compiling-mod_rpaf-on-apache/
 
 参考サイト
 ----------------------------

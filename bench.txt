@@ -1,0 +1,28 @@
+ベンチマークソフト
+============================
+
+siege
+----------------------------
+
+Macでのインストール方法:
+
+    $ sudo port install siege
+
+siege.config でホームディレクトリに設定ファイルを作る
+
+    $ siege.config 
+    New configuration template added to /Users/taku/.siegerc
+    Run siege -C to view the current settings in that file
+
+ログファイルの設定を修正する
+
+    $ emacs ~/.siege 
+    logfile = /var/log/siege/siege.log
+
+*各オプションの説明*
+
+* `-c`: 同時接続数を指定できる
+* `-b`: ベンチマークモードで使用する
+  （デフォルトでは0〜1秒間の間でランダムな遅延が発生する)
+* `-t`: 接続時間を指定する
+* `-f url.txt`: url.txtに接続するべきURLを列挙する

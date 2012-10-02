@@ -1,0 +1,129 @@
+エラー集
+============================
+
+インフラ関係のエラー
+----------------------------
+
+### sysfs を解凍する時 ###
+
+     $ unsquasfs root-image.fs.sys
+     zlib::uncompress failed, unknown error -3
+
+このエラーは unsquasfs が lzma 形式で圧縮されている場合に起こるエラー.
+適切なライブラリをインストールし, squash-tools を再インストールすれば OK.
+     
+ライブラリをインストールする （Cent OSの場合）
+Debian の場合は liblzma というパッケージらしい.
+
+     $ yum -y install xz xz-devel xz-libs
+
+squash-tools をダウンロード, 解凍, ダウンロードする.
+この時 Makefile の lzma の
+
+    $ w3m http://squashfs.sourceforge.net/
+    $ tar zxvf squashfs4.2.tar.gz
+    $ cd squashfs4.2
+    $ emacs Makefile
+
+    ## 以下の部分が 1 になっているか確認する
+    # LZMA_SUPPORT = 1
+    # LZMA_XZ_SUPPORT = 1
+     
+    $ make
+    $ make install
+
+これで再度 unsquashfs を行えば正常に解凍できる.
+
+### tfpt の接続 ###
+
+症状: tftpd サーバーがローカルで動いているにも関わらず tftp に正しく繋がらない
+
+    $ tftp localhost
+    tftp> verbose on
+    Verbose mode on.
+    
+    tftp> trace on
+    Packet tracing on.
+    
+    tftp> get /pxelinux.0
+    getting from localhost:/pxelinux.0 to pxelinux.0 [netascii]
+    sent RRQ <file=/pxelinux.0, mode=netascii>
+    sent RRQ <file=/pxelinux.0, mode=netascii>
+    ...
+    Transfer timed out.
+
+原因: tftp localhost と指定しているため
+tftp の場合は直接IPアドレスを入れて接続しないとダメ
+
+解決策: tftp 127.0.0.1 とIPを直接入力して接続すればOK
+
+    $ tftp 127.0.0.1
+    tftp> get /pxelinux.0
+    Received 90548 bytes in 0.0 seconds
+    
+    tftp> quit
+    
+    $ ls
+    pxelinux.0
+
+### ブート領域がマウントされない ###
+
+/etc/mtab が壊れている可能性がある.
+/etc/fstab を全てラベル表示にし, 再起動した後下記のように mtab を更新する.
+
+    $ cat /proc/mounts | grep -v rootfs > /etc/mtab
+
+arch linux の場合 /etc/rc.multi の 
+
+
+プログラミング関係のエラー ハマりどころ
+----------------------------
+
+### Shell編 ###
+
+#### / の後に空白を入れない ####
+
+症状: 以下のように引数が一部までしか評価されない
+
+    hello() {
+       echo \
+          "hoge" \
+          "fuga" \ 
+          "hello"
+    }
+
+    # 実行した結果
+    hoge
+    fuga
+    
+    # 期待している出力
+    hoge
+    fuga
+    hello
+
+原因: 以下のように \ の後ろ（" " で表した部分）に空白を入れているから
+
+    hello() {
+       echo \
+          "hoge" \
+          "fuga" \" "
+          "hello"
+    }
+
+解決策: " " の空白を取り除けばよい！
+
+    hello() {
+       echo \
+          "hoge" \
+          "fuga" \
+          "hello"
+    }
+   
+    $ hello
+    hoge
+    fuga
+    hello
+
+はぁ..
+
+

@@ -1,4 +1,4 @@
-tmux の使い方
+Btmux の使い方
 ============================
 
 
@@ -17,3 +17,15 @@ tmux のプレフィクスがCtrl-bの場合
 * `Ctrl-b !`: ペインの分割終了
 * `tmux attach`: アタッチ
 
+フリーズした場合
+----------------------------
+tmuxが稼働しているプロセスを探し、S+を一旦killする。
+
+    ps aux | grep tmux
+
+その後`tmux attach` すればフリーズしたプロセスに戻ることができる。
+
+ショートカットメモ
+----------------------------
+
+[TMUX](https://bytebucket.org/ns9tks/tmux-ja/wiki/tmux-ja.html)

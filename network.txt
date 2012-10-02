@@ -1,0 +1,93 @@
+ネットワーク転送速度を調べるツール
+============================
+
+概要
+----------------------------
+
+ネットワーク転送速度を計るツールとしてはnetperf, iperfの主に2つが存在する。
+僕の場合は以下の理由により主にiperfの方を利用している。
+
+1. netperfの場合sshのフォワーディングが出来ないので、異なるサブネットワーク間で転送速度の測定が出来ないことがある
+2. iperfの方がレポートが見やすい
+3. netperfではサーバーとクライアント間のバージョンが一致しないと接続できない場合がある。
+
+
+netperf
+----------------------------
+
+必ずソースからコンパイルし、**クライアントとサーバーのバージョンを合わせること**
+バージョンが合わない場合正常に接続できないことがある。
+
+(公式サイト)[ftp://ftp.netperf.org/netperf/]から最新版をダウンロードする。
+
+    $ wget ftp://ftp.netperf.org/netperf/netperf-version.tar.gz
+    $ tar zxvf netperf-version.tar.gz
+    $ cd netperf-version 
+    $ ./configure && make && make install
+
+基本的にサーバー側でnetserverを立て、クライアント側はnetperfコマンドから接続する。
+
+サーバー側の設定
+
+    $ netserver
+    Starting netserver with host 'IN(6)ADDR_ANY' port '12865' and family AF_UNSPEC
+
+これでポート12865でパケットを待ち受ける。
+iptablesで疎通できるように設定する。
+
+    $ sudo emacs /etc/sysconfig/iptables
+    # netperf 用に追加
+    -A SERVICE -p tcp --dport 12865 -j ACCEPT
+    -A SERVICE -p tcp --sport 0:65535 -j ACCEPT   
+    
+    $ sudo /etc/init.d/iptables restart
+
+netperfのテストが終了したら上記の設定はコメントアウトし、再起動しておく。
+
+クライアントからの接続。
+
+    $ netperf -H IP 
+
+
+iperf
+----------------------------
+
+### 基本的な使い方 ###
+
+iperf をパッケージ管理ソフトからインストールする。
+サーバー側での待受
+
+    $ iperf -s
+    
+クライアント側からの接続
+
+    $ iperf -c IPアドレス
+
+### 応用例 ###
+
+サーバー側から接続する場合の有用なオプション
+
+* `-D, --daemon`: デーモンとして起動させる
+* `-p, --port`: 待受ポート番号を指定する
+
+サーバー側でデーモンとして起動させる
+
+    $ iperf -s -D
+
+クライアント側から接続する場合の有用なオプション
+
+* `-p, --port`: 接続先ポート番号を指定する
+* `-i, --interval`: 指定秒間経過後、レポート報告を行う
+* `-P, --parallel`: 並行接続数を指定する
+* `-n, --num [KM]`: 送信するデータ量を指定
+* `-t, --time`: 送信する時間を指定する
+
+10秒間, 10スレッドで接続する場合
+
+    $ iperf -c IP -t 10 -P 10
+
+1GB のデータを送信し, 5秒ごとにレポートを出力する場合
+
+    $ iperf -c IP -n 1000M -i
+
+

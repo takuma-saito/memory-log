@@ -1,0 +1,36 @@
+fluentd の導入方法
+============================
+
+インストール・セットアップ方法
+----------------------------
+gemにてfluetdをインストールする。
+
+    $ gem install fluentd
+    $ gem install fluent-plugin-mongo
+    $ gem install bson_ext
+    $ sudo fluentd --setup /etc/fluent
+    $ emacs etc/fluent/fluent.conf
+
+fluent.confに設定を書き込む
+
+    <source>
+      type forward
+    </source>
+      
+    <source>
+      type http
+      port 12000
+    </source>
+          
+    <match debug.**>
+      type copy
+      <store>    
+       type stdout
+      </store>
+      <store>
+      type mongo
+      host localhost
+      database fluent
+      collection debug
+      </store>
+    </match>

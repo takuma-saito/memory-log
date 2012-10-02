@@ -1,0 +1,8 @@
+
+location / {
+  index index.html index.php;
+}
+
+location ~ /\.ht {
+  deny all;
+}

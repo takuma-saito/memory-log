@@ -22,8 +22,32 @@ mysql の設定ファイル（/etc/my.cnf）にエンコード設定を追加す
 mysqld を実行し、`mysql_secure_installation` を実行する
 
     $ /etc/init.d/mysqld start
+    (Mac: sudo /opt/local/lib/mysql55/bin/mysqld_safe &)
+    $ mysql_install_db --user=mysql
     $ /usr/bin/mysqladmin -u root password '新しいパスワード'
     $ /usr/bin/mysql_secure_installation
+
+デフォルトでutf8が有効になっていない場合がある。
+その場合は設定ファイル`my.cnf`を修正し、utf8を有効にする
+
+    $ sudo emacs /etc/mysql/my.cnf
+    
+    [mysqld]
+    ...
+    default-character-set = utf8
+    skip-character-set-client-handshake
+    
+    [mysql]
+    ...
+    default-character-set=utf8
+    
+    [client]
+    ...
+    default-character-set=utf8
+    
+    [mysqldump]
+    ...
+    default-character-set=utf8
 
 mysql 端末にログインし、エンコードが全てutf8になっているか確認する。
 
@@ -47,11 +71,60 @@ mysql 端末にログインし、エンコードが全てutf8になっている�
 ----------------------------
 
 * ユーザー追加:
-    `GRANT ALL PRIVILEGES ON データベース名* TO ユーザー名 IDENTIFIED BY 'パスワード'`;
+    `GRANT ALL PRIVILEGES ON dbname.* TO \`user\`@localost IDENTIFIED BY 'password'`;
     `FLUSH PRIVILEGES`
 
 * 利用できるストレートエンジンの一覧を出力:
     `SHOW ENGINES;`
+
+* テーブルの状態を確認:
+    `SHOW CREATE TABLE テーブル名`
+
+* パスワード再発行:
+    
+    $ mysqld-safe --skip-grant-tables --user=raoot &
+    $ mysql -u root
+    
+* コマンドラインからクエリを実行
+
+    $ mysql -h hostname -u username -ppassword -N -s -e "SELECT * FROM table;" dbname
+
+エクスポート・インポート
+----------------------------
+テーブルをCSV形式でエクスポートする
+
+    mysql > SELECT id, birthplace, town FROM table_name 
+      INTO OUTFILE "/path/to/csv" 
+      FIELDS TERMINATED BY ","
+      ENCLOSED BY '"'
+      LINES TERMINATED BY "\n";
+
+CSV形式のデータをインポートする。
+この時対応するデータがnullの場合だけ更新する
+
+    mysql > LOAD DATA INFILE '/path/to/csv'
+      INTO TABLE table_name
+      FIELDS TERMINATED BY ","
+      LINES TERMINATED BY "\n"
+      (one, two, three, @vfour, five)
+      SET four = nullif(@vfour,'');;
+
+CSVデータから対応する特定のデータのアップデートを行う
+
+    mysql > CREATE TEMPORARY TABLE your_temp_table LIKE your_table;
+    
+    mysql > LOAD DATA INFILE '/tmp/your_file.csv'
+    INTO TABLE your_temp_table
+    FIELDS TERMINATED BY ','
+    (id, product, sku, department, quantity); 
+    
+    mysql > UPDATE your_table
+    INNER JOIN your_temp_table on your_temp_table.id = your_table.id
+    SET your_table.quantity = your_temp_table.quantity;
+    
+    mysql > DROP TEMPORARY TABLE your_temp_table;
+    
+
 
 その他
 ----------------------------

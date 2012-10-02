@@ -1,0 +1,155 @@
+pacman 
+============================
+
+pacman の初期設定
+----------------------------
+
+まず GPG key をインストールする
+
+     # pacman-key --init
+
+ここで処理が一旦止まるので、ランダムな文字列をキーボードで入力する.
+完了すれば自分用の gpg secret key が作成される.
+
+     # pacman-key --populate archlinux
+
+pacman の主要マスキー5つインストールする.
+このキーを承認しないと pacman でパッケージをインストールできない.
+pacman が最新バージョンであることを確認する
+
+     # pacman -Syu
+
+
+初期に必要なパッケージ一覧
+----------------------------
+* zsh
+* lsof
+* mlocate
+* net-tools
+* openssh
+* openssl
+* inetutils
+* iproute2
+* wget
+* curl
+* emacs
+* vim
+* sudo
+* w3m
+* make
+* nmap
+* autoconf
+* gcc
+* g++
+
+pacmanの使い方
+----------------------------
+
+* `pacman -S <package_name>`: パッケージをインストール
+* `pacman -R <package_name>`: パッケージを削除
+* `pacman -Ss <package_name>`: パッケージを検索
+* `pacman -Ql <package_name>`: インストールしたパッケージのファイル一覧を表示
+* `pacman -U <package_name>`: レポジトリからではなくファイルからインストールする
+* `pacman -Si <package_name>`: パッケージの情報を表示
+* `pacman -Qqe`: インストール済パッケージ一覧
+* `pacman -Qqm`: AURや手動でインストールしたパッケージ一覧
+* `pacman -Sy`: データベースを更新
+* `pacman -Syu`: システムをアップデート
+
+zshrc に以下のようなエイリアスを定義しておくと便利
+
+    alias arch-install='yaourt -S'
+    alias arch-files='yaourt -Ql'
+    alias arch-remove='yaourt -R'
+    alias arch-search='yaourt -Ss'
+    alias arch-info='yaourt -Si'
+    alias arch-installed='pacman -Qqe'
+    alias arch-update-db='yaourt -Sy'
+    alias arch-update-system='yaourt -Syu'
+
+### 定期的バックアップ ###
+
+下記のように現在インストールしたパッケージ一覧を定期的に保存しておくのがよい
+
+    # pacman -Qqe | grep -v $(pacman -Qqm) > pkglist
+
+
+pacman の拡張機能など
+----------------------------
+
+pacman のフロントエンドツール yaourt を利用する.
+yaourt を使うとよりパッケージのインストールが見やすくなり, AUR のインストールも行えるようになる.
+また、基本的に pacman  と同様のオプションを利用できる.
+
+まず ABS をインストールする.
+（これを行わないと, pacman-color・yaourt のインストールが行えない）
+
+    $ pacman -S abs
+
+    $ nano /etc/pacman.conf
+    # /etc/pacman.conf に以下の行を追加    
+    [archlinuxfr]
+    Server = http://repo.archlinux.fr/$arch
+
+    $ abs
+
+ABS (Arch Build Package) とは arch linux のパッケージを作るための専用ツール.
+既存のパッケージをカスタマイズしたい場合などにも利用できる
+
+ABS 一覧が /var/abs に展開される.
+
+その後 yaourt, pacman-color のインストールを行う
+
+    # pacman -S yaourt pacman-color
+    $ yaourt -S zsh-yaourt
+
+### ABS でカーネルモジュールをインストール ###
+
+まずは既存パッケージの ABS をダウンロードする.
+もし一度 ABS でパッケージのインストールを行ったことがあれば 
+/var/abs/<type>/<package-name> にも同じファイルが存在する
+
+    # ABSROOT=. abs core/linux
+    # cd core/linux
+
+このファイル中の **PKGBUILD** が ABS の核. 
+このファイルに依存関係やパッチ処理を行うシェルスクリプトが書かれている.
+pkgname をコメントアウト, linux-custom を新しいパッケージネームにセットする.
+
+    # pkgname=('linux' 'linux-headers' 'linux-docs') ⇐ コメントアウト
+    pkgname=linux-custom       # Build kernel with a different name 
+
+    ...
+    # make menuconfig
+    make nconfig ⇐ コメントアウト
+    # make xconfig
+    # make oldconfig
+    ...
+
+インストール中のフックは _package-${pkgname} の関数を PKGBUILD に定義することで行える.
+
+    _package-linux-cusotm() {
+        echo "hello abs!"
+    }
+
+全て完了したら makepkg でコンパイル行う
+
+    # makepkg
+
+もし "ERROR: Could not resolve all dependencies" のエラーが出た場合 
+"Missing Dependencies:" で表示されている一連のパッケージをインストールする
+
+    # yaourt -S xmlto docbook-xsl
+
+### AUR へソースのアップロード ###
+
+もし AUR に独自のパッケージをアップロードしたい場合はアカウントを作成し所定のフォームからソースをアップロードする.
+
+* アカウントURL: https://aur.archlinux.org/account.php
+* パッケージアップロードURL: https://aur.archlinux.org/packages.php
+
+ソースファイルの作り方は下記のコマンドを打つだけ.
+
+    # makepkg --source
+
+

@@ -10,7 +10,6 @@ gem install capistrano_colors
 環境に応じてcapistrano設定を差分ファイルで上書きできる
 gem install capistrano-ext
 
-
 # capistrano の使い方
 
 

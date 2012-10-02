@@ -1,0 +1,152 @@
+haskell の文法について
+============================
+
+拡張オプション
+----------------------------
+
+hsファイルの一番上に構文を追加するか
+
+    {-# LANGUAGE ～ #-}
+
+`-X`オプションを付けてGHCを起動させる
+
+
+### Trustworthy ###
+
+ghc 7.2 から導入された拡張構文。
+GHC Haskell の構文を制限することにより、副作用のあるコードを安全に取り込むことを目的としている。
+
+* unsafePerformIO などの副作用のあるIOを許可しない
+
+### MagicHash ###
+
+後置修飾子として, "#" を構文として認めるもの。
+すなわち int# や x# true# などが有効な変数としてみなされる。
+
+### CPP ###
+
+#include や #define などCプリプロセッサを使うことが出来る。
+
+### PatternGuards ###
+
+パターンガードの拡張構文 "|" のORマッチの他に "," でANDマッチを行うことが出来る。
+デフォルトで有効になっている。
+
+### BangPatterns  ###
+
+束縛される変数に "!" を加えることによって正格評価させる。
+Haskellの場合に遅延評価のため引数の評価や変数の評価が正確にいつ行われるか分からない。
+正確に評価の順序をコントロールした時に使う。
+
+例）
+
+    add x y = y + 3
+    
+    addStrict !x y = y + 3
+    
+    -- 引数を普通に指定した場合は同じ
+    addStrict 3 2 
+     -> 6
+    
+    add 3 2
+     -> 6
+    
+    -- 引数にundefinedを入れると評価の違いが出る
+    -- addStrict版は正確評価により引数が先に評価されている
+    -- add版は遅延評価により引数は評価されない
+    
+    addStrict undefined 2
+     -> Exception: Prelude.undefined 
+     
+    add undefined 2
+     -> 6
+    
+    -- ちなみにundefiedを評価した場合
+    undefined
+     -> Exception: Prelude.undefined 
+
+### ParallelListComp ###
+
+リスト内包表記にてリスト同士の並行操作が行えるようになる。
+"|" という構文を使って記述する。
+
+例）
+
+    -- "," を使った場合と "|" を使った場合の評価の違い
+    
+    [(x + y) | x <- [1..3] | y <- [1..3]]
+     -> [2, 4, 6]
+     
+    [(x + y) | x <- [1..3], y <- [1..3]]
+     -> [2,3,4,3,4,5,4,5,6] 
+    
+    -- フィナチボ数列も簡潔に定義できる
+    fib = 1:1:[ x + y | x <- fib | y <- tail fib ]
+    
+    take 10 fib
+     -> [1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765] 
+     
+    -- インデックス付きの値を出力する
+    out strings = mapM_ putStrLn $ [ (show index) ++ " : " ++ string | string <- strings | index <- [1..]]
+    
+    out ["hello", "world", "yew", "we", "can", "!"]
+     -> 
+      1 : hello
+      2 : world
+      3 : yew
+      4 : we
+      5 : can
+      6 : ! 
+
+### ViewPatterns ###
+
+パターンマッチの中で関数が使えるオプション。
+使い方は下記の通り。
+
+    -- 関数名 (関数 -> 式) でパターンマッチが行える
+    charToStr :: Char -> String
+    charToStr (isSpace -> True) = "Space"
+    charToStr (isUpper -> True) = "isUpper"
+    charToStr _ = "other"
+    
+    -- ちなみに上記の式は下記のようにcase式に置き換えることが"できない"
+    charToStr char = 
+      case char of
+        (isSpace char) -> "Space"
+        (isUpper char) -> "isUpper"
+        _ -> "other"
+
+
+### TypeSynonymInstances ###
+
+Haskellのデフォルトでは型に代数データ型を利用することできない
+
+
+### FlexibleInstances ###
+
+
+
+### OverlappingInstances ###
+
+
+### NoMonomorphismRestriction ###
+
+
+
+
+プラグマ
+----------------------------
+
+GHCはいくつかのプラグマ(ソースコード中に置かれるコンパイラへの指示)に対応している。
+プラグマは通常プログラムの意味には影響を与えないが、生成されるコードの効率性には影響し得る。
+
+全てのプラグマは**{-# word ... #-}**という形を取る。ここで、**word**はプラグマの種類を表す。
+
+### UNPACK ###
+
+コンパイラに対し、構築子フィールドの内容を構築子に直に収めることで
+一段階の間接参照を排除することを指示するもの。
+
+
+
+
