@@ -1,0 +1,26 @@
+wakeonlan の方法
+================
+
+wakeonlan が使える状況
+----------------------
+
+* ハードウェアが対応しているか: BIOS で Power On by PCI が設定できればOK
+* NIC が対応しているか: 基本的に有線の場合は問題ない
+
+wakeonlan の設定方法
+--------------------
+
+BIOS で以下を設定する。
+
+Power Managemnet Setup -> Power On by PCIE -> enable
+Power Managemnet Setup -> Power On by PCI -> enable
+
+次に NIC の MAC アドレス調べ、NIC 側の Wake On Lan の設定を on にする
+
+    $ sudo ethtool -s eth0 wol g
+
+クライアント側で wakeonlan のコマンドをインストールし、 MAC アドレスにマジックパケットを送信する。
+
+    $ wakeonlan 00:00:00:00:00:00
+    Sending magic packet to 255.255.255.255:9 with 00:00:00:00:00:00
+

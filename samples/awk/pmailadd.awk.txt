@@ -1,0 +1,63 @@
+# filename: PMAILADD.AWK
+#   author: Eric Pement - pemente@northpark.edu
+#     date: 12-05-96
+#   syntax: gawk -f PMAILADD.AWK input.fil > PMADD1.OUT
+#
+# Sample GNU Awk script for Doug H.  Suppose you have a datafile, and
+# it contains names, e-mail addresses, and comments (3 fields).  You
+# can alter it with this script to be suitable for import into the
+# Pegasus Mail address book.  In my case, my datafile looked like this,
+# minus the leading pound sign and leading spaces:
+#----------------------------
+#     Firstname Lastname:  user@site           # comments follow
+#     Jon Doe:          santaclaus@usps.gov    # Likes disguises
+#     Eric Pement:      invalid@address.net    # His wife is cute
+#     Doug H.:          dough@pseudoaddre.ss   # Underpaid, IMHO
+#----------------------------
+#
+# Regardless of the formatting differences, you can use the awk function
+# split(...) to split the line into an array of 3 fields. Note that what
+# separates the fields above is either a colon OR a pound sign, and there
+# may also be whitespace after the colon or before and after the pound
+# sign.  So, you do something like this:
+
+/^[A-Za-z]/ {       # For each line of the file which begins with a letter
+                    # as the first character on the line, do this...
+
+  split($0,args," *[:#] *") # split(string,array-name,delimiters)
+                            #         $0 = split the whole line,
+                            #       args = call the new array "args"
+                            # " *[:#] *" = this expression is what to split
+                            #   The delimiters are omitted from the array.
+
+# What's happened?  For line 2,
+# args = ("John Doe","santaclaus@usps.gov","Likes disguises"). The
+# notation 'args[1]' refers to the first element in the array, 'args[2]'
+# refers to the second element, and so on.
+# The following lines must ALL BE INCLUDED in the output file:
+   print "Name:            " args[1]
+   print "Of:              "
+   print "Key:             " "BLURK"            # see note below!
+   print "Street address:  "
+   print "Postal address:  "
+   print "E-mail address:  " args[2]
+   print "Phone number:    "
+   print "Fax number:      "
+   print "Notes:           " args[3]
+   print "Picture:         "
+   print "-- "
+   print ""
+}			# end of block command
+
+# NOTE: I tried importing about 300 names and e-mail addresses into
+# Pegasus Mail, but Pegasus failed unless I had some arbitrary string
+# in the "KEY" field.  It can be anything, but this string is required
+# for some reason.  I put in APOLOG for most of them, and possibly the
+# same string would work for all 300 names. Only thing I know is, this
+# field cannot be left blank.
+#
+# After the output file is created, you can import the file into
+# the PMAIL address book.  Select address books, open a folder, and an
+# additional menu/option will appear on the Pegasus command bar at the
+# top, allowing you to import a disk file into the PMAIL address book.
+# This is the required format.  Hope this helps you!!

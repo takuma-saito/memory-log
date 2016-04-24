@@ -1,0 +1,60 @@
+nsd 使い方入門
+============================
+
+# zonefile のチェック
+$ zonec -v
+
+# zonefile の更新を適用
+$ sudo nsdc rebuild
+$ sudo nsdc restart
+
+
+nsd セットアップ方法
+----------------------------
+
+nsd をパッケージ管理ソフトからインストールする.
+
+    $ sudo port install nsd
+
+設定ファイルを変更する.
+    
+    $ sudo mv /opt/local/etc/nsd/nsd.conf{.sample,}   
+
+設定ファイルを修正する.
+まず最低限のサーバーの設定だけを行う.
+今回はローカルのみでしか利用しないので、待受IPアドレスは 127.0.0.1 とする.
+また、53 番ポートは unbound が動いているのでポートを変更する.
+
+    $ sudo emacs /opt/local/etc/nsd/nsd.conf
+    server: 
+        ip-address: 127.0.0.1@5300
+        port: 5300
+        zonesdir: "/opt/local/etc/nsd/zones"
+        verbosity: 1
+        
+    $ sudo mkdir /opt/local/etc/nsd/zones
+
+次にゾーン用の記述を入れる
+
+    $ sudo emacs /opt/local/etc/nsd/nsd.conf
+    zone: 
+       name: "g"
+       zonefile: "g.zone"
+
+基本的には zonefile の指定とドメインの指定だけ入れれば OK.
+
+ゾーンファイルを作る.（省略）
+
+基本的な操作は nsdc で行う.
+
+* `nsdc start`: nsd を起動させる
+* `nsdc stop`: nsd を停止させる
+* `nsdc rebuild`: nsd を再コンパイルする
+* `nsdc reload`: 設定ファイルを再読み込みする
+
+最初は nsd の db が作成されていないので rebuild を行う
+
+    $ sudo nsdc rebuild
+    $ sudo nsdc restart
+
+

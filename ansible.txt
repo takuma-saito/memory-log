@@ -1,0 +1,10 @@
+ansible
+=======
+
+** 設定など  **
+
+* ping チェック: `ansible -vvv <module-name> -i <hosts> -m ping`
+* 実行: `ansible-playbook <playbook.yml> -i <hosts>`
+* セットアップ: `ansible <module-name> -i <hosts> -m setup`
+
+

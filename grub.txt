@@ -73,3 +73,37 @@ update-grub がない場合は直接設定ファイルを生成する
 ----------------------------
 
 grub の設定ファイルを追加する際は**実行できるように**しておくこと
+
+grub2 menuentry の書き方
+------------------------
+
+/etc/grub.d/40_custom などに以下を追加する
+
+    menuentry 'Name' {
+      # ブートファイルが ext2 形式の場合
+      insmod ext2
+      
+      # root を指定する /dev/sda3 の場合
+      # set root='hd1,mdsos2'
+      
+      # search は boot ファイルが存在する場所を指定
+      search --no-floppy --label boot --set
+      
+      # linux カーネルを指定
+      linux /vmlinuz-linux root=LABEL=archroot ro quiet
+      
+      # 初期化 ram ディスクの指定
+      initrd /initramfs-linux.img
+    }
+
+設定ファイルを再生成し、再起動する
+
+    $ grub-mkconfig -o /boot/grub/grub.cfg
+
+解像度を最初から上げたい場合には、以下を追加する
+
+    set gfxpayload=keep
+
+
+
+

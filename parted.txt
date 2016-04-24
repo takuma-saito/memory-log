@@ -1,0 +1,25 @@
+パーティションツールの使い方
+============================
+
+2 TB 以上のハードディスクには fdisk ではなく parted を使用し,
+gpt ディスクラベル形式でパーティションを切る.
+
+parted の使い方
+----------------------------
+
+parted のインターラクティブシェルに入る.
+
+    $ parted /dev/sda
+
+parted のインターラクティブシェルに入った後に使えるコマンド.
+以下で <number> となっているところは print で表示される partition number である
+
+* パーティションを表示する: `print`
+* パーティションとファイル・システムを作成: `mkpart <number> <start> <end>`, `mkpart primary ext2 0MB -1MB` (-1 で最後まで）
+* GPT ディスクラベル: `mklabel gpt`
+* MBR（msdos）ディスクラベル: `mklabel msdos`
+* パーティションを削除する: `rm <number>`
+* ブートフラグを付ける: `set <number> boot on`
+* ブートフラグを外す: `set <partition_number> boot off`
+* ファイル・システムを作る: `mkfs <partition_number> <>`
+* parted シェルを終了する: `quit`

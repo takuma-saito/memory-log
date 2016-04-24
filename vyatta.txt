@@ -1,0 +1,379 @@
+vyatta について
+============================
+
+vyatta のインストール
+----------------------------
+
+下記のサイトから vyatta の Live Image を用意する.
+
+* [Index of /vyatta/iso](http://packages.vyatta.com/vyatta/iso)
+
+既に KVM 環境と bridge の設定は行なっているものとする.
+
+bridge は下記のように br0 にローカルネットワークと固定IP, br1 にインターネットネットワークとIPなし
+がそれぞれ設定されているものとする.
+
+    $ brctl show                                   
+    bridge name     bridge id               STP enabled     interfaces
+    br0             8000.4ce676d8374c       no              net1000bps
+                                                            vnet0
+                                                            vnet1 
+    br1             8000.0025111a354a       no              net100bps
+    
+    $ ifconfig br0 
+    br0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet 192.168.2.9  netmask 255.255.255.0  broadcast 192.168.2.255
+            inet6 fe80::4ee6:76ff:fed8:374c  prefixlen 64  scopeid 0x20<link>
+            ether 4c:e6:76:d8:37:4c  txqueuelen 0  (Ethernet)
+            RX packets 10950  bytes 6133187 (5.8 MiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 6026  bytes 773150 (755.0 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0 
+            
+    $ ifconfig br1   
+    br1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet6 fe80::225:11ff:fe1a:354a  prefixlen 64  scopeid 0x20<link>
+            ether 00:25:11:1a:35:4a  txqueuelen 0  (Ethernet)
+            RX packets 32663  bytes 6996992 (6.6 MiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 6  bytes 468 (468.0 B)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+vyatta の Live Image を起動させる.
+
+    $ virt-install  --connect qemu:///system  \
+    --name vyatta01 \
+    --ram 512  \
+    --vcpus=1  \
+    --disk=/var/lib/libvirt/images/vyatta.img,size=5 \
+    --nographics  \
+    --network=bridge:br0 --network=bridge:br1 \
+    --cdrom=vyatta-livecd_VC6.3-2011.07.21_i386.iso
+
+* `--connect <hypervisor>`: root 権限で使用する場合は quemu:///system
+* `--ram <memory>`: メモリ容量 MB 単位
+* `--vcpus=<cpu_number>`: 割り当てる vcpu の数を指定する. vcpu は QEMU が立ち上げるスレッドの数 1 〜 16 まで指定できる
+* `--disk=<path>,size=<disk_size>`: 仮想ストレージのパスを指定する. 
+    size は GB 単位で指定できる. 仮想ストレージは raw フォーマットで作成される.
+* `--graphics <type>`: ディスプレイタイプの指定. GUI 形式で利用しない場合は none を指定する
+* `--network=<type>:<interface>`: ネットワークの設定.
+* `--cdrom=<cdrom>`: インストーラーへのパス
+
+Live Image からの起動に成功するとログインを促されるので, vyatta と入力する
+
+     Welcome to Vyatta - vyatta ttyS0
+     
+     vyatta login: vyatta
+     Password: vyatta
+
+インストールを行う.
+     
+     $ install system
+
+インストーラーの指示に従ってインストールを行えばよい.
+
+vyatta の初期設定
+----------------------------
+
+vyatta の設定の流れは大まかに以下のようになる.
+
+1. configureで設定モードに入る
+2. 設定を入れる
+3. commitで反映
+4. saveでディスクに保存
+
+まずは時間, DNS などの基本設定を行う
+
+    vyatta@vyatta:~$ configure
+    vyatta@vyatta# set system time-zone Asia/Tokyo
+    vyatta@vyatta# set system name-server 192.168.1.1
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+まず WAN 側の IP アドレスとデフォルトゲートウェイの設定を行う.
+
+    vyatta@vyatta:~$ configure
+    vyatta@vyatta# set interfaces ethernet eth1 address 192.168.1.5/24
+    vyatta@vyatta# set system gateway-address 192.168.1.1
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+この時点でネットワークに接続ができるになっている.
+一応 ping で確かめる
+
+    vyatta@vyatta:~$ ping google.co.jp
+    PING google.co.jp (173.194.38.95): 56 data bytes
+    64 bytes from 173.194.38.95: icmp_seq=0 ttl=54 time=15.703 ms
+    64 bytes from 173.194.38.95: icmp_seq=1 ttl=54 time=14.253 ms
+    
+    --- google.co.jp ping statistics ---
+    2 packets transmitted, 2 packets received, 0.0% packet loss
+    round-trip min/avg/max/stddev = 14.253/14.978/15.703/0.725 ms
+
+次にイントラネット側の IP アドレスを設定し, 
+イントラネット側の dhcp を作動させる.
+
+    vyatta@vyatta:~$ configure
+    vyatta@vyatta# set service dhcp-server shared-network-name inet subnet 192.168.2.0/24 start 192.168.2.2 stop 192.168.2.254
+    vyatta@vyatta# set service dhcp-server shared-network-name inet subnet 192.168.2.0/24 dns-server 192.168.2.1
+    vyatta@vyatta# set service dhcp-server shared-network-name inet subnet 192.168.2.0/24 default-router 192.168.2.1
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+ネットワーク側から ssh で接続できるように設定を行う
+
+    vyatta@vyatta:~$ configure
+    vyatta@vyatta# set service ssh listen-address 192.168.2.1
+    vyatta@vyatta# commit
+    vyatta@vyatta# save    
+
+この時点でイントラネット側のインターフェイスにネットワークアドレスが割り振られるようになる.
+ただしまだ nat を構成していないので, イントラネットから外部へは接続できない.
+
+そこで外部に接続できるように NAT の設定を行う.
+
+    vyatta@vyatta01# set source nat rule 10 outbound-interface eth1
+    vyatta@vyatta01# set source nat rule 10 source address 192.168.2.0/24
+    vyatta@vyatta01# set source nat rule 10 type masquerade
+
+最後に DNS の転送設定を行う.
+キャッシュサイズがデフォルトが 150 entry と少ないので 5000 entry まで上げる.
+
+    vyatta@vyatta01# set service dns forwarding listen-on eth0
+    vyatta@vyatta01# set service dns forwarding system
+    vyatta@vyatta01# set service dns forwarding cache-size 5000 
+    
+設定を保存して接続が行えるかどうか確認する
+
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+またセキュリティのために外部から内部ネットワークに接続できないように設定する.
+まずは確立したセッションだけ通すようにファイヤーウォールを設定する.
+
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH 
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH default-action drop
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH rule 10 
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH rule 10 action accept 
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH rule 10 state established enable 
+    vyatta@vyatta# set firewall name ALLOW_ESTABLISH rule 10 state related enable 
+
+eth1 （インターネット側）から入るパケットにファイヤーウォールを適用しフィルタリングを行う
+
+in はインターフェイスに入ってくるパケット
+out はインターフェイスから出ていくパケット
+local はインターフェイス自身に送るパケット
+
+よって, 外部ネットワークに繋がるインターフェイスの in, local に対して先ほど作成した
+ALLOW_ESTABLISH のルールを適用すればよい.
+
+    vyatta@vyatta# set interfaces ethernet eth1 firewall in name ALLOW_ESTABLISHED
+    vyatta@vyatta# set interface ethernet eth1 firewall local name ALLOW_ESTABLISHED
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+nmap でポートが閉じているかどうかを確認.
+
+    $ sudo nmap -O -sT -p1-65535 192.168.1.5
+    $ sudo nmap -O -sU -p1-65535 192.168.1.5
+
+毎回パスワードで入るのは面倒なので, 公開鍵を登録する.
+（※  authorized_keys はリブートするたび初期化されるので, configure から設定しなければならない）
+
+    vyatta@vyatta# set system login user vyatta authentication public-keys taku@localhost type ssh-rsa
+    vyatta@vyatta# set system login user vyatta authentication public-keys taku@loclahost key AAAAB3NzaC1yc2EAAAABIwAAAQEAy+sOUMQ8/gs3yHwMSBMgvKHofVrMebtxVhGedlXf0gUxxOklqF2nnQYeuXb6d0hzMEEgDjyb2mGZ9dZIVkulEYLY8Y1DsT8R8TpIcM/4wTZdMyz+cJ/fLcEEEzwC3BUkZKbeA2O5oOsCLI8UpLPTYuzcS4l4Gfue/y96ll6mAxYsx1WHsFCPVZ3gzOXn7H3eUmyyBjrjzVAHtpSqCV9LLJUI20MQJVhkfgUJDdsFjhAjIgBYbWCVG7r5DQzooGwZkyiA+HYiZrM8YmZnPhOaYZ3LbCNYmiTbWYR5pmRIPuvOP6hS8nScjpv3hIAg2tEg+HS67zcgqbMn5ZvmjvQtpQ==
+    vyatta@vyatta# set service ssh disable-password-authentication
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+AP router のアドレスに名前を割り当てる.
+
+    vyatta@vyatta# set system static-host-mapping host-name router inet 192.168.1.1 
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+vyatta の webproxy 設定
+----------------------------
+
+イントラネット側のネットワークアドレスに webproxy を割り当てる.
+またキャッシュサイズをデフォルトの 100M から 250M に増やす.
+
+    vyatta@vyatta# set service webproxy listen-address 192.168.2.1
+    vyatta@vyatta# set service webproxy cache-size 250 
+
+ブロックするサイトやキャッシュしないドメインの設定を行う.
+
+    vyatta@vyatta# set service webproxy domain-noncache google.co.jp
+    vyatta@vyatta# edit service webproxy url-filtering squidguard 
+    vyatta@vyatta# local-block b.hatena.ne.jp
+    vyatta@vyatta# local-block www.hatena.ne.jp
+    vyatta@vyatta# local-block hatena.ne.jp
+    vyatta@vyatta# exit
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+commit した時点で webproxy が起動する.
+ローカルからアクセスし, 下記で確かにログがとれていることを確認する.
+
+    vyatta@vyatta:~$ show webproxy log 
+
+またデフォルトでは IP アドレスを直打ちが許可されていないので、明示的に許可する設定を行う
+
+    vyatta@vyatta# set service webproxy url-filtering squidguard allow-ipaddr-url 
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+
+### 特定のユーザーのみ URL フィルタを適用させる ###
+
+まず特定ユーザーの MAC アドレスを特定し,
+DHCP に固定 IP を割り当てる.
+DHCP の MAC アドレスとの静的マッピング機能を利用すれば実現できる.
+今回は自分の MAC アドレスを 192.168.2.4 に割り当てる.
+
+    vyatta@vyatta:~$ configure 
+    vyatta@vyatta# edit service dhcp-server shared-network-name inet subnet 192.168.2.0/24
+    vyatta@vyatta# static-mapping user-taku 
+    vyatta@vyatta# static-mapping user-taku ip-address 192.168.2.4
+    vyatta@vyatta# static-mapping user-taku mac-address xx:xx:xx:xx:xx
+    vyatta@vyatta# exit
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+次にソースグループの設定を行う.
+ここで指定したソースグループについてのみ URL フィルタリングを適用させる事ができる
+
+    vyatta@vyatta:~$ configure 
+    vyatta@vyatta# edit service webproxy url-filtering squidguard
+    vyatta@vyatta# set source-group user-taku 
+    vyatta@vyatta# set source-group user-taku address 192.168.2.4
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+このソースグループに対して特定の URL に対してフィルタを行う設定をする
+
+    vyatta@vyatta# set rule 10 source-group user-taku 
+    vyatta@vyatta# set rule 10 local-block-url hatena.ne.jp  
+    vyatta@vyatta# set rule 10 local-block-url b.hatena.ne.jp  
+    vyatta@vyatta# set rule 10 local-block-url www.hatena.ne.jp
+    vyatta@vyatta# set rule 10 allow-ipaddr-url
+    vyatta@vyatta# show
+    vyatta@vyatta# commit
+    vyatta@vyatta# save
+
+もしもその他に管理している PC などがあれば source-group に IP アドレスを追加すればよい.
+    
+vyatta の pptp 設定
+----------------------------
+
+### クライアントとして利用する ###
+
+現在（2012年10月時点）では vyatta の標準機能として実現できないので、
+linux 用の pptp 通信機能をダウンロードしパッチを当てなければ利用できない.
+（今後は正式レポジトリにマージされる予定らしい）
+
+まずはレポジトリの登録を行う.
+
+    vyatta@vyatta:~$ configure    
+    vyatta@vyatta:# set system package repository debian components 'main'    
+    vyatta@vyatta:# set system package repository debian distribution 'squeeze'    
+    vyatta@vyatta:# set system package repository debian url 'http://packages.vyatta.com/debian'
+    vyatta@vyatta:# commit
+    vyatta@vyatta:# exit
+    vyatta@vyatta:~$ sudo apt-get update
+    vyatta@vyatta:~$ sudo apt-get install pptp-linux
+
+次に configure で pptp インターフェイスが利用できるようにパッチを当てる
+
+    vyatta@vyatta:~$ wget http://intarweb.goretsoft.net/tmp/pptpclient.patch
+    vyatta@vyatta:~$ patch -f -p0 --no-backup-if-mismatch < pptpclient.patch
+    vyatta@vyatta:~$ sudo find /etc/ppp -name '99*' | sudo xargs chmod +x
+
+pptp の接続設定を行う
+
+    vyatta@vyatta:~$ conf
+    vyatta@vyatta# set interfaces pptp-client cpptp0 password 'vyatta'
+    vyatta@vyatta# set interfaces pptp-client cpptp0 'require-mppe'
+    vyatta@vyatta# set interfaces pptp-client cpptp0 server-ip '198.51.100.105'
+    vyatta@vyatta# set interfaces pptp-client cpptp0 user-id 'tester-3'
+    vyatta@vyatta# commit
+
+vyatta で linux のセットアップ
+----------------------------
+
+まず, レポジトリの登録を行う.
+
+    vyatta@vyatta:~$ configure    
+    vyatta@vyatta:# set system package repository debian components 'main'    
+    vyatta@vyatta:# set system package repository debian distribution 'squeeze'    
+    vyatta@vyatta:# set system package repository debian url 'http://packages.vyatta.com/debian'
+    vyatta@vyatta:# commit
+    vyatta@vyatta:# exit
+
+レポジトリの登録を行ったので apt-get が利用できるようになった.
+必要なパッケージ（emacs, vim, w3m ..etc） などをインストール
+
+    vyatta@vyatta:~$ apt-get install w3m vim emacs
+
+w3m が文字化けするので locale を設定する
+
+    vyatta@vyatta:~$ emacs /etc/locale.gen
+    # 以下のコメントを外す
+    en_US ISO-8859-1
+    en_US.UTF-8 UTF-8
+    ja_JP.UTF-8 UTF-8
+    
+    vyatta@vyatta:~$ sudo locale-gen
+    Generating locales (this might take a while)...
+    en_US.ISO-8859-1... done
+    en_US.UTF-8... done
+    ja_JP.UTF-8... done
+    Generation complete.
+    
+    vyatta@vyatta:~$ locale
+    LANG=ja_JP.UTF-8
+    LANGUAGE=LC_CTYPE="ja_JP.UTF-8"
+    LC_NUMERIC="ja_JP.UTF-8"
+    LC_TIME="ja_JP.UTF-8"
+    LC_COLLATE="ja_JP.UTF-8"
+    LC_MONETARY="ja_JP.UTF-8"
+    LC_MESSAGES="ja_JP.UTF-8"
+    LC_PAPER="ja_JP.UTF-8"
+    LC_NAME="ja_JP.UTF-8"
+    LC_ADDRESS="ja_JP.UTF-8"
+    LC_TELEPHONE="ja_JP.UTF-8"
+    LC_MEASUREMENT="ja_JP.UTF-8"
+    LC_IDENTIFICATION="ja_JP.UTF-8"
+    LC_ALL=ja_JP.UTF-8
+
+利用できる locale に ja_JP.UTF-8 が加わったことを確認する.
+
+    vyatta@vyatta:~$ sudo locale -a 
+    C
+    POSIX
+    en_US
+    en_US.iso88591
+    en_US.utf8
+    ja_JP.utf8
+
+debian の場合は以下のコマンドでも locale を設定できる.
+（グラフィカルな表示なので、こちらの方が分かりやすいかも）
+
+    vyatta@vyatta:~$ sudo dpkg-reconfigure locales
+
+さて、locale 設定後も w3m の表示は文字化けしたまま.
+LC_ALL=C に設定されていたので以下のようにデフォルトファイルを修正する
+
+    vyatta@vyatta:~$ sudo emacs /etc/default/locale
+    # 以下のように設定を修正
+    LANG=ja_JP.UTF-8
+    LC_ALL=ja_JP.UTF-8
+    
+    vyatta@vyatta:~$ export LC_ALL="ja_JP.UTF-8"
+    vyatta@vyatta:~$ echo $LC_ALL
+    ja_JP.UTF-8
+
+これで日本語表示の w3m を表示できる
+
+    vyatta@vyatta:~$ w3m google.co.jp
+

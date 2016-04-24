@@ -1,0 +1,135 @@
+BBBBemacs の使い方など
+============================
+
+emacs 初期設定
+----------------------------
+
+### パッケージのインストール ###
+emacs 起動後
+
+    M-x list-packages
+
+と入力するとインストールできるパッケージ一覧が表示される。
+選択してインストールすると、~/.emacs.d/elpa 以下にパッケージがインストールされ利用できるようになる。
+
+ただし、デフォルトでは利用できるパッケージが少ないので、
+~/.emacs.el に以下の内容を追記しパッケージ提供元を増やしてあげる。
+
+    (require 'package)
+    (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+    (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+    (package-initialize)
+
+emacs lisp
+----------------------------
+
+* 関数を評価する: `C-x C-e`
+* 設定ファイル全体を読み込む: `M-x current-eval-buffer`
+
+### ハマりどころ ###
+
+1. message 関数は文字列型のみしか表示できない
+
+以下のようなコードは（予想に反して）エラーになる！
+
+    (message 5)
+
+このような場合、一旦文字列に変換しなければならない。
+
+    (message (number-to-string 5))
+
+2. defvar は 2 回評価しても値は変わらない
+例えば、以下のように defvar を 2 回同じシンボルに対して呼び出す。
+
+    (defvar hoge 5)
+    (defvar hoge 3)
+
+defvar が通常の代入と同じ役割だと考えると、期待される hoge の値は 3 である。
+しかし、一旦シンボルに値がバインディングされると、defvar では変更できない。
+よって、hoge を評価した値は 5 になる。
+
+    hoge      # => 5
+
+その他
+----------------------------
+
+* 色の確認
+
+    M-x list-colors-display
+
+* ファイルをバイトコンパイル: `emacs -Q -batch -f batch-byte-compile hogehoge.el`
+
+ショートカット
+--------------
+
+* 上方向: `\C-p`, previous
+* 下方向: `\C-n`, next
+* 左方向: `\C-f`, forward
+* 右方向: `\C-b`, backward
+* コピー: `M-w`
+* 文末までのセンテンスを削除: `M-k`, kill-sentence
+* 文頭までのセンテンスを削除: `C-x Del`, backward-kill-sentence
+* 単語単位で移動, 左 <- : `M-b`
+* 単語単位で移動, 右 -> : `M-f`
+* キーバインドを調べる: `M-x describe-bindings`
+* 変数の名前を調べる: `M-x describe-variable`
+* 特殊文字を入力する: `C-q <特殊文字>` C-n C-l などを入れられる
+  * 改行を入力する: `C-q C-j`
+* 始めの単語を削除する: `M-d`
+* 繰り返し入力する場合: `Esc <回数> <文字>`, repeat
+* 一括置換: `M-%`, query-replace
+  * !: 残り全てを一括置換する*  
+* 正規表現マッチ: `M-x re-builder` 起動, `C-c C-q 終了`
+* 全範囲選択: `C-x h`
+* バッファを消去: `C-x k`
+
+各モードのショートカット
+------------------------
+
+### haskell mode ###
+
+* `C-c C-l`: haskell 起動, ファイルの評価
+
+### Gauche ###
+
+* `C-c S`: goshのインタープリタが起動
+* `C-c C-l`: インタープリタにファイルをロード
+* `C-x C-e`: 式を評価(ex. (+ 2 3)の直後にカーソルを合わせてC-x C-eするとインタープリタに5が表示)
+* `C-xo`: 次のウィンドウへ
+
+### Mozart ###
+
+* `C-. C-l`: 現在の行をフィード(Ozに命令を取り込ませる)
+* `C-. C-r`: 選択した部分をフィード
+* `C-. C-b`: 全バッファをフィード
+* `M-C-x`:   現在の段落(paragraph)をフィード
+* `C-. C-p`: 同上
+* `C-. c`:   *Oz Compiler* バッファの表示on/off切り替え
+* `C-. e`:   *Oz Emulator* バッファの表示on/off切り替え
+
+### yatex (tex) ###
+
+* `C-c t j`: platex を起動（コンパイル）
+* `C-c t r`: 領域を指定してコンパイル
+* `C-c t b`: jbibtex を起動
+* `C-c t p`: xdvi でプレビュー
+
+### package.el ###
+
+* `M-x package-refresh-contents`: パッケージを更新
+
+
+逆引き
+------
+
+* 設定を再読み込み: `M-x load-file, ~/.emacs.el`
+
+参照
+----
+
+* [Common Lisp Package](http://www.gnu.org/software/emacs/manual/html_node/cl/index.html)
+* [Emacs Lisp 組込み関数](http://www-antenna.ee.titech.ac.jp/~hira/hobby/symbolic/lisp/build-in.html)
+
+
+
+

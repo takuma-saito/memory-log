@@ -1,0 +1,118 @@
+匿名化
+---------
+
+電話番号認証のバイパス
+=====================
+
+* 電話: `https://secure.tpad.com/signup/`
+
+http, https の匿名化
+====================
+
+* Cookie の削除
+  - Firefox の設定画面から
+  - Mac の保存場所: ~/Library/Application Support/Firefox/Profiles/xxxx.default/
+  - Self-Destructing Cookies
+
+* etag の偽装
+* If-Modified-Since が付く
+* If-None-Match が付く
+  - network.http.use-cache=false
+
+* https 通信に
+  - https-everywhere
+
+* user-agent の偽装
+  - Random Agent Spoofer
+
+* referer を取り除く
+  - RefControl
+
+* accept-encoding の偽装
+  - intl.accept_languages = en,en-US
+
+* テストは必須, netcat + proxy か Firebug で全てのヘッダーがきちんと偽装されているか必ず確認する
+
+* https-everywhere のインストール, 全てのアドレス
+
+* プライベートブラウジングモードをデフォルト設定
+
+* proxychain の複数構成
+
+
+** 必要な Firefox のアドオン **
+* firebug
+* foxyproxy standard
+* https-every-where
+* random agent spoofer
+* refcontrol
+* self destructive cookies
+* noscript
+# その他
+* classic compact options
+* vimperator
+* ツリー型タブ
+* video downloader
+* theme: simple white
+
+*** 必要な設定 ***
+
+* Firefox の終了時に履歴を消去する
+* プライベートブラウジングモード（プライベートブラウジングだと cookie を送れなくなる）
+
+*** about:config ***
+network.http.keep-alive.timeout = 600 (default 115)
+network.http.pipelining = true (default false)
+network.http.proxy.pipelining = true (default false)
+network.dns.disableIPv6 = true (default false)
+network.http.max-persistent-connections-per-proxy = 64 (default 32)
+network.http.pipelining.maxrequests = 64 (default 32)
+network.http.use-cache = false (default true)
+intl.accept_languages = en, en-us
+browser.tabs.insertRelatedAfterCurrent = true
+
+
+** 今後やること **
+
+* Tor のコマンドライン専用ネットワークチューニングソフト ARM を入れる
+
+* OS レベル Tor (3 つの手段のどれかを選ぶ)
+    - ルーターを vyatta にしてそこに Tor を入れる
+      デフォルトゲートウェイを vyatta 宛にして vyatta から出るパケットは全て Tor を通す
+    - iptables, ipfw を使って Tor 経由になるようにパケットを修正する
+    - tuntap などの仮想 NIC と P2P トンネリングを使って local で待ち受けてる Tor Socks 宛にパケットが向かうようにする
+
+* 公衆無線Lanなどを借りる時はMACアドレスの偽装必須, *数分置きにランダムなMACアドレスにする*
+
+* USB に Linux を入れる (Customized Arch Linux)
+
+
+
+** 匿名化 **
+
+* V プリカ
+
+* 米アマゾンのe-giftカードで支払わせてpurse.ioとか使ってビットコインに変えればいい。
+
+* virwox で bitcoin 購入
+
+* anonymous proxy
+
+* local bitcoin: https://localbitcoins.com/
+大阪: https://localbitcoins.com/ad/116812/buy-bitcoins-with-cash-osaka-prefecture-japan
+アマゾンギフトカード: https://localbitcoins.com/buy-bitcoins-online/amazon-gift-card-code/
+netteler で入金: http://bookmaker.luckyjapan.club/neteller/deposit.html
+neteller: https://localbitcoins.com/ad/140044/purchase-bitcoin-neteller-japan
+
+* amazon gift card の購入方法: http://www.amazon.co.jp/gp/aw/help?id=200355970
+
+* コンビニ現金 -> amazon gift card
+1. amazon gift card -> walmart card
+2. amazon gift card -> bit coin
+3. walmart card -> buy vpn
+
+* 匿名VPN: https://secure.paygarden.com/, VIP72socks, http://www.vip72socks.net/
+
+* 暗号化: http://nalilix.hatenablog.com/
+
+* 匿名クレジットカード: https://bitcointalk.org/index.php?topic=216629

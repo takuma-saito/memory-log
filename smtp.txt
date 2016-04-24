@@ -45,6 +45,41 @@ smtp コマンド一覧
 
 smtp コマンドの例
 ----------------------------
+sakura サーバーへの接続テスト
+
+$ echo -ne "contact@hoge.sakura.ne.jp\x00contact@hoge.sakura.ne.jp\x00hoge" | base64
+Y29udGFjdEBob2dlLnNha3VyYS5uZS5qcABjb250YWN0QGhvZ2Uuc2FrdXJhLm5lLmpwAGhvZ2U=
+
+$  socat TCP:hoge.sakura.ne.jp:587 -
+> 220 www774.sakura.ne.jp ESMTP Sendmail 8.14.5/8.14.5; Fri, 8 May 2015 14:06:33 +0900 (JST)
+
+AUTH PLAIN
+> 334
+
+Y29udGFjdEBiZWF1dHktaGFuYS5qcABjb250YWN0QGJlYXV0eS1oYW5hLmpwADQ0OTkwNDAycmk=
+> 235 2.0.0 OK Authenticated
+
+HELO gmail.com
+> 250 www774.sakura.ne.jp Hello ___, pleased to meet you
+
+MAIL FROM: contact@hogehoge.sakura.ne.jp
+> 250 2.1.0 contact@hogehoge.sakura.ne.jp... Sender ok
+
+RCPT TO: test@gmail.com
+> 250 2.1.5 test@gmail.com .. Recipient ok
+
+DATA
+> 354 Enter mail, end with "." on a line by itself
+
+FROM: contact@hogehoge.sakura.ne.jp
+SUBJECT: this is test
+Hello!
+.
+> 250 2.0.0 t4856XTR052371 Message accepted for delivery
+
+quit
+> 221 2.0.0 www774.sakura.ne.jp closing connection
+
 SMTPサーバーにtelnetに接続してメール送信する例
 
     // SMTPサーバーに接続する

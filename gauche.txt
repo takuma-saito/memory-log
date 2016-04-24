@@ -1,4 +1,11 @@
 
+Gauche のキーバインド
+---------------------
+
+* `\C-cS`: goshのインタープリタが起動
+* `\C-c\C-l`: インタープリタにファイルをロード
+* `\C-x\C-e`: 式を評価(ex. (+ 2 3)の直後にカーソルを合わせてC-x C-eするとインタープリタに5が表示)
+* `\C-xo`: 次のウィンドウへ
 
 ユーザーリファレンス
 http://practical-scheme.net/gauche/man/gauche-refj.html#Top

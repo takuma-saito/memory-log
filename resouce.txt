@@ -1,0 +1,20 @@
+Linux のリソース管理
+====================
+
+メモ
+-----
+
+# 現在のリソース確認
+$ ulimit -a
+
+# システム全体で利用できる最大のファイルディスクリプタ数, プロセス数
+$ cat /proc/sys/fs/file-max
+$ cat /proc/sys/kernel/pid_max
+
+# main グループのリソースリミッター解除
+# 生成できるスレッド数とファイルディスクリプタ数の上限を上げる
+$ emacs /etc/security/limits.conf
+@resource soft nproc 32768
+@resource hard nofile 32768
+
+

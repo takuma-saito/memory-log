@@ -1,0 +1,17 @@
+PDF の結合・分割など
+====================
+
+PDF の操作
+----------
+
+* 複数ファイルの結合: `pdftk 1.pdf 2.pdf 3.pdf cat output 123.pdf`
+* PDF のメタデータをテキストに: `pdftk in.pdf dump_data output out.txt`
+* PDF の分割:
+  * p.7: `pdftk in.pdf cat 7 output out.pdf`
+  * p.3 ~ 6: `pdftk in.pdf cat 3-6 output out.pdf`
+  * p.2 ~ : `pdftk in.pdf cat 2-end output out.pdf`
+  * p.3,4 + p.7 ~ : `pdftk in.pdf cat 3-4 7-end output out.pdf`
+  * ページごとに分割: `pdftk hoge1.pdf burst`
+* PDF の暗号化: `pdftk in.pdf output out.pdf owner_pw PASS1 user_pw PASS2`
+* 暗号を解く: `pdftk secured.pdf input_pw foopass output unsecured.pdf`
+

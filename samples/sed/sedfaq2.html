@@ -1,0 +1,817 @@
+<HTML>
+<HEAD>
+<TITLE>Frequently-Asked Questions about sed, the stream editor</TITLE>
+<META http-equiv="content-type" content="text/html;charset=iso-8859-1">
+<META name="KEYWORDS" content="sed,stream editor,Unix,Linux,DOS,Windows,GNU,FAQ">
+<META name="DESCRIPTION" content="Frequently Asked Questions about sed">
+<STYLE type="text/css"><!--
+  BODY   { margin: 15px 25px; background-color:white; }
+  H2     { margin-top:0px;  margin-bottom:0px;
+           padding-top:0px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+
+  H2.t1  { margin-top:6px;  margin-bottom:0px;
+           padding-top:6px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+  H3.t2  { margin:1px; padding:0px; text-indent:2em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t3  { margin:1px; padding:0px; text-indent:3em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t4  { margin:1px; padding:0px; text-indent:4em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H4     { background-color:#D7EDFD; }
+  H5     { padding-bottom:0px; margin-bottom:0px; font-size:110%; }
+
+ .cent   { text-align:center; }
+ .dkblue { color:#333399; background-color:white; }
+ .sed    { margin-left:4em; margin-right:4em;
+           margin-top:4px;  margin-bottom:4px;
+           padding-top:3px; padding-bottom:3px;
+           border:1px;      border-style:solid;   border-color:#006600;
+           color:#3B3B3B;   background-color:#E9E9E9;
+           font-family: "Courier New", Courier, monospace;
+           white-space:pre;
+         }
+ .red    { color:#CC0000; background-color:#FFCCCC; }
+ .ver    { font-family: Verdana, Arial, Helvetica, sans-serif; font-size:10pt; }
+ a.t:link     { text-decoration:none; }
+ a.t:visited  { text-decoration:none; }
+ a.t:hover    { text-decoration:underline; }
+ a.t:active   { text-decoration:none; }
+--></STYLE>
+</HEAD>
+<BODY>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is  Section 2 of the sed FAQ.<br>
+Go back to <a href="sedfaq1.html">Section 1</a>,
+ or forward to <a href="sedfaq3.html">Section 3</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+
+<H2>2. BASIC SED</H2>
+
+<A NAME="s2.1"></A><H3>2.1. What is sed?</H3>
+
+<p ID='thr3'>"sed" stands for Stream EDitor. Sed is a non-interactive editor,
+   written by the late Lee E. McMahon in 1973 or 1974. A brief history
+   of sed's origins may be found in an early history of the Unix
+   tools, at &lt;<A href="http://www.columbia.edu/~rh120/ch106.x09">http://www.columbia.edu/~rh120/ch106.x09</A>&gt;.
+</p>
+<p ID='thr3'>Instead of altering a file interactively by moving the cursor on
+   the screen (as with a word processor), the user sends a script of
+   editing instructions to sed, plus the name of the file to edit (or
+   the text to be edited may come as output from a pipe). In this
+   sense, sed works like a filter -- deleting, inserting and changing
+   characters, words, and lines of text. Its range of activity goes
+   from small, simple changes to very complex ones.
+</p>
+<p ID='thr3'>Sed reads its input from stdin (Unix shorthand for "standard
+   input," i.e., the console) or from files (or both), and sends the
+   results to stdout ("standard output," normally the console or
+   screen). Most people use sed first for its substitution features.
+   Sed is often used as a find-and-replace tool.
+</p>
+<PRE class='sed'>
+     sed 's/Glenn/Harold/g' oldfile &gt;newfile
+</PRE>
+
+<p ID='thr3'>will replace every occurrence of "Glenn" with the word "Harold",
+   wherever it occurs in the file. The "find" portion is a regular
+   expression ("RE"), which can be a simple word or may contain
+   special characters to allow greater flexibility (for example, to
+   prevent "Glenn" from also matching "Glennon").
+</p>
+<p ID='thr3'>My very first use of sed was to add 8 spaces to the left side of a
+   file, so when I printed it, the printing wouldn't begin at the
+   absolute left edge of a piece of paper.
+</p>
+<PRE class='sed'>
+     sed 's/^/        /' myfile &gt;newfile   # my first sed script
+     sed 's/^/        /' myfile | lp       # my next sed script
+</PRE>
+
+<p ID='thr3'>Then I learned that sed could display only one paragraph of a file,
+   beginning at the phrase "and where it came" and ending at the
+   phrase "for all people". My script looked like this:
+</p>
+<PRE class='sed'>
+     sed -n '/and where it came/,/for all people/p' myfile
+</PRE>
+
+<p ID='thr3'>Sed's normal behavior is to print (i.e., display or show on screen)
+   the entire file, including the parts that haven't been altered,
+   unless you use the -n switch. The "-n" stands for "no output". This
+   switch is almost always used in conjunction with a 'p' command
+   somewhere, which says to print only the sections of the file that
+   have been specified. The -n switch with the 'p' command allow for
+   parts of a file to be printed (i.e., sent to the console).
+</p>
+<p ID='thr3'>Next, I found that sed could show me only (say) lines 12-18 of a
+   file and not show me the rest. This was very handy when I needed to
+   review only part of a long file and I didn't want to alter it.
+</p>
+<pre class='sed' ID='s'>
+<div class='red'>     # the 'p' stands for print
+</div>     sed -n 12,18p myfile
+</pre>
+
+<p ID='thr3'>Likewise, sed could show me everything else BUT those particular
+   lines, without physically changing the file on the disk:
+</p>
+<pre class='sed' ID='s'>
+<div class='red'>     # the 'd' stands for delete
+</div>     sed 12,18d myfile
+</pre>
+
+<p ID='thr3'>Sed could also double-space my single-spaced file when it came time
+   to print it:
+</p>
+<PRE class='sed'>
+     sed G myfile &gt;newfile
+</PRE>
+
+<p ID='thr3'>If you have many editing commands (for deleting, adding,
+   substituting, etc.) which might take up several lines, those
+   commands can be put into a separate file and all of the commands in
+   the file applied to file being edited:
+</p>
+<pre class='sed' ID='s'>
+<div class='red'>     #  'script.sed' is the file of commands
+     # 'myfile' is the file being changed
+</div>     sed -f script.sed myfile  # 'script.sed' is the file of commands
+</pre>
+
+<p ID='thr3'>It is not our intention to convert this FAQ file into a full-blown
+   sed tutorial (for good tutorials, see <a href="sedfaq2.html#s2.3">section 2.3</a>). Rather, we hope
+   this gives the complete novice a few ideas of how sed can be used.
+</p>
+<A NAME="s2.2"></A><H3>2.2. What versions of sed are there, and where can I get them?</H3>
+
+<A NAME="s2.2.1"></A><H3>2.2.1. Free versions</H3>
+
+<p ID='thr3'>Note: "Free" does not mean "public domain" nor does it necessarily
+   mean you will never be charged for it. All versions of sed in this
+   section except the CP/M versions are based on the GNU general
+   public license and are "free software" by that standard (for
+   details, see <A href="http://www.gnu.org/philosophy/free-sw.html">http://www.gnu.org/philosophy/free-sw.html</A>). This
+   means you can get the source code and develop it further.
+</p>
+<p ID='thr3'>At the URLs listed in this category, sed binaries or source code
+   can be downloaded and used without fees or license payments.
+</p>
+<A NAME="s2.2.1.1"></A><H3>2.2.1.1. Unix platforms</H3>
+
+   <H5>ssed v3.60</H5>
+<p ID='thr3'>ssed is the version recommended by the FAQ maintainers, since it
+   shares the same codebase with GNU sed, has the most options, and is
+   free software (you can get the source). Though there were earlier
+   version of ssed distributed, sites for these are not being listed.
+</p>
+<PRE>
+       <A href="http://sed.sourceforge.net/grabbag/ssed">http://sed.sourceforge.net/grabbag/ssed</A>
+       <A href="http://freshmeat.net/project/sed/">http://freshmeat.net/project/sed/</A>
+</PRE>
+
+   <H5>GNU sed v4.0.5</H5>
+<p ID='thr3'>This is the latest official version of GNU sed. It offers in-place
+   text replacement as an option switch.
+</p>
+<PRE>
+       <A href="ftp://ftp.gnu.org/pub/gnu/sed/sed-4.0.5.tar.gz">ftp://ftp.gnu.org/pub/gnu/sed/sed-4.0.5.tar.gz</A>
+       <A href="http://freshmeat.net/project/sed">http://freshmeat.net/project/sed</A>
+</PRE>
+
+   <H5>BSD multi-byte sed (Japanese)</H5>
+<p ID='thr3'>Based on the latest version of GNU sed, which supports multi-byte
+   characters.
+</p>
+<PRE>
+       <A href="ftp://ftp1.freebsd.org/pub/FreeBSD/FreeBSD-stable/packages/Latest/ja-sed.tgz">ftp://ftp1.freebsd.org/pub/FreeBSD/FreeBSD-stable/packages/Latest/ja-sed.tgz</A>
+</PRE>
+
+   <H5>GNU sed v3.02.80</H5>
+<p ID='thr3'>An alpha test release which was the base for the development of
+   ssed and GNU sed v4.0.
+</p>
+<PRE>
+       <A href="ftp://alpha.gnu.org/pub/gnu/sed/sed-3.02.80.tar.gz">ftp://alpha.gnu.org/pub/gnu/sed/sed-3.02.80.tar.gz</A>
+</PRE>
+
+   <H5>GNU sed v3.02a</H5>
+<p ID='thr3'>Interim version with most features of GNU sed v3.02.80.
+</p>
+   <H5>GNU sed v3.02</H5>
+<PRE>
+       <A href="ftp://ftp.gnu.org/pub/gnu/sed/sed-3.02.tar.gz">ftp://ftp.gnu.org/pub/gnu/sed/sed-3.02.tar.gz</A>
+</PRE>
+
+   <H4>Precompiled versions:</H4>
+
+   <H5>GNU sed v3.02-8</H5>
+<p ID='thr3'>source code and binaries for Debian GNU/Linux
+</p>
+<PRE>
+       <A href="http://www.debian.org/Packages/stable/base/sed.html">http://www.debian.org/Packages/stable/base/sed.html</A>
+</PRE>
+
+<p ID='thr3'>For some time, the GNU project &lt;<A href="http://www.gnu.org">http://www.gnu.org</A>&gt; used Eric S.
+   Raymond's version of sed (ESR sed v1.1), but eventually dropped it
+   because it had too many built-in limits. In 1991 Howard Helman
+   modified the GNU/ESR sed and produced a flexible version of sed
+   v1.5 available at several sites (Helman's version permitted things
+   like \&lt;...\&gt; to delimit word boundaries, \xHH to enter hex code and
+   \n to indicate newlines in the replace string). This version did
+   not catch on with the GNU project and their version of sed has
+   moved in a similar but different direction.
+</p>
+   <H5>sed v1.3, by Eric Steven Raymond (released 4 June 1998)</H5>
+<PRE>
+       <A href="http://catb.org/~esr/sed-1.3.tar.gz">http://catb.org/~esr/sed-1.3.tar.gz</A>
+</PRE>
+
+<p ID='thr3'>Eric Raymond &lt;<A href="mailto:esr@snark.thyrsus.com">esr@snark.thyrsus.com</A>&gt; wrote one of the earliest
+   versions of sed. On his website &lt;<A href="http://www.catb.org/~esr/">http://www.catb.org/~esr/</A>&gt; which
+   also distributes many freeware utilities he has written or worked
+   on, he describes sed v1.1 this way:
+</p>
+<p ID='thr3'>"This is the fast, small sed originally distributed in the GNU
+   toolkit and still distributed with Minix. The GNU people ditched it
+   when they built their own sed around an enhanced regex package --
+   but it's still better for some uses (in particular, faster and less
+   memory-intensive)." (Version 1.3 fixes an unidentified bug and adds
+   the L command to hexdump the current pattern space.)
+</p>
+<A NAME="s2.2.1.2"></A><H3>2.2.1.2. OS/2</H3>
+
+   <H5>GNU sed v3.02.80</H5>
+<PRE>
+       <A href="http://www2s.biglobe.ne.jp/~vtgf3mpr/gnu/sed.htm">http://www2s.biglobe.ne.jp/~vtgf3mpr/gnu/sed.htm</A>
+</PRE>
+
+   <H5>GNU sed v3.02</H5>
+<PRE>
+       <A href="http://hobbes.nmsu.edu/pub/os2/util/file/sed-3_02-r2-bin.zip">http://hobbes.nmsu.edu/pub/os2/util/file/sed-3_02-r2-bin.zip</A> # binaries
+       <A href="http://hobbes.nmsu.edu/pub/os2/util/file/sed-3_02-r2.zip">http://hobbes.nmsu.edu/pub/os2/util/file/sed-3_02-r2.zip</A>     # source
+</PRE>
+
+<A NAME="s2.2.1.3"></A><H3>2.2.1.3. Microsoft Windows (Win3x, Win9x, WinNT, Win2K)</H3>
+
+   <H5>GNU sed v4.0.5</H5>
+<p ID='thr3'>32-bit binaries and docs. Precompiled versions not available (yet).
+</p>
+   <H5>GNU sed v3.02.80</H5>
+<p ID='thr3'>32-bit binaries and docs, using DJGPP compiler. For details on new
+   features, see Unix section, above.
+</p>
+<PRE>
+       <A href="http://www.student.northpark.edu/pemente/sed/sed3028a.zip">http://www.student.northpark.edu/pemente/sed/sed3028a.zip</A> # DOS binaries
+       <A href="ftp://alpha.gnu.org/pub/gnu/sed/sed-3.02.80.tar.gz">ftp://alpha.gnu.org/pub/gnu/sed/sed-3.02.80.tar.gz</A>        # source
+       <A href="ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028b.zip">ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028b.zip</A> # binaries
+       <A href="ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028d.zip">ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028d.zip</A> # docs
+       <A href="ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028s.zip">ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed3028s.zip</A> # source
+</PRE>
+
+   <H5>GNU sed v2.05</H5>
+<p ID='thr3'>32-bit binaries, no docs. Requires 80386 DX (SX will not run) and
+   must be run in a DOS window or in a full screen DOS session under
+   Microsoft Windows. Will not run in MS-DOS mode (outside Win/Win95).
+   We recommend using the latest version of GNU sed.
+</p>
+<PRE>
+       <A href="http://www.simtel.net/pub/win95/prog/gsed205b.zip">http://www.simtel.net/pub/win95/prog/gsed205b.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/win95/prog/gsed205b.zip">ftp://ftp.cdrom.com/pub/simtelnet/win95/prog/gsed205b.zip</A>
+</PRE>
+
+   <H5>GNU sed v1.03</H5>
+<p ID='thr3'>modified by Frank Whaley.
+</p>
+<p ID='thr3'>This version was part of the "Virtually UN*X" toolset, hosted by
+   itribe.net; that website is now closed. Gsed v1.03 supported Win9x
+   long filenames, as well as hex, decimal, binary, and octal
+   character representations.
+</p>
+   <H5>The Cygwin toolkit:</H5>
+<PRE>
+       <A href="http://www.cygwin.com">http://www.cygwin.com</A>
+</PRE>
+
+<p ID='thr3'>Formerly know as "GNU-Win32 tools." According to their home page,
+   "The Cygwin tools are Win32 ports of the popular GNU development
+   tools for Windows NT, 95 and 98. They function through the use of
+   the Cygwin library which provides a UNIX-like API on top of the
+   Win32 API." The version of sed used is GNU sed v3.02.
+</p>
+   <H5>Minimalist GNU for Windows (MinGW):</H5>
+<PRE>
+       <A href="http://www.mingw.org">http://www.mingw.org</A>
+       <A href="http://mingw.sourceforge.net">http://mingw.sourceforge.net</A>
+</PRE>
+
+<p ID='thr3'>According to their home page, "MinGW ('Minimalist GNU for Windows')
+   refers to a set of runtime headers, used in building a compiler
+   system based on the GNU GCC and binutils projects. It compiles and
+   links code to be run on Win32 platforms ... MinGW uses Microsoft
+   runtime libraries, distributed with the Windows operating system."
+   The version of sed used is GNU sed v3.02.
+</p>
+   <H5>sed v1.5 (a/k/a HHsed), by Howard Helman</H5>
+<p ID='thr3'>Compiled with Mingw32 for 32-bit environments described above. This
+   version should support Win95 long filenames.
+</p>
+<PRE>
+       <A href="http://www.dbnet.ece.ntua.gr/~george/sed/OLD/sed15.exe">http://www.dbnet.ece.ntua.gr/~george/sed/OLD/sed15.exe</A>
+       <A href="http://www.student.northpark.edu/pemente/sed/sed15exe.zip">http://www.student.northpark.edu/pemente/sed/sed15exe.zip</A>
+</PRE>
+
+<A NAME="s2.2.1.4"></A><H3>2.2.1.4. MS-DOS</H3>
+
+   <H5>sed v1.6 (from HHsed), by Walter Briscoe</H5>
+
+<p ID='thr3'>This is a forthcoming version, now in beta testing, but with many
+   new features. It corrects all the bugs in sed v1.5, and adds the
+   best features of sedmod v1.0 (below). It is available in 16-bit and
+   32-bit compiled versions for MS-DOS. Sorry, no URLs available yet.
+</p>
+   <H5>sed v1.5 (a/k/a HHsed), by Howard Helman</H5>
+<p ID='thr3'>uncompiled source code (Turbo C)
+</p>
+<PRE>
+       <A href="ftp://ftp.simtel.net/pub/simtelnet/msdos/txtutl/sed15.zip">ftp://ftp.simtel.net/pub/simtelnet/msdos/txtutl/sed15.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/msdos/txtutl/sed15.zip">ftp://ftp.cdrom.com/pub/simtelnet/msdos/txtutl/sed15.zip</A>
+</PRE>
+
+<p ID='thr3'>DOS executable and documentation
+</p>
+<PRE>
+       <A href="ftp://ftp.simtel.net/pub/simtelnet/msdos/txtutl/sed15x.zip">ftp://ftp.simtel.net/pub/simtelnet/msdos/txtutl/sed15x.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/msdos/txtutl/sed15x.zip">ftp://ftp.cdrom.com/pub/simtelnet/msdos/txtutl/sed15x.zip</A>
+</PRE>
+
+   <H5>sedmod v1.0, by Hern Chen</H5>
+<PRE>
+       <A href="http://www.ptug.org/sed/SEDMOD10.ZIP">http://www.ptug.org/sed/SEDMOD10.ZIP</A>
+       <A href="http://www.student.northpark.edu/pemente/sed/sedmod10.zip">http://www.student.northpark.edu/pemente/sed/sedmod10.zip</A>
+       <A href="ftp://garbo.uwasa.fi/pc/unix/sedmod10.zip">ftp://garbo.uwasa.fi/pc/unix/sedmod10.zip</A>
+</PRE>
+
+   <H5>GNU sed v3.02.80</H5>
+<p ID='thr3'>See <a href="sedfaq2.html#s2.2.1.3">section 2.2.1.3</a> ("Microsoft Windows"), above.
+</p>
+   <H5>GNU sed v2.05</H5>
+<p ID='thr3'>Does not run under MS-DOS.
+</p>
+   <H5>GNU sed v1.18</H5>
+<p ID='thr3'>32-bit binaries and source, using DJGPP compiler. Requires 80386 SX
+   or better. Also requires 3 CWS*.EXE extenders on the path. See
+   <a href="sedfaq5.html#s5.5">section 5.5</a> ("What is CSDPMI*B.ZIP and why do I need it?"), below.
+   We recommend using a newer version of GNU sed.
+</p>
+<PRE>
+       <A href="http://www.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed118b.zip">http://www.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed118b.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/gnu/djgpp/v2gnu/sed118b.zip">ftp://ftp.cdrom.com/pub/simtelnet/gnu/djgpp/v2gnu/sed118b.zip</A>
+       <A href="http://www.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed118s.zip">http://www.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/sed118s.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/gnu/djgpp/v2gnu/sed118s.zip">ftp://ftp.cdrom.com/pub/simtelnet/gnu/djgpp/v2gnu/sed118s.zip</A>
+</PRE>
+
+   <H5>GNU sed v1.06</H5>
+<p ID='thr3'>16-bit binaries and source. Should run under any MS-DOS system.
+</p>
+<PRE>
+       <A href="http://www.simtel.net/pub/gnu/gnuish/sed106.zip">http://www.simtel.net/pub/gnu/gnuish/sed106.zip</A>
+       <A href="ftp://ftp.cdrom.com/pub/simtelnet/gnu/gnuish/sed106.zip">ftp://ftp.cdrom.com/pub/simtelnet/gnu/gnuish/sed106.zip</A>
+</PRE>
+
+<A NAME="s2.2.1.5"></A><H3>2.2.1.5. CP/M</H3>
+
+   <H5>ssed v2.2, by Chuck A. Forsberg</H5>
+
+<p ID='thr3'>Written for CP/M, ssed (for "small/stupid stream editor) supports
+   only the a(ppend), c(hange), d(elete) and i(nsert) options, and
+   apparently doesn't support regular expressions. A -u switch will
+   "unsqueeze" compressed files and was used mainly in conjunction
+   with DIF.COM for source code maintenance. (file: ssed22.lbr)
+</p>
+   <H5>change, by Michael M. Rubenstein</H5>
+
+<p ID='thr3'>Rubenstein released a version of sed called CHANGE.COM (the
+   TTOOLS.LBR archive member CHANGE.CZM is a "crunched" file).
+   CHANGE.COM supports full RE's except grouping and backreferences,
+   and its only function is global substitution. (file: ttools.lbr)
+</p>
+<A NAME="s2.2.1.6"></A><H3>2.2.1.6. Macintosh v8 or v9</H3>
+
+<p ID='thr3'>Since sed is a command-line utility, it is not customary to think
+   of sed being used on a Mac. Nonetheless, the following instructions
+   from Aurelio Jargas describe the process for running sed on MacOS
+   version version 8 or 9.
+</p>
+<p ID='thr3'>(1) Download and install the Apple DiskCopy application
+</p>
+<PRE>
+       <A href="ftp://ftp.apple.com/developer/Development_Kits">ftp://ftp.apple.com/developer/Development_Kits</A>
+</PRE>
+
+<p ID='thr3'>(2) Download and install Apple MPW
+</p>
+<PRE>
+       <A href="ftp://ftp.apple.com/developer/Tool_Chest/Core_Mac_OS_Tools/MPW_etc./">ftp://ftp.apple.com/developer/Tool_Chest/Core_Mac_OS_Tools/MPW_etc./</A>
+</PRE>
+
+<p ID='thr3'>(3) Download and expand Matthias Neeracher's GNU sed for MPW. (They
+   seem to have misnumbered the sed filename.)
+</p>
+<PRE>
+       <A href="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src/mpw_c/sed-2.03.sit.bin">ftp://sunsite.cnlab-switch.ch/software/platform/macos/src/mpw_c/sed-2.03.sit.bin</A>
+</PRE>
+
+<p ID='thr3'>(4) Enter the sed-3.02 directory and doubleclick the 'sed' file
+</p>
+<p ID='thr3'>(5) MPW Shell will open up. It will be a command window instead of
+   a command line, but sed should work as expected. For example:
+</p>
+<PRE>
+       echo aa | sed 's/a/Z/g'&lt;ENTER&gt;
+</PRE>
+
+<p ID='thr3'>Note that ENTER is different from RETURN on an iMac. Apple <b>also</b>
+   has its own version of sed on MPW, called "StreamEdit", with a
+   syntax fairly similar to that of normal sed.
+</p>
+<A NAME="s2.2.2"></A><H3>2.2.2. Shareware and Commercial versions</H3>
+
+<A NAME="s2.2.2.1"></A><H3>2.2.2.1. Unix platforms</H3>
+
+<PRE>
+       [ Additional information needed. ]
+</PRE>
+
+<A NAME="s2.2.2.2"></A><H3>2.2.2.2. OS/2</H3>
+
+   <H5>Hamilton Labs:</H5>
+<PRE>
+       <A href="http://www.hamiltonlabs.com/cshell.htm">http://www.hamiltonlabs.com/cshell.htm</A>
+</PRE>
+
+<p ID='thr3'>A sizable set of Unix/C shell utilities designed for OS/2. Price is
+   $350 in the US, $395 elsewhere, with FedEx shipping, unconditional
+   guarantee, unlimited support and free updates. A demo version of
+   the suite can be downloaded from this site, but a stand-alone copy
+   of sed is not available.
+</p>
+<A NAME="s2.2.2.3"></A><H3>2.2.2.3. Windows 95/98, Windows NT, Windows 2000</H3>
+
+   <H5>Hamilton Labs:</H5>
+<PRE>
+       <A href="http://www.hamiltonlabs.com/cshell.htm">http://www.hamiltonlabs.com/cshell.htm</A>
+</PRE>
+
+<p ID='thr3'>A sizable set of Unix/C shell utilities designed for Win9x, WinNT,
+   and Win2K. Price is $350 in the US, $395 elsewhere, with FedEx
+   shipping, unconditional guarantee, unlimited support and free
+   updates. A demo version of the suite can be downloaded from this
+   site, but a stand-alone copy of sed is not available.
+</p>
+   <H5>Interix:</H5>
+<PRE>
+       <A href="http://www.interix.com">http://www.interix.com</A>
+</PRE>
+
+<p ID='thr3'>Interix (formerly known as OpenNT) is advertised as "a complete
+   UNIX system environment running natively on Microsoft Windows NT",
+   and is licensed and supported by Softway Systems. It offers over
+   200 Unix utilities, and supports Unix shells, sockets, networking,
+   and more. A single-user edition runs about $200. A free demo or
+   evaluation copy will run for 31 days and then quit; to continue
+   using it, you must purchase the commercial version.
+</p>
+   <H5>MKS NuTCRACKER Professional</H5>
+<PRE>
+       <A href="http://www.datafocus.com/products/nutc/">http://www.datafocus.com/products/nutc/</A>
+</PRE>
+
+<p ID='thr3'>A different, yet related product line offered by MKS (Mortice Kern
+   Systems, below); the awkward spelling "NuTCRACKER" is intentional.
+   Various packages offer hundreds of Unix utilities for Win32
+   environments. Sed is not available as a separate product.
+</p>
+   <H5>UnixDos:</H5>
+<PRE>
+       <A href="http://www.unixdos.com">http://www.unixdos.com</A>
+</PRE>
+
+<p ID='thr3'>UnixDos is a suite of 82 Unix utilities ported over to the Windows
+   environments. There are 16-bit versions for Win3.x and 32-bit
+   versions for WinNT/Win95. It is distributed as uncrippled shareware
+   for the first 30 days. After the test period, the utilities will
+   not run and you must pay the registration fee of $50.
+</p>
+<p ID='thr3'>Their version of sed supports "\n" in the RHS of expressions, and
+   increases the length of input lines to 10,000 characters. By
+   special arrangement with the owners, persons who want a licensed
+   version of sed <b>only</b> (without the other utilities) may pay a
+   license fee of $10.
+</p>
+   <H5>U/WIN:</H5>
+<PRE>
+       <A href="http://www.research.att.com/sw/tools/uwin/">http://www.research.att.com/sw/tools/uwin/</A>
+</PRE>
+
+<p ID='thr3'>U/WIN is a suite of Unix utilities created for WinNT and Win95
+   systems. It is owned by AT&amp;T, created by David Korn (author of the
+   Unix korn shell), and is freely distributed only to educational
+   institutions, AT&amp;T employees, or certain researchers; all others
+   must pay a fee after a 90-day evaluation period expires. U/WIN
+   operates best with the NTFS (WinNT file system) but will run in
+   degraded mode with the FAT file system and in further degraded mode
+   under Win95. A minimal installation takes about 25 to 30 megs of
+   disk space. Sed is not available as a separate file for download,
+   but comes with the suite.
+</p>
+<A NAME="s2.2.2.4"></A><H3>2.2.2.4. MS-DOS</H3>
+
+   <H5>Mix C/Utilities Toolchest</H5>
+<PRE>
+       <A href="http://www.mixsoftware.com/product/utility.htm">http://www.mixsoftware.com/product/utility.htm</A>
+</PRE>
+
+<p ID='thr3'>According to their web page, "The C/Utilities Toolchest adds over
+   40 powerful UNIX utilities to your MS-DOS operating system. The
+   result is an environment very similar to UNIX operating systems,
+   yet 100% compatible with MS-DOS programs and commands." The
+   toolchest costs $19.95, with source code available for an
+   additional fee. Mix C's version of sed is not available separately.
+</p>
+   <H5>MKS (Mortice Kern Systems) Toolkit</H5>
+<PRE>
+       <A href="http://www.mks.com">http://www.mks.com</A>
+</PRE>
+
+<p ID='thr3'>Sed comes bundled with the MKS Toolkit, which is distributed only
+   as commercial software; it is not available separately.
+</p>
+   <H5>Thompson Automation Software</H5>
+<PRE>
+       <A href="http://www.tasoft.com">http://www.tasoft.com</A>
+</PRE>
+
+<p ID='thr3'>The Thompson Toolkit contains over 100 familiar Unix utilities,
+   including a version of the Unix Korn shell. It runs under MS-DOS,
+   OS/2, Win3.x, Win9x, and WinNT. Sed is one of the utilities, though
+   Thompson is better known for its version of awk for DOS, TAWK. The
+   toolkit runs about $150; sed is not available separately.
+</p>
+<A NAME="s2.3"></A><H3>2.3. Where can I learn to use sed?</H3>
+
+<A NAME="s2.3.1"></A><H3>2.3.1. Books</H3>
+
+<PRE>
+       <i>Sed &amp; Awk, 2d edition</i>, by Dale Dougherty &amp; Arnold Robbins
+       (Sebastopol, Calif: O'Reilly and Associates, 1997)
+       ISBN 1-56592-225-5
+       <A href="http://www.oreilly.com/catalog/sed2/noframes.html">http://www.oreilly.com/catalog/sed2/noframes.html</A>
+</PRE>
+
+<p ID='thr3'>About 40 percent of this book is devoted to sed, and maybe 50
+   percent is devoted to awk. The other 10 percent covers regexes and
+   concepts common to both tools. If you prefer hard copy, this is
+   definitely the best single place to learn to use sed, including its
+   advanced features.
+</p>
+<p ID='thr3'>The first edition is also very useful. Several typos crept into the
+   first printing of the first edition (though if you follow the
+   tutorials closely, you'll recognize them right away). A list of
+   errors from the first printing of <i>sed &amp; awk</i> is available at
+   &lt;<A href="http://www.cs.colostate.edu/~dzubera/sedawk.txt">http://www.cs.colostate.edu/~dzubera/sedawk.txt</A>&gt;, and errors in
+   the 2nd are at &lt;<A href="http://www.cs.colostate.edu/~dzubera/sedawk2.txt">http://www.cs.colostate.edu/~dzubera/sedawk2.txt</A>&gt;,
+   though most of these were corrected in later printings. The second
+   edition tells how POSIX standards have affected these tools and
+   covers the popular GNU versions of sed and awk. Price is about (US)
+   $30.00
+</p>
+<p ID='thr3'>-----
+</p>
+<PRE>
+       <i>Mastering Regular Expressions, 2d ed.,</i> by Jeffrey E. F. Friedl
+       (Sebastopol, Calif: O'Reilly and Associates, 2002)
+       ISBN 0-596-00289-0
+       <A href="http://regex.info">http://regex.info</A>
+       <A href="http://www.oreilly.com/catalog/regex2/">http://www.oreilly.com/catalog/regex2/</A>
+       <A href="http://public.yahoo.com/~jfriedl/regex/">http://public.yahoo.com/~jfriedl/regex/</A> (for the first edition)
+</PRE>
+
+<p ID='thr3'>Knowing how to use "regular expressions" is essential to effective
+   use of most Unix tools. This book focuses on how regular
+   expressions can be best implemented in utilities such as perl, vi,
+   emacs, and awk, but also touches on sed as well. Friedl's home page
+   (above) gives links to other sites which help students learn to
+   master regular expressions. His site also gives a Perl script for
+   determining a syntactically valid e-mail address, using regexes:
+</p>
+<PRE>
+       <A href="http://public.yahoo.com/~jfriedl/regex/code.html">http://public.yahoo.com/~jfriedl/regex/code.html</A>
+</PRE>
+
+<p ID='thr3'>-----
+</p>
+<PRE>
+       <i>Awk und Sed</i>, by Helmut Herold.
+       (Bonn: Addison-Wesley, 1994; 288 pages)
+       2nd edition to be released in March 2003
+       ISBN 3-8273-2094-1
+       <A href="http://www.addison-wesley.de/main/main.asp?page=home/bookdetails&amp;ProductID=37214">http://www.addison-wesley.de/main/main.asp?page=home/bookdetails&amp;ProductID=37214</A>
+</PRE>
+
+<A NAME="s2.3.2"></A><H3>2.3.2. Mailing list</H3>
+
+<p ID='thr3'>If you are interested in learning more about sed (its syntax, using
+   regular expressions, etc.) you are welcome to subscribe to a
+   sed-oriented mailing list. In fact, there are two mailing lists
+   about sed: one in English named "sed-users", moderated by Sven
+   Guckes; and one in Portuguese named "sed-BR" (for sed-Brazil),
+   moderated by Aurelio Marinho Jargas. The average volume of mail for
+   "sed-users" is about 35 messages a week; the average volume of mail
+   for "sed-BR" is about 15 messages a week.
+</p>
+<PRE>
+       sed-BR mailing list:    <A href="http://br.groups.yahoo.com/group/sed-br/">http://br.groups.yahoo.com/group/sed-br/</A>
+       sed-users mailing list: <A href="http://groups.yahoo.com/group/sed-users/">http://groups.yahoo.com/group/sed-users/</A>
+</PRE>
+
+<p ID='thr3'>To subscribe to sed-users, send a blank message to:
+</p>
+<PRE>
+       <A href="mailto:sed-users-subscribe@yahoogroups.com">sed-users-subscribe@yahoogroups.com</A>
+</PRE>
+
+<p ID='thr3'>To unsubscribe from sed-users, send a blank message to:
+</p>
+<PRE>
+       <A href="mailto:sed-users-unsubscribe@yahoogroups.com">sed-users-unsubscribe@yahoogroups.com</A>
+</PRE>
+
+<A NAME="s2.3.3"></A><H3>2.3.3. Tutorials, electronic text</H3>
+
+<p ID='thr3'>The original users manual for sed, by Lee E. McMahon, from the
+   7th edition UNIX Manual (1978), with the classic "Kubla Khan"
+   example and tutorial, in formatted text format:
+</p>
+<PRE>
+       <A href="http://sed.sourceforge.net/grabbag/tutorials/sed_mcmahon.txt">http://sed.sourceforge.net/grabbag/tutorials/sed_mcmahon.txt</A>
+</PRE>
+
+<p ID='thr3'>The source code to the preceding manual. Use "troff -ms sed" to
+   print this file properly:
+</p>
+<PRE>
+       <A href="http://plan9.bell-labs.com/7thEdMan/vol2/sed">http://plan9.bell-labs.com/7thEdMan/vol2/sed</A>
+       <A href="http://cm.bell-labs.com/7thEdMan/vol2/sed">http://cm.bell-labs.com/7thEdMan/vol2/sed</A>
+</PRE>
+
+<p ID='thr3'>"Do It With Sed", by Carlos Duarte
+</p>
+<PRE>
+       <A href="http://www.dbnet.ece.ntua.gr/~george/sed/OLD/sedtut_1.html">http://www.dbnet.ece.ntua.gr/~george/sed/OLD/sedtut_1.html</A>
+</PRE>
+
+<p ID='thr3'>"Sed: How to use sed, a special editor for modifying files
+   automatically", by Bruce Barnett and General Electric Company
+</p>
+<PRE>
+       <A href="http://www.grymoire.com/Unix/Sed.html">http://www.grymoire.com/Unix/Sed.html</A>
+</PRE>
+
+<p ID='thr3'>U-SEDIT2.ZIP, by Mike Arst (16 June 1990)
+</p>
+<PRE>
+       <A href="ftp://ftp.cs.umu.se/pub/pc/u-sedit2.zip">ftp://ftp.cs.umu.se/pub/pc/u-sedit2.zip</A>
+       <A href="ftp://ftp.uni-stuttgart.de/pub/systems/msdos/util/unixlike/u-sedit2.zip">ftp://ftp.uni-stuttgart.de/pub/systems/msdos/util/unixlike/u-sedit2.zip</A>
+       <A href="ftp://sunsite.icm.edu.pl/vol/wojsyl/garbo/pc/editor/u-sedit2.zip">ftp://sunsite.icm.edu.pl/vol/wojsyl/garbo/pc/editor/u-sedit2.zip</A>
+       <A href="ftp://ftp.sogang.ac.kr/pub/msdos/garbo_pc/editor/u-sedit2.zip">ftp://ftp.sogang.ac.kr/pub/msdos/garbo_pc/editor/u-sedit2.zip</A>
+</PRE>
+
+<p ID='thr3'>U-SEDIT3.ZIP, by Mike Arst (24 Jan. 1992)
+</p>
+<PRE>
+       <A href="http://www.student.northpark.edu/pemente/sed/u-sedit3.zip">http://www.student.northpark.edu/pemente/sed/u-sedit3.zip</A>
+       CompuServe DTPFORUM, "PC DTP Utilities" library, file SEDDOC.ZIP
+</PRE>
+
+<p ID='thr3'>Another sed FAQ
+</p>
+<PRE>
+       <A href="http://www.dreamwvr.com/sed-info/sed-faq.html">http://www.dreamwvr.com/sed-info/sed-faq.html</A>
+</PRE>
+
+<p ID='thr3'>sed-tutorial, by Felix von Leitner
+</p>
+<PRE>
+       <A href="http://www.math.fu-berlin.de/~leitner/sed/tutorial.html">http://www.math.fu-berlin.de/~leitner/sed/tutorial.html</A>
+</PRE>
+
+<p ID='thr3'>"Manipulating text with sed," chapter 14 of the SCO OpenServer
+   "Operating System Users Guide"
+</p>
+<PRE>
+       <A href="http://ou800doc.caldera.com/SHL_automate/CTOC-Manipulating_text_with_sed.html">http://ou800doc.caldera.com/SHL_automate/CTOC-Manipulating_text_with_sed.html</A>
+</PRE>
+
+<p ID='thr3'>"Combining the Bourne-shell, sed and awk in the UNIX environment
+   for language analysis," by Lothar Schmitt and Kiel Christianson.
+   This basic tutorial on the Bourne shell, sed and awk downloads as a
+   71-page PostScript file (compressed to 290K with gzip). You may
+   need to navigate down from the root to get the file.
+</p>
+<PRE>
+       <A href="ftp://ftp.u-aizu.ac.jp/u-aizu/doc/Tech-Report/1997/97-2-007.tar.gz">ftp://ftp.u-aizu.ac.jp/u-aizu/doc/Tech-Report/1997/97-2-007.tar.gz</A>
+       available upon request from Lothar Schmitt &lt;<A href="mailto:lothar@u-aizu.ac.jp">lothar@u-aizu.ac.jp</A>&gt;
+</PRE>
+
+<A NAME="s2.3.4"></A><H3>2.3.4. General web and ftp sites</H3>
+
+<PRE>
+       <A href="http://sed.sourceforge.net/grabbag">http://sed.sourceforge.net/grabbag</A>             # Collected scripts
+       <A href="http://main.rtfiber.com.tw/~changyj/sed/">http://main.rtfiber.com.tw/~changyj/sed/</A>       # Yao-Jen Chang
+       <A href="http://www.math.fu-berlin.de/~guckes/sed/">http://www.math.fu-berlin.de/~guckes/sed/</A>      # Sven Guckes
+       <A href="http://www.math.fu-berlin.de/~leitner/sed/">http://www.math.fu-berlin.de/~leitner/sed/</A>     # Felix von Leitner
+       <A href="http://www.dbnet.ece.ntua.gr/~george/sed/">http://www.dbnet.ece.ntua.gr/~george/sed/</A>      # Yiorgos Adamopoulos
+       <A href="http://www.student.northpark.edu/pemente/sed/">http://www.student.northpark.edu/pemente/sed/</A>  # Eric Pement
+</PRE>
+
+<PRE>
+       <A href="http://spacsun.rice.edu/FAQ/sed.html">http://spacsun.rice.edu/FAQ/sed.html</A>
+       <A href="ftp://algos.inesc.pt/pub/users/cdua/scripts.tar.gz">ftp://algos.inesc.pt/pub/users/cdua/scripts.tar.gz</A> (sed and shell scripts)
+</PRE>
+
+<p ID='thr3'>"Handy One-Liners For Sed", compiled by Eric Pement. A large list
+   of 1-line sed commands which can be executed from the command line.
+</p>
+<PRE>
+       <A href="http://sed.sourceforge.net/sed1line.txt">http://sed.sourceforge.net/sed1line.txt</A>
+       <A href="http://www.student.northpark.edu/pemente/sed/sed1line.txt">http://www.student.northpark.edu/pemente/sed/sed1line.txt</A>
+</PRE>
+
+<p ID='thr3'>"Handy One-Liners For Sed", translated to Portuguese
+</p>
+<PRE>
+       <A href="http://wmaker.lrv.ufsc.br/sed_ptBR.html">http://wmaker.lrv.ufsc.br/sed_ptBR.html</A>
+</PRE>
+
+<p ID='thr3'>The Single UNIX Specification, Version 3 (technical man page)
+</p>
+<PRE>
+       <A href="http://www.opengroup.org/onlinepubs/007904975/utilities/sed.html">http://www.opengroup.org/onlinepubs/007904975/utilities/sed.html</A>
+</PRE>
+
+<p ID='thr3'>Getting started with sed
+</p>
+<PRE>
+       <A href="http://www.cs.hmc.edu/tech_docs/qref/sed.html">http://www.cs.hmc.edu/tech_docs/qref/sed.html</A>
+</PRE>
+
+<p ID='thr3'>masm to gas converter
+</p>
+<PRE>
+       <A href="http://www.delorie.com/djgpp/faq/converting/asm2s-sed.html">http://www.delorie.com/djgpp/faq/converting/asm2s-sed.html</A>
+</PRE>
+
+<p ID='thr3'>mail2html.zip
+</p>
+<PRE>
+       <A href="http://www.crispen.org/src/#mail2html">http://www.crispen.org/src/#mail2html</A>
+</PRE>
+
+<p ID='thr3'>sample uses of sed in batch files and scripts (Benny Pederson)
+</p>
+<PRE>
+       <A href="http://users.cybercity.dk/~bse26236/batutil/help/SED.HTM">http://users.cybercity.dk/~bse26236/batutil/help/SED.HTM</A>
+</PRE>
+
+<p ID='thr3'>dc.sed - the most complex and impressive sed script ever written.
+   This sed script by Greg Ubben emulates the Unix dc (desk
+   calculator), including base conversion, exponentiation, square
+   roots, and much more.
+</p>
+<PRE>
+       <A href="http://sed.sourceforge.net/grabbag/scripts/dc_overview.htm">http://sed.sourceforge.net/grabbag/scripts/dc_overview.htm</A>
+</PRE>
+
+<p ID='thr3'>If you should find other tutorials or scripts that should be added
+   to this document, please forward the URLs to the FAQ maintainer.
+</p>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is the end of Section 2 of the sed FAQ.<br>
+Go back to <a href="sedfaq1.html">Section 1</a>,
+ or forward to <a href="sedfaq3.html">Section 3</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+</BODY></HTML>
+</BODY></HTML>

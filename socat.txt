@@ -1,0 +1,462 @@
+socat Examples
+===============
+
+* 注意
+- SYSTEM で : を使う時は必ずエスケープすること
+
+
+* 相手に接続
+
+# telnet, netcat, socat それぞれの場合
+$ socat - TCP:127.0.0.1:8000
+$ netcat 127.0.0.1 8000
+$ telnet 127.0.0.1 8000
+
+# ローカルポートを指定して接続
+$ socat -  TCP:127.0.0.1:5555,sourceport=4444
+
+# web ページ取得
+$ socat - TCP:<hostname>:<port> < <(echo 'GET / HTTP/1.0') | nkf -w
+
+
+* FTP サーバーと直接通信
+# ログインして終了する
+$ socat TCP:localhost:21,crlf -
+USER ***
+PASS ***
+HELP
+QUIT
+
+# 接続して ls する
+$ socat TCP:localhost:21,crlf -
+USER ***
+> 331 Password please
+PASS ***
+> 230 User logged in
+PASV
+> 227 Entering Passive Mode (127,0,0,1,46,224)
+# passive モードより別窓で 127.0.0.1:12000 に接続する
+$ socat - TCP:localhost:$[46*256+224]
+# 元のクライアントで LIST
+LIST
+> 226 Directory list has been submitted.
+
+# 接続して ~/src/bftpd/README のファイルを取得する
+$ socat TCP:localhost:21,crlf -
+USER ***
+> 331 Password please
+PASS ***
+> 230 User logged in
+PASV
+> 227 Entering Passive Mode (127,0,0,1,46,224)
+# passive モードより別窓で 127.0.0.1:12000 に接続する
+$ socat - TCP:localhost:$[46*256+224]
+# 元のクライアント
+PWD
+> 257 "/" is the current working directory.
+CWD src/bftpd/
+> 250 OK
+MGET README
+> 150 BINARY data connection established.
+> 226 File transmission successful.
+QUIT
+> 221 See you later
+
+# 通常にログインする場合
+$ ftp ftp://username:password@localhost
+> ...
+quote pasv
+> 227 Entering Passive Mode (xxx,xxx,xxx,xxx,46,225)
+quote port xxx,xxx,xxx,xxx,46,225
+
+# ncftp を使う
+$ ncftp ftp://admin:findsomething13@157.7.72.160
+
+
+* Webサーバー
+# hello world を返却するだけ
+$ socat TCP-LISTEN:8000,reuseaddr,crlf,fork SYSTEM:"echo HTTP/1.0 200; echo Content-Type\: text/plain; echo; echo hello world"
+
+# hello world を返却するだけ, タイムアウト時間10秒
+$ socat -T 10 TCP-LISTEN:8000,crlf SYSTEM:"echo HTTP/1.0 200; echo Content-Type\: text/plain; echo; echo hello world"
+
+# 相手の IP アドレス表示させる, pktinfo を追加, IPは SOCAT_PEERADDR
+$ socat -v TCP-LISTEN:8000,crlf,pktinfo,fork SYSTEM:'echo HTTP/1.0 200; echo Content-Type\: text/plain; echo; echo $SOCAT_PEERADDR\:$SOCAT_PEERPORT'
+
+# 相手の IP + User-Agent を表示
+$ socat -v TCP-LISTEN:8001,crlf,pktinfo,fork SYSTEM:'set -x; echo HTTP/1.0 200; \
+       echo Content-Type\: text/plain; echo; for i in {1..7}; do read i$i; done; for i in {1..7}; \
+       do eval echo \\'\$i\\'$i; done; \
+       echo; echo IP\: $SOCAT_PEERADDR\:$SOCAT_PEERPORT;'
+
+
+* ECHO サーバー
+# -v で verbose モード
+$ socat -v TCP-LISTEN:8000 SYSTEM:"cat "
+
+# readline でも同様に出来る, この時 SYSTEM は必要ない
+$ socat readline TCP-LISTEN:8000
+
+# デーモン化
+$ socat -v readline TCP-LISTEN:8000,fork SYSTEM:"cat "
+
+# 一部の文字列だけ変化させる
+$ socat -v TCP-LISTEN:7777,reuseaddr SYSTEM:'while read line; do echo $line | sed -e 1s/fuga/hoge/g; done'
+
+
+* シリアルコンソール
+# 仮想端末を用意, (/dev/ttys005, /dev/ttys006 とする)
+$ socat -d -d pty,raw,echo=0 pty,raw,echo=0
+# 接続確認
+$ cat < /dev/ttys005
+$ echo 'test' > /dev/ttys006
+
+# シリアル -> TCP 変換
+$ socat -v -d -d /dev/ttys009,raw,echo=0 TCP-LISTEN:4438,fork,reuseaddr
+# 接続確認 console -> tcp
+$ socat - TCP:localhost:4438
+$ echo 'hello world' > /dev/ttys009
+# 接続確認 tcp -> console
+$ cat < /dev/ttys009
+$ socat - TCP:localhost:4438 < <(echo 'test')
+
+
+* UDP 通信
+# サーバー側, 待ち受け
+$ socat -x -v -d UDP-LISTEN:2384 -
+# クライアント側, 送信
+$ socat - UDP-SENDTO:localhost:53
+
+# dns レコード待ち受け
+$ sudo socat -x -d UDP-LISTEN:53 -
+# 送信
+$ dig @localhost google.com
+
+# dns record の中身を覗く
+$ socat -x -d UDP-RECVFROM:1234,reuseaddr,fork,bind=127.0.0.1 UDP:<dns-cache-server>:<dns-cache-port>
+$ dig -p 1234 @localhost google.com
+
+# UDP ポートを利用したバックドア
+# サーバー側
+$ sudo socat UDP-RECVFROM:53,reuseaddr,fork EXEC:'/bin/bash',pty,ctty,stderr
+# クライアント側
+$ socat -,echo=0,icanon=1 UDP:<hostname>:53
+
+# tcp over udp, ssh トンネリング経由から問い合わせを行う
+# ssh でトンネリングを掘る
+$ # 後で書く
+
+**** UDP 53 番ポートで socks5 を使う ****
+
+# サーバー側, dante を使う, 最小構成のセットアップ
+$ sudo emacs /etc/sockd.conf
+internal: eth0 port = 38425
+logoutput: stderr
+external: eth0
+method: none
+clientmethod: none
+# allow the rest
+client pass { from: 0/0 port 1-65535 to: 0/0 }
+socks pass { from: 0/0 to: 0/0 }
+
+# 起動
+$ sockd
+
+# 疎通テスト, クライアント側
+$ sudo emacs /etc/socks.conf
+route {
+  from: 0.0.0.0/0 to: 0.0.0.0/0 via: 157.7.72.160 port = 38425
+  proxyprotocol: socks_v5
+  protocol: tcp udp
+  method: none
+}
+$ socksify curl -s 'ipcheck.com'
+
+# サーバー側
+$ sudo socat -x -v -d UDP-LISTEN:53,reuseaddr,fork TCP:<hostname>:38425
+# クライアント側
+$ socat -d -v -x TCP-LISTEN:1234,fork,reuseaddr UDP:<hostname>:53
+# 接続確認
+$ SOCKS5_SERVER=127.0.0.1:1234 SOCKS_DEBUG=1 socksify curl -s 'ipcheck.com'
+$ curl -s -x socks://127.0.0.1:1234 "ipcheck.com"
+
+
+* Tor 関係
+#user -> TOR -> vpn -> internet の設定
+# ECHO サーバーを立ち上げる
+$ socat -v -d -d TCP-LISTEN:38426,reuseaddr,fork -
+
+# クライアント側
+$ tor
+$ echo "strict_chain\n[ProxyList]\nsocks5 127.0.0.1 9050" > ~/.proxychains.conf
+# 適当に文字を入力した時, サーバー側のIPが Tor であれば OK
+$ proxychains4 -f ~/.proxychains.conf socat - TCP:<hostname>:38426
+
+# localhost:9999 -> Tor -> VPN
+# TCP-LISTEN に絶対に crlf を付けてはならない
+$ proxychains4 -f ~/.proxychains.conf  socat -v -d TCP-LISTEN:9999,reuseaddr,fork TCP:<hostname>:38426
+
+
+* tuntap
+# taptap インターフェースを作成
+$ socat -,echo=0 open:/dev/tap0
+# 確認, tap0 が出ていればOK
+$ ifconfig
+
+
+* ファイル入出力関係
+# /tmp/myfile に標準出力の内容を書き出す
+# ignoreeof で tail -f 状態に
+# trunc で open している間は書き込まない
+# create はファイルが存在しない場合は作成する
+$ socat -,echo=0 OPEN:/tmp/myfile,create,trunc,ignoreeof
+
+# 原始的なバイナリエディタとして用いる (zsh)
+$ echo 'This is a file '> /tmp/a
+# -u で stdio から file:/tmp/a に上書き
+$ echo -n "\x68\x61\x74" | socat -u STDIO, FILE:/tmp/a,seek=0x1 # That is a file
+
+# 標準入力 -> 標準出力
+$ socat echo -
+$ socat echo STDIO
+$ socat echo STDIN'!!'STDOUT
+$ socat echo - -
+$ socat echo -'!!'-
+$ socat echo STDIO'!!'STDIO
+$ socat echo /dev/stdin'!!'/dev/stdout
+
+# 一方向のみの通信は -u 
+$ socat -u - -
+# 例 copy a.txt -> b.txt
+$ echo 'This is a' > /tmp/a.txt
+$ echo 'This is b' > /tmp/b.txt
+$ socat -v -d -d -u FILE:/tmp/a.txt,create,ignoreeof FILE:/tmp/b.txt,create,ignoreeof
+# 確認
+$ cat /tmp/a.txt /tmp/b.txt
+# 例 copy b.txt -> a.txt
+$ socat -v -d -d -U FILE:/tmp/a.txt,create,ignoreeof FILE:/tmp/b.txt,create,ignoreeof
+# 確認
+$ cat /tmp/a.txt /tmp/b.txt
+
+
+# tail -f 相当
+$ socat -u FILE:/tmp/log,ignoreeof -
+# 別の端末からファイルに書き込みテスト
+$ socat - FILE:/tmp/log.txt,create,ignoreeof
+
+
+* UNIX ソケット通信
+# ソケットを作る
+$ socat UNIX-LISTEN:/tmp/mysocket -
+# 別の端末で通信できるかテスト
+$ socat - UNIX:/tmp/mysocket
+
+
+* proxy リレー
+# localhost:4040 -> <hostname>:<port> 経由にする
+$ socat -v -d -d TCP-LISTEN:4040,reuseaddr,fork TCP:<hostname>:<port>
+
+
+* socks リレー
+# ssh による socks リレー
+# socks サーバーを立てる
+$ ssh -N -D 0.0.0.0:1080 username@hostname
+# localhost:4040 -> localhost:1080 -> ssh host -> internet, でパケットを経由させる
+$ socat TCP-LISTEN:4040,reuseaddr,fork TCP:127.0.0.1:1080
+
+# localhost:4041 -> localhost:4040 -> localhost:1080 -> ssh host -> internet, でパケットを経由させる
+$ socat -v -d -d TCP-LISTEN:4041,reuseaddr,fork TCP:127.0.0.1:4040
+
+
+* ssh へのインタラクティブな命令
+# <password> の <server> に対して socat のインストールを行っている
+# exec する時は端末に紐付けるため pty を入れる
+$ (echo 'ls -al; sudo yum install -y socat'; sleep 3; echo <passowrd>; sleep 20; echo exit) | socat - exec:'ssh <server>',pty
+
+
+* 画面共有
+# tigervnc の場合, サーバー側
+$ vncpasswd
+$ vncserver :2 -geometry 800x600 -depth 24
+
+# クライアント側には ssh でポートフォワード
+$ ssh -N -L 5902:localhost:5902 conoha
+
+# 接続確認
+$ vncviewer localhost:5902
+
+
+* Proxy として利用する
+# tinyproxy を起動
+$ sudo tinyproxy
+$ tail -f /var/log/tinyproxy/tinyproxy.log
+# localhost:9999 -> localhost:80 への web proxy
+$ socat -v -d -d TCP-LISTEN:9999,fork,reuseaddr TCP:localhost:80
+
+
+* 端末関係
+# 他の tty にメッセージを送る
+# 相手側
+$ tty  # -> /dev/ttys010
+# 相手の tty に接続
+$ socat -v -d -d readline /dev/ttys003,raw,echo=0,crlf,nonblock
+
+
+* 簡易 telnet サーバー
+# pty を付けることで仮想端末と通信できるようにする
+$ socat TCP-LISTEN:7777,reuseaddr,fork EXEC:'/usr/bin/login',pty
+
+# 端末側: ログイン
+$ socat -,raw,echo=0 TCP:localhost:7777
+
+# 標準エラーやセッションIDなどを付与する場合
+$ socat TCP-LISTEN:7777,reuseaddr,fork EXEC:'/usr/bin/login',pty,setsid,setpgid,stderr
+
+
+* ファイルの sniffer
+$ socat -v TCP-LISTEN:7774,reuseaddr SYSTEM:'tee l2r | socat - "TCP:127.0.0.1:80" | tee rl2'
+
+
+* バックドアを開ける
+# サーバー側
+$ socat -v -d -d TCP-LISTEN:38425,reuseaddr,fork EXEC:/bin/bash,pty,stderr,sigint,ctty
+# 接続
+$ socat -,echo=0,icanon=0 TCP:<server>:<server-port>
+
+
+* バイナリ
+# JPG 7~10 バイト目の IFIF 文字列を HOGE に変える
+$ echo 'HOGE' | socat -u - file:in.jpg,seek=0x6
+# ファイルの 0x7f に NULL Byte を入れる
+$ echo "\x00" | socat -u - FILE:a-2.txt,seek=0x7f
+# in.png の 0x29 バイトから 0x25df バイトだけ切り出して書き込み
+$ dd if=in.png of=a.zip bs=1 skip=0x29 count=0x25df
+
+
+* OPENSSL 関係
+# https に接続
+$ socat -d -v OPENSSL:google.com:443,verify=0,crlf -
+
+# 公開鍵証明を用意する
+# 1. 秘密鍵を生成
+$ openssl genrsa -out server.key 1024
+# 2. 秘密鍵から公開鍵を生成して証明書（crt, certificate ）を生成する, x509 形式
+$ openssl req -new -key server.key -x509 -days 0 -out server.crt -subj '/'
+# 3. 生成した証明書の公開鍵や情報を確認
+$ openssl x509 -in server.crt -noout -pubkey
+$ openssl x509 -in server.crt -noout -subject
+# 4. 公開鍵+秘密鍵を一つにする
+$ cat server.key server.crt > server.pem
+# 5. 接続確認
+$ socat OPENSSL-LISTEN:4433,reuseaddr,fork,cert=server.pem -
+$ openssl s_client -showcerts -connect localhost:4433
+
+
+# その他, google.com の証明書を取得する
+$ openssl s_client -showcerts -connect google.com:443 < /dev/null | openssl x509 -outform pem > google.com.pem
+# 情報を表示
+$ openssl x509 -in google.com.pem -noout -pubkey -subject
+$ openssl x509 -in google.com.pem -noout -text
+
+
+* socat で imap とやり取りする
+# gmail アカウントの Basic 認証を on にする
+# gmail.com の imap に接続
+$ socat OPENSSL:imap.gmail.com:993,verify=0,crlf -
+? login username password
+> OK username@gmail.com authenticated
+? list "" "*"
+> ...
+? select inbox
+> ...
+? fetch 2 body[]
+> ...
+? fetch 2 body[header]
+> ...
+? logout
+> * BYE LOGOUT Requested
+
+
+* socks 関係
+# tor 経由で ipcheck.com にアクセスする
+$ (echo "GET / HTTP/1.1"; echo "HOST: ipcheck.com"; echo ""; sleep 1) |
+   socat SOCKS4A:192.168.39.1:ipcheck.com:80,socksport=9050 -
+
+# tor 経由で ssh
+$  ssh -v -o ProxyCommand='socat SOCKS4A:192.168.39.1:%h:%p,socksport=9050 -' admin@host
+
+
+* TCP, TCP-LISTEN を詳細に制御する
+# eth0 に bind
+$ sudo socat TCP-LISTEN:38425,bindtodevice=eth0,resuseadd,fork -
+# localhost に bind
+$ socat TCP-LISTEN:38425,bind=127.0.0.1,resuseadd,fork -
+
+
+* TCP を利用したファイル交換
+# 待ち受け側
+$ socat - TCP-LISTEN:4438 > output-file
+# 送信側
+$ socat - TCP:127.0.0.1:4438 < input-file
+
+# ファイルを暗号化して送る, 公開鍵方式
+# 適当なファイルを生成
+$ dd if=/dev/random of=file.bin bs=$[2**20] count=1
+$ md5 file.bin > checksum
+
+# 暗号化なしのファイル送信
+$ socat TCP-LISTEN:4040,reuseaddr - > transfered-file.bin
+$ socat TCP:localhost:4040 - < file.bin
+$ md5 transfered-file.bin
+
+
+* デバッグ
+# warning などを出す
+$ socat -d ...
+$ socat -d -d ...
+$ socat -d -d -d ...
+
+# history を使う
+$ socat READLINE,history=~/.socat.history -
+
+# socat のグローバル変数を全て dump
+$ socat -v TCP-LISTEN:8001,crlf,pktinfo,fork SYSTEM:"export"
+
+# chroot すると exports が行えない,  sandbox 化
+$ socat -v TCP-LISTEN:8001,crlf,pktinfo,fork,chroot=/tmp/sandbox SYSTEM:"export"
+
+# -x で hex dump
+$ socat -v -x TCP-LISTEN:8001,reuseaddr,fork -
+
+# 通信内容をファイルに保存
+$ socat -x -v TCP-LISTEN:6060,reuseaddr,fork TCP:localhost:9050 2>&1 | tee hogei
+
+* オリジナルペイロードを作る
+# パイプを作成して繋げる
+$ mkfifo in
+$ socat OPENSSL:localhost:465,verify=0 - < in
+# 別ターミナル
+$ cat | tee payload > in
+EHLO hoge.com
+...
+
+# ペイロード送る
+$ cat payload | socat OPENSSL:localhost:465,verify=0,nonblock=1 -
+
+
+* DNS サーバーの応答を保存する
+# サーバー側
+$ socat -x -v UDP-RECVFROM:9923,reuseaddr,fork SYSTEM:'tee -a request.bin'
+# 別クライアントから問い合わせ
+$ dig -p 9923 @xxx.xxx.xxx.xxx yahoo.co.jp
+# レスポンスの dump
+$ xxd request.bin
+
+# レスポンスを直接 Google public DNS へ proxy させる
+$ socat -x -v UDP:8.8.8.8:53 FILE:request.bin
+
+# 中間ファイルを生成しないで DNS の response, request を見る
+$ socat -x -v UDP-RECVFROM:9923,reuseaddr,fork UDP:8.8.8.8:53
+# 同様の方法で l2r, r2l に内容を保存する
+$ socat -x -v UDP-RECVFROM:9923,reuseaddr,fork SYSTEM:'tee request.bin | socat - "UDP:8.8.8.8:53"  | tee response.bin'
+

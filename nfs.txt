@@ -1,6 +1,56 @@
 nfs
 ============================
 
-
+Mac の nfs 設定
 ----------------------------
+
+nfs をスタートさせる
+
+    $ sudo nfsd status
+    nfsd service is enabled
+    nfsd is not running
+    
+    $ sudo nfsd start
+    Starting the nfsd service
+
+exports による公開先の設定を行う.
+exports の書式は公開するディレクトリへのパスと
+ネットワークオプションを以下のように1行に空白区切でリストアップする.
+
+    /filesystem/path -network_options
+
+network_options には以下の値が設定できる
+
+* `-rw`: -r read（読込）, -w write（書込）を許可しマウントする.
+* `-ro`: read only でマウントする.
+* `-mapall=user`: クライアントからではなく、ここで指定したユーザーからのマウントとみなされる
+* `-network <NET_IP>`: nfs を公開する network の範囲を指定する
+* `-mask <NET_MASK>`: ネットマスク
+
+exports ファイルの例）
+
+    # nfs root
+    /private/nfsroot -network 192.168.0.0 -mask 255.255.0.0
+
+    # freebsd install
+    /private/tftpboot/freebsd -ro -mapall=nobody -network 192.168.0.0 -mask 255.255.0.0
+
+exports ファイルを更新したら, 公開マウントの設定を確認する
+
+    $ showmount -e localhost
+    /private/tftpboot/syslinux/public/freebsd/i386 192.168.0.0
+    /private/tftpboot/syslinux/public/arch_linux 192.168.0.0
+    /private/nfsroot                    192.168.0.0
+
+実際にファイルをマウントできるかどうかも確認しておく.
+mount する場合は `mount sever_ip:remote_path local_path` でマウントできる.
+
+    $ mount 192.168.2.1:/private/nfsroot /Volumes/nfs
+
+その他
+----------------------------
+
+ポートマッパーでデーモン情報を確認する
+
+    $ rpcinfo -p hostname
 

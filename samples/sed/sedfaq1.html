@@ -1,0 +1,170 @@
+<HTML>
+<HEAD>
+<TITLE>Frequently-Asked Questions about sed, the stream editor</TITLE>
+<META http-equiv="content-type" content="text/html;charset=iso-8859-1">
+<META name="KEYWORDS" content="sed,stream editor,Unix,Linux,DOS,Windows,GNU,FAQ">
+<META name="DESCRIPTION" content="Frequently Asked Questions about sed">
+<STYLE type="text/css"><!--
+  BODY   { margin: 15px 25px; background-color:white; }
+  H2     { margin-top:0px;  margin-bottom:0px;
+           padding-top:0px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+
+  H2.t1  { margin-top:6px;  margin-bottom:0px;
+           padding-top:6px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+  H3.t2  { margin:1px; padding:0px; text-indent:2em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t3  { margin:1px; padding:0px; text-indent:3em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t4  { margin:1px; padding:0px; text-indent:4em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H4     { background-color:#D7EDFD; }
+  H5     { padding-bottom:0px; margin-bottom:0px; font-size:110%; }
+
+ .cent   { text-align:center; }
+ .dkblue { color:#333399; background-color:white; }
+ .sed    { margin-left:4em; margin-right:4em;
+           margin-top:4px;  margin-bottom:4px;
+           padding-top:3px; padding-bottom:3px;
+           border:1px;      border-style:solid;   border-color:#006600;
+           color:#3B3B3B;   background-color:#E9E9E9;
+           font-family: "Courier New", Courier, monospace;
+           white-space:pre;
+         }
+ .red    { color:#CC0000; background-color:#FFCCCC; }
+ .ver    { font-family: Verdana, Arial, Helvetica, sans-serif; font-size:10pt; }
+ a.t:link     { text-decoration:none; }
+ a.t:visited  { text-decoration:none; }
+ a.t:hover    { text-decoration:underline; }
+ a.t:active   { text-decoration:none; }
+--></STYLE>
+</HEAD>
+<BODY>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is  Section 1 of the sed FAQ.<br>
+Go forward to <a href="sedfaq2.html">Section 2</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+
+<H2>1. GENERAL INFORMATION</H2>
+
+<A NAME="s1.1"></A><H3>1.1. Introduction - How this FAQ is organized</H3>
+
+<p ID='thr3'>This FAQ is organized to answer common (and some uncommon)
+   questions about sed, quickly. If you see a term or abbreviation in
+   the examples that seems unclear, see if the term is defined in
+   <a href="sedfaq1.html#s1.5">section 1.5</a>. If not, send your comment to pemente[at]northpark.edu.
+</p>
+<A NAME="s1.2"></A><H3>1.2. Latest version of the sed FAQ</H3>
+
+<p ID='thr3'>The newest version of the sed FAQ is usually here:
+</p>
+<PRE>
+       <A href="http://sed.sourceforge.net/sedfaq.html">http://sed.sourceforge.net/sedfaq.html</A> (HTML version)
+       <A href="http://sed.sourceforge.net/sedfaq.txt">http://sed.sourceforge.net/sedfaq.txt</A>  (plain text)
+       <A href="http://www.student.northpark.edu/pemente/sed/sedfaq.html">http://www.student.northpark.edu/pemente/sed/sedfaq.html</A>
+       <A href="http://www.student.northpark.edu/pemente/sed/sedfaq.txt">http://www.student.northpark.edu/pemente/sed/sedfaq.txt</A>
+       <A href="http://www.faqs.org/faqs/editor-faq/sed">http://www.faqs.org/faqs/editor-faq/sed</A>
+       <A href="ftp://rtfm.mit.edu/pub/faqs/editor-faq/sed">ftp://rtfm.mit.edu/pub/faqs/editor-faq/sed</A>
+</PRE>
+
+<p ID='thr3'>Another FAQ file on sed by a different author can be found here:
+</p>
+<PRE>
+       <A href="http://www.dreamwvr.com/sed-info/sed-faq.html">http://www.dreamwvr.com/sed-info/sed-faq.html</A>
+</PRE>
+
+<A NAME="s1.3"></A><H3>1.3. FAQ revision information</H3>
+
+<p ID='thr3'>In the plaintext version, changes are shown by a vertical bar (|)
+   placed in column 78 of the affected lines. To remove the vertical
+   bars (use double quotes for MS-DOS):
+</p>
+<PRE class='sed'>
+     sed 's/  *|$//' sedfaq.txt &gt; sedfaq2.txt
+</PRE>
+
+<p ID='thr3'>In the HTML version, vertical bars do not appear. New or altered
+   portions of the FAQ are indicated by printing in dark blue type.
+</p>
+<p ID='thr3'>In the text version, words needing emphasis may be surrounded by
+   the underscore '_' or the asterisk '*'. In the HTML version, these
+   are changed to italics and boldface, respectively.
+</p>
+<A NAME="s1.4"></A><H3>1.4. How do I add a question/answer to the sed FAQ?</H3>
+
+<p ID='thr3'>Word your question briefly and send it to pemente[at]northpark.edu,
+   indicating your proposed change. We'll post it on the sed-users
+   mailing list (see <a href="sedfaq2.html#s2.3.2">section 2.3.2</a>) and discuss it there. If it's
+   good, your contribution will be added to the next edition.
+</p>
+<A NAME="s1.5"></A><H3>1.5. FAQ abbreviations</H3>
+
+<PRE>
+       files = one or more filenames, separated by whitespace
+       gsed  = GNU sed
+       ssed  = super-sed
+       RE    = Regular Expressions supported by sed
+       LHS   = the left-hand side ("find" part) of "s/find/repl/" command
+       RHS   = the right-hand side ("replace" part) of "s/find/repl/" cmd
+       nn+   = version <i>nn</i> or higher (e.g., "15+" = version 1.5 and above)
+</PRE>
+
+<p ID='thr3'>files: "files" stands for one or more filenames entered on the
+   command line. The names may include any wildcards your shell
+   understands (such as ``zork*'' or ``Aug[4-9].let''). Sed will
+   process each filename passed to it by the shell.
+</p>
+<p ID='thr3'>RE: For details on regular expressions, see <a href="sedfaq3.html#s3.1.1">section 3.1.1</a>., below.
+</p>
+<A NAME="s1.6"></A><H3>1.6. Credits and acknowledgements</H3>
+
+<p ID='thr3'>Many of the ideas for this FAQ were taken from the Awk FAQ:
+</p>
+<PRE>
+       <A href="http://www.faqs.org/faqs/computer-lang/awk/faq/">http://www.faqs.org/faqs/computer-lang/awk/faq/</A>
+       <A href="ftp://rtfm.mit.edu/pub/usenet/comp.lang.awk/faq">ftp://rtfm.mit.edu/pub/usenet/comp.lang.awk/faq</A>
+</PRE>
+
+<p ID='thr3'>and from the old Perl FAQ:
+</p>
+<PRE>
+       <A href="http://www.perl.com/doc/FAQs/FAQ/oldfaq-html/index.html">http://www.perl.com/doc/FAQs/FAQ/oldfaq-html/index.html</A>
+</PRE>
+
+<p ID='thr3'>The following individuals have contributed significantly to this
+   document, and have provided input and wording suggestions for
+   questions, answers, and script examples. Credit goes to these
+   contributors (in alphabetical order by last name):
+</p>
+<p ID='thr3'>Al Aab, Yiorgos Adamopoulos, Paolo Bonzini, Walter Briscoe, Jim
+   Dennis, Carlos Duarte, Otavio Exel, Sven Guckes, Aurelio Jargas,
+   Mark Katz, Toby Kelsey, Eric Pement, Greg Pfeiffer, Ken Pizzini,
+   Niall Smart, Simon Taylor, Peter Tillier, Greg Ubben, Laurent
+   Vogel.
+</p>
+<A NAME="s1.7"></A><H3>1.7. Standard disclaimers</H3>
+
+<p ID='thr3'>While a serious attempt has been made to ensure the accuracy of the
+   information presented herein, the contributors and maintainers of
+   this document do not claim the absence of errors and make no
+   warranties on the information provided. If you notice any mistakes,
+   please let us know so we can fix it.
+</p>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is the end of Section 1 of the sed FAQ.<br>
+Go forward to <a href="sedfaq2.html">Section 2</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+</BODY></HTML>
+</BODY></HTML>

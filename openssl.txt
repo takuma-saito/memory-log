@@ -1,6 +1,12 @@
 openssl の使い方・暗号化について
 ============================
 
+メモ
+----
+# 公開鍵証明書の情報表示
+$ openssl x509 -in server.crt -text | less
+
+
 クライアント認証 - CAの構築方法
 ----------------------------
 
@@ -198,6 +204,44 @@ openssl に関する逆引きリスト
     * CA証明書のみを取り出す:`openssl pkcs12 -cacerts -in pkcs12形式のファイル -nokeys -out CA署名書`
     * CA証明書を除いたユーザー証明書・秘密鍵を取り出す:`openssl pkcs12 -clcerts -in pkcs12形式のファイル -out ファイルの名前`
 
+* CA 証明書で公開鍵を確認する
+    `openssl verify -CAfile inter.cert server.cert`
+
+* web サイトの証明書を確認したい時。
+    
+Linux の場合は以下。証明書は通常 `/etc/ssl/certs` に入っている。
+    
+    // 証明書を自分のディレクトリにコピー
+    $ cp -r /etc/ssl/certs ~/.certs
+    
+    // rehash する
+    $ c_rehash ~/.certs
+    
+    // return 1 を返却すれば認証成功
+    $ openssl s_client -CApath ~/.certs -crlf -quiet -connect server.com:443
+    ...
+    verify return:1
+
+Mac の場合、証明書はキーチェーンアクセスを通じて取得する。
+キーチェーンアクセス > システムルート
+で全ての証明書を選択し、ファイル > 書き出す > pem 形式、で証明書の書き出しを行う。
+
+    $ openssl s_client -CAfile ~/cafiles.pem -crlf -quiet -connect server.com:443
+
+Web サイトの証明書ではなく、pem 形式でローカルファイルに保存されている証明書を確認する場合は以下
+
+    $ openssl verify -CApath ~/.certs localfile.cert
+
+* 自己署名を行う
+
+自己署名とは認証局の鍵とプライベート鍵が同一な場合を指す。
+自己署名はテストなどで利用するとよい。
+
+     // private 鍵を生成する
+     $ openssl genrsa 2048 > server.key
+     
+     // 電子署名付き公開鍵を作成する
+     $ openssl req -new -x509 -days 3650 -key server.key -out server.crt
 
 
 参考サイト

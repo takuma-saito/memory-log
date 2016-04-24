@@ -1,11 +1,17 @@
 unbound の使い方入門
 ============================
 
+# 上手くいかない時の確認
+$ sudo unbound-control dump_cache
+
+# rrset-cache-size, msg-cache-size の値を適切に設定する
+
 unbound とは
 ----------------------------
 高性能なDNSキャッシュサーバー。
-特にローカルキャッシュとして利用するとよい。
-
+特に DNS のローカルキャッシュとして利用を想定している.
+DNSSEC などの機能も利用できる.
+DNS コンテンツサーバーも利用したい場合は nsd も含めてインストールしよう.
 
 unbound のインストール方法・設定
 ----------------------------
@@ -17,10 +23,104 @@ unbound のインストール方法・設定
 
     $ sudo mv /opt/local/etc/unbound/unbound.conf.{sample,}
 
+unbound の設定チェックを行う
 
-unboundの各コマンドの使い方・運用方法
-----------------------------
+    $ sudo unbound-checkconf
 
+起動は以下で行う.
+
+    $ unbound -d -c /opt/local/etc/unbound/unbound.conf 
+
+### forward zone 設定 ###
+
+forward-zone: の中にフォワードするドメインとネームサーバーのアドレスを入力する.
+*DNS キャッシュサーバーのアドレスを入れること*, DNS コンテンツサーバーを指定したい場合は stub-zone を利用する.
+name: にフォワードするドメイン名, forwad-addr: に名前を問い合わせるネームサーバーを記入する.
+（name, forward-addr は複数指定できる.）
+
+    forward-zone:
+       name: "."
+       forward-addr: 202.248.0.xx
+
+name に "." を入れると全ての問い合わせを forward-addr に問い合わせる.
+通常はプロバイダから指定された DNS アドレスを記入すればよい.
+
+### stub zone 設定 ###
+stub-zone: の中に問い合わせるコンテンツサーバーのアドレスを入れる.
+また、コンテンツサーバーに localhost のアドレスを指定する場合には 
+do-not-query-localhost の指定を no にしなければならないので注意すること.
+
+    server: 
+      do-not-query-localhost: no
+    
+    stub-zone:
+      name: "example.com"
+      stub-addr: 127.0.0.1@10053
+
+stub-addr には NSD などのコンテンツサーバーを指定する.
+キャッシュサーバーを指定したい場合には forward-zone を利用しなければならない.
+
+### unbound control ###
+
+unbound-control で unbound の状態を調べることができる.
+まず, セットアップを行う.
+
+    $ sudo unbound-control-setup 
+    setup in directory /opt/local/etc/unbound
+    generating unbound_server.key
+    Generating RSA private key, 1536 bit long modulus
+    .................++++
+    ..++++
+    e is 65537 (0x10001)
+    generating unbound_control.key
+    Generating RSA private key, 1536 bit long modulus
+    ............++++
+    ............++++
+    e is 65537 (0x10001)
+    create unbound_server.pem (self signed certificate)
+    create unbound_control.pem (signed client certificate)
+    Signature ok
+    subject=/CN=unbound-control
+    Getting CA Private Key
+    Setup success. Certificates created. Enable in unbound.conf file to use
+
+    $ ls /opt/local/etc/unbound/
+    unbound.conf  unbound_control.key  unbound_control.pem  unbound_server.key  unbound_server.pem
+
+その後再起動を行うと, unbound-control が利用できるようになっている.
+
+    $ sudo unbound-control status
+    version: 1.4.18
+    verbosity: 1
+    threads: 1
+    modules: 2 [ validator iterator ]
+    uptime: 12 seconds
+    unbound (pid 2650) is running...
+
+unbound-control で利用できるコマンドは以下.
+
+* `unbound-control start`: サーバーを起動させる
+* `unbound-control stop`: サーバーを停止させる
+* `unbound-control reload`: サーバーをリロードする
+* `unbound-control status`: サーバーの状態を表示する
+* `unbound-control stats`: サーバーの統計を表示する
+* `unbound-control dump_cache`: キャッシュに読み込まれているデータを出力する
+* `unbound-control dump_infra`: インフラキャッシュの内容を表示する
+* `unbound-control lookup <name>`: キャッシュに読み込まれているドメイン名を検索する
+
+### unbound 最適化 ###
+
+* `num-threads`: スレッド数の設定
+   最適化: システムのコア数と同じにする
+* `*-slabs`: msg-cache-slab, key-cache-slab ...etc キャッシュ内のスラブ数
+   最適化: num-threads の 2 乗に設定する
+* `msg-cache-size`: メッセージキャッシュサイズ
+* `rrset-cache-size`: RRset のキャッシュサイズ
+   最適化: rrset-cache-size は msg-cache-size の2倍に設定する
+   ※ 総メモリ使用量は総キャッシュメモリ量の 2 〜 2.5 倍消費する
+* `so-rcvbuf, so-sndbuf`: 送信, 受信バッファサイズ 4m を指定する
+
+### プライベートアドレスの名前検索 ###
 
 
 参考サイト

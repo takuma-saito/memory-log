@@ -1,0 +1,28 @@
+プログラミングに関するおもしろい話
+============================
+
+* ジョークRFC:
+    http://www.imasy.or.jp/~yotti/rfc-joke.html
+
+* hoge を考える会:
+    http://kmaebashi.com/programmer/hoge.html
+
+* telnet でスターウォーズ:
+    `telnet towel.blinkenlights.nl`
+
+* 正確な見積が不可能なこと
+    http://www.aoky.net/articles/leon_bambrick/littlefishes.htm
+    
+* fortran が好きだ
+    http://www.technopolitan.jp/etc/i_love_fortran.html
+
+* 海外のプログラマーの日本語訳
+    http://www.aoky.net/
+
+* 平和で適当なかわし方
+  Lisp: http://cielquis.net/religion/result/c3a8e22ec8af82b9812248d1c0d28ef67cbed87a.html
+  vim: http://cielquis.net/religion/results/aa3b5e0121511c08bca4f7c5f79b314275a91a40.html
+  Haskell: http://cielquis.net/religion/results/2cf68ea14896ef51940cdc3dbfe96ed5a1084ccd.html
+
+* プログラミング言語人気TOP10の簡易解説
+   http://www.mwsoft.jp/column/program_top10.html

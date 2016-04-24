@@ -125,8 +125,23 @@ CSVデータから対応する特定のデータのアップデートを行う
     mysql > DROP TEMPORARY TABLE your_temp_table;
     
 
+逆引き
+------
 
-その他
+* socket へのパスを取得する: `mysqladmin version`
+* テーブルのスキーマのみダンプ: `SHOW CREATE TABLE tablename`
+* テーブルのスキーマ表示: `DESC tablename`
+* テーブルのスキーマのみ抽出(cli）: `mysqldump -d dbname tablename1 tablename2 ...`
+* テーブルの insert 文のみ抽出(cli): `mysqldump -t dbname tablename1 tablename2 ...`
+* UPDATE 文でループを回す:
+
+    mysql > UPDATE threads AS `r`, 
+              (SELECT * FROM threads) AS `l` 
+            SET  r.updated = r.created 
+            WHERE l.id = l.id;
+
+
+メモ
 ----------------------------
 
 ### mysqlのパスワード・ユーザーを省略する ###
@@ -145,5 +160,22 @@ mysqlのターミナルに入れるようになる。
     [mysql]
     prompt='[\\c] \\u:\\d > '
     show-warnings
+
+### エラー ###
+
+*1: Cannot proceed because system tables used by Event Scheduler were found damaged at server start*
+というエラーが発生する場合。
+mysql のスキーマが壊れているので、それを下記のコマンドで修正すればよい。
+
+    $ mysql_upgrade -u username -ppassword
+
+### hacking ###
+
+* 出力: SELECT * FROM files INTO OUTFILE '/tmp/hoge.txt';
+* ファイル入力: LOAD DATA INFILE '/tmp/hoge1.txt' INTO TABLE files LINES TERMINATED BY '\n\r';
+* カラムを明示的に指定する場合: LOAD DATA INFILE '/tmp/hoge1.txt' INTO TABLE files LINES TERMINATED BY '\n\r' (@text) SET text=@text;
+* ホスト名: SELECT @@hostname
+* バージョン名: SELECT @@version
+
 
 

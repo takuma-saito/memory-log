@@ -1,0 +1,279 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link href="http://campus.northpark.edu/dev-sem/main.css" rel="stylesheet" type="text/css">
+<style type="text/css">
+<!--
+BODY   { margin: 20px; }
+DT     { font-family: "Courier New", Terminal, System, monospace;
+         font-style:normal; color: black;}
+VAR    { font-family: "Courier New", Terminal, System, monospace;
+         font-style:normal; color: blue; }
+
+VAR#DD { font-family: "Courier New", Terminal, System, monospace;
+         font-style:normal; color: blue; }
+
+VAR#GN { font-family: "Courier New", Terminal, System, monospace;
+         font-style:normal; color: darkblue; }
+
+SPAN   { color: blue; }
+-->
+</style>
+<script type="text/javascript" language="JavaScript">
+<!--
+ var mtr = "MiniTrue is a term used in the book '1984' by George Orwell. MiniTrue is short for the 'Ministry of Truth', which was always changing and revising its own documents and historical records."
+// -->
+</script>
+<title>MiniTrue</title>
+</head>
+
+<body>
+<h1>MiniTrue<br>
+<span style="font-size:75%">A file-view, file-search, and find/replace utility</span></h1>
+<div class=IB>
+
+<p>MiniTrue is an overlooked search/replace utility, available for both
+MS-DOS and Linux. The DOS versions come in 16-bit (mt.exe) and 32-bit (mtr.exe)
+varieties. MiniTrue (mtr) was written by Andrew Pipkin and is free
+software, distributed with the source code under the GNU General Public
+License. Yes, it has a weird <a href="javascript:alert(mtr)">name</a>.
+From my experience with Win32 systems,
+MiniTrue works best under Windows 9x and sorta half-way under Winows 2000.
+I have used it to change thousands of web files on a Win2K box, so it <i>is</i>
+a usable piece of software. I have not tested it on WinXP or WinME at all.
+You can download precompiled binaries (executables) and the source code here:</p>
+
+<blockquote>
+<p><a href="http://www.idiotsdelight.net/minitrue/">http://www.idiotsdelight.net/minitrue/</a></p>
+</blockquote>
+
+<p>The following comments refer to MiniTrue v2.0.2 (Alpha #3), which is
+the latest release version available.</p>
+
+<h2>Three Basic Uses of MiniTrue (mtr)</h2>
+<ol>
+  <li> <b>Find-and-replace in files (like "sed")</b>
+    <ul type="square">
+	  <li> Defaults to prompted mode: highlight each match in context, query for replace</li>
+	  <li> Defaults: regular expressions ON, case-insensitive, make numbered backup files</li>
+	  <li> Option: directory recursion, traversing the directory tree to find matches
+	  <li> Options: whole-word and case-sensitive matching, automatic replacements</li>
+	  <li> Options: statistics, log files, replacement scripts, binary input, more</li>
+	</ul>
+  </li>
+  <li> <b>View file contents in pager (like "less")</b>
+    <ul type="square">
+	  <li> Defaults: regular expressions ON, case-insensitive matching</li>
+	  <li> Matched expressions are highlighted, toggle ASCII/hex mode</li>
+	  <li> Page forward, backward across the file; embedded help file</li>
+	  <li> Options: control video mode, control placement of match on screen, expand tabs</li>
+	  <li> Options: search inside .ZIP files, accept list of filenames, boolean proximity</li>
+	</ul>
+  </li>
+  <li> <b>Send matching lines to console (like "grep")</b>
+    <ul type="square">
+	  <li> Defaults: regular expressions ON, case-insensitive matching</li>
+	  <li> Options: list of search terms, list of filenames, whole-word searching, inverse match</li>
+	  <li> Options: number lines, list filenames but not matches, omit all context, more</li>
+	</ul>
+  </li>
+</ol>
+
+<h2>General syntax</h2>
+<DL>
+
+<DT>mtr <var>-swit file1 file2...</var> - <var>find = replace</var>&nbsp;&nbsp;# find-and-replace in pager</DT>
+<DT>mtr -no+ <var>file1 file2...</var> - "<var>find</var>" = "<var>repl</var>"&nbsp;&nbsp;# automatic replace like sed</DT>
+
+<DD><p>Display <var ID="DD">file1</var>,
+highlighting the <var ID="DD">find</var> term if it exists, and
+prompt the user to replace here or skip to the next match. A backup file is made by
+default. After the first file is processed, proceed to <var ID="DD">file2</var> and so on.
+<b>One hyphen</b> separates the files from the <var ID="DD">find</var> strings.
+Option switches are indicated by <var ID="DD"><nobr>-swit</nobr></var>.</p>
+
+<p><code>-n</code> means "replace automatically" (no prompting)<br>
+<code>-o</code> sends the changed lines to <i>stdout</i> instead of to the pager.<br>
+<code>-o+</code> sends both the changed and the unchanged lines to <i>stdout</i>, just like sed.</p></DD>
+
+<DT>mtr <var>file1 file2...</var> - <var>find</var>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# view files in pager</DT>
+<DT>mtr -o <var>file1 file2...</var> - "<var>regex</var>"&nbsp;&nbsp;&nbsp;# view lines like grep</DT>
+
+<DD><p>Display <var ID="DD">file1</var>,
+highlighting the <var ID="DD">find</var> term if it exists.
+At the end of <var ID="DD">file1</var>, proceed to display <var ID="DD">file2</var> and so on. No backup
+file is created, since the files are not altered. Use "double quotes" if the search term contains
+angle brackets, pipes <code>(|)</code>, or spaces.</p>
+</DD>
+
+<DT>mtr <var>-swit find</var> [<var>= replace</var>] -- <var>file1 file2...</var>
+<DD><p>Alternate syntax. Note that
+<b>two hyphens</b> allow the user to put
+the <var ID="DD">find</var> or <var ID="DD">find = replace</var> pattern before
+the list of files. For a list of all options, go <a href="minitrue.txt">here</a>.</p></DD>
+</DL>
+
+<h2>Defaults</h2>
+<UL>
+  <li>Case-insensitive matching (use <var id=GN>-c-</var> to disable)
+  <li>Regexes automatically enabled (use <var id=GN>-x-</var> to disable)
+  <li>Numbered backup files turned ON (use <var id=GN>-b-</var> to disable)
+</UL>
+
+<h2>Real examples I've used at work</h2>
+<div style="margin: 1px 20px;">
+<DL>
+  <DT>mtr -ro# f:\dev-sem\* - "home\.html"</DT>
+	<DD><p><span>I need to find out how often and where</span> <kbd>home.html</kbd> <span>occurs in my files</span><br>
+	Recurse through subdirectories (-r)<br>
+    Send results to stdout, not to viewer (-o), add line numbers (-o#)<br>
+    This command is identical to:&nbsp;&nbsp; <kbd>grep -inr "home\.html" *</kbd></p></DD>
+	<hr>
+
+	<DT>mtr -nr *.ht* - "home\.html" = "news.html"</DT>
+	<DD><p><span>After checking first, I do the replacement</span><br>
+	No prompting, replace automatically (-n)<br>
+	Recurse through subdirectories (-r).<br>
+	Numbered backups always created (<code>info~1.ht1, main~1.ht1 ...</code>)
+	on find/replace (yes, I lose the LFN on backup files)</p></DD>
+	<hr>
+
+  <DT>mtr -x- -kn -b:..BAK t*.html - ".../" = "../../" </DT>
+	<DD><p><span>Some joker used three periods</span> <kbd>.../</kbd>
+	<span>to navigate up two levels, so I gotta fix it.</span><br>
+	Turn off regex expansion (-x-)<br>
+	Keep a list of hits and results (-k)<br>
+	No prompting, replace automatically (-n)<br>
+	Backup file has <code>.BAK</code> replace original filetype (-b)<br>
+  <br>
+	<UL>
+	 <LI>Numbered back-up files are created by default; originals will keep LFN
+	 <LI>Backup files usually change to short filenames running on Win32, <kbd>docum~1.ht2</kbd>
+	 <LI><var id=GN>-b:BAK</var> appends <kbd>.BAK</kbd> to the filename
+	 <LI><var id=GN>-b:..BAK</var> replaces the original extension with <kbd>.BAK</kbd>
+	 <LI><var id=GN>-b+:NEW</var> sends the altered version to the newfile extension
+	 <LI><var id=GN>-b-</var> disables the creation of backup files
+  </UL></p></DD>
+  <hr>
+
+	<DT>mtr -wc+ myfile - "Adolph" = "Adolf"
+	<DD><p><span>Somebody misspelled Adolf's name. Fix it, even if it's capitalized.</span><br>
+	Whole word match (-w)<br>
+	Correspond case throughout whole word (-c+), so<br>
+	&nbsp;&nbsp;&nbsp; <kbd>adolph --> adolf</kbd>, <kbd>Adolph --> Adolf</kbd>,
+	&nbsp;and&nbsp; <kbd>ADOLPH --> ADOLF</kbd>.<br>
+	Or, correspond case only on first letter (-c~), so<br>
+	&nbsp;&nbsp;&nbsp; <kbd>adolph -->adolf</kbd>, <kbd>Adolph --> Adolf</kbd>,
+	&nbsp;but&nbsp; <kbd>ADOLPH --> Adolf</kbd> (This isn't one I use much)</p></DD>
+	<hr>
+
+	<DT>mtr -i:script.txt -@:FILELIST</DT>
+	<DD><p><span>I have a script file (</span><kbd>script.txt</kbd><span>) for my changes,
+	plus a list of files to alter in</span> <kbd>FILELIST</kbd><br>
+	Get find/replace strings from input file <code>script.txt</code> (-i).<br>
+	If the script file is omitted, get find/replace pairs from console.<br>
+	Use <code>FILELIST</code> to get names of files to process (-@).<br>
+	If the filelist is omitted, get list of names from console.</p></DD>
+	<hr>
+
+	<DT>mtr -ko -i:STRINGS string --</DT>
+	<DD><p>Keep a list of hits and search data (-k)<br>
+	Send results to console, not to viewer (-o)<br>
+	Use input list of <code>STRINGS</code> to find or replace</p></DD>
+</DL>
+</div>
+<br>
+<br>
+
+</div>
+<h2>Annoyances and Workarounds with MiniTrue</h2>
+<p>Though MiniTrue is a great program, it has aggravating misbehaviors under Windows 2000,
+which is what I use at work. Fortunately, those misbehaviors are predictable, and there
+are workarounds.</p>
+
+<h4>1. It doesn't handle wildcards appended to Long File Names</h4>
+
+<p>This means that if you type a command like:</p>
+
+<pre>
+       mtr SomeValidLongname*.htm - only = merely
+</pre>
+
+<p>which ought to expand normally under Windows 9x or Windows 2000
+(assuming those files exist), nothing will happen at all. To properly
+handle the files, you must use 8.3 filename conventions, like so:</p>
+
+<pre>
+     mtr Some*.htm - only = merely
+     mtr some* - only = merely
+</pre>
+
+<p>Then, <tt>SomeValidLongname01.htm, SomeValidLongname02.htm,</tt> and
+<tt>SomeValidLongname03.htm</tt> will all be matched and changed. The new
+files will receive the long filename, but the backup files be renamed to
+an 8.3 format (See point #3 below).</p>
+
+<h4>2. It doesn't handle keyboard input properly under Windows 2000</h4>
+
+<p>With <b>mtr</b>, the 32-bit version of MiniTrue,
+you will get a flashing cursor on the next line, but nothing else. (This bug appears
+in Windows 2000, but not in Windows 98). You may think that MiniTrue is hung up, but
+the workaround is to press the command key followed by the ENTER key.  If viewing the
+help menus, you must press the movement key twice (i.e., instead of pressing <b><kbd>space</kbd></b>
+to page down, press <b><kbd>space-space</kbd></b>. Instead of pressing <b><kbd>b</kbd></b> to move
+backwards a page, press <b><kbd>bb</kbd></b>). Sometimes you have to press a command key followed
+by the ENTER key. This behavior is somehow related to how Win2K handles the console,
+which is not the same as how Win9x handles the console. (Maybe the author can
+borrow some code from the Windows version of <i>less</i> or something.)</p>
+
+<p>The simplest fix for this problem was sent to me by another user. Just use
+<b>mt</b>, the 16-bit version of MiniTrue, instead. He reports that the
+16-bit version will not handle as many files as the 32-bit version (I don't
+know, since I haven't tested it myself), but I can confirm that on a Win2000
+system, the 16-bit version <b>does</b> handle keyboard input properly.</p>
+
+<h4>3. It munges Windows long filenames on backup copies</h4>
+
+<p><i>The following is not complete, but since it may be a long time before
+I have time to finish it, I thought it best to post what I have in its
+provisional form.</i></p>
+
+<p>The worst thing about MiniTrue is that if you tell it to fix a bunch of files
+on a system that uses long filenames, the <b>new</b> file still keeps the long filename
+all right (such as <code>stewardship.html</code>),
+but the <b>backup</b> (original) file often gets changed to an 8.3 name like
+<code>stewar~1.ht1</code>. So as long as your replacements are perfect, you have nothing
+to worry about.</p>
+
+<p>But if you should make a mistake and want to revert to your original filenames,
+you may find yourself in trouble. This happened to me once, after changing several
+hundred files with long filenames. I accidentally changed hundreds of <code>*.html</code>
+files with an untested pattern. I had guessed wrong. The new/changed files had the
+right long filenames, but the changes were in the wrong place.</p>
+
+<P>I don't remember exactly what I did to recover from that disaster, but it was recoverable.
+I think that none of the short filenames used <code>~2</code> or <code>~3</code>, so
+I could rely on the fact that the first 6 characters of the "bad" files and the "good"
+files were always the same, and then I did a "for..in..do" loop involving file
+renaming and substring matching.</p>
+
+<p>The lesson here is to use short (8.3) filenames as much as possible, if you can.
+If you must change a group of files, before you use the <code>-n</code> (no promping) switch,
+use the selective-preview mode (the default mode for MiniTrue) on a few files, and
+then when you are sure the replacements are what you expect, you can invoke MiniTrue
+with the <code>-n</code> switch on the rest.</p>
+
+<p>I think there is a work-around that will preserve long filenames in the backup files
+that MiniTrue creates, but I don't recall what it is. If someone else finds out, let
+me know. Thanks.</p>
+<hr>
+<!-- Last Updated Script -->
+<p class="xs">Last updated:
+Dec. 3, 2003
+</p>
+<!-- End Updated Script -->
+<p class="xs">E-mail your comments or corrections to:
+<a href="mailto:pemente@northpark.edu?subject=minitrue_page">Eric Pement</a>
+</p>
+</body>
+</html>

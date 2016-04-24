@@ -3,7 +3,8 @@ Open VPN 構築
 
 openVPN とは
 ----------------------------
-openVPNとは...（後で書く）
+Linux でも Mac OSX でも tun/tap 用のドライバをインストールする必要がある。
+Mac OS X 用の TUN/TAP ドライバは下記からダウンロードできる。 `http://tuntaposx.sourceforge.net/`
 
 
 事前共有鍵を用いたopen VPN の構築方法
@@ -510,7 +511,6 @@ MAC用のtuntap ドライバーをインストールする。
     $ sudo launchctl load -w /Library/LaunchDaemons/org.macports.tuntaposx.plist 
 
 * Windowsの場合: [OpenVPN GUI](http://openvpn.se/)
-
 
 
 参考サイト

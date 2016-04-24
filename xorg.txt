@@ -1,0 +1,404 @@
+X Window の設定
+============================
+
+X Window の設定, 以下は基本的に Arch Linux 環境での設定方法.
+
+開発環境の作り方
+----------------------------
+
+1. Arch Linux の最新 ISO を取得
+2. 最新版の Arch Linux を CD ブート または ネットワークブート
+  2-1.  キーバインドの変更: `loadkeys jp106`
+  2-2.  ネットワークの設定: `dhcpcd, ping`
+  2-3.  パーティション・ファイルシステムの作成: `parted, lvm, fdisk, mkfs`, この時 swap 領域を忘れないように!
+  2-4.  ファイル・システムのマウント: `mount`
+  2-5.  pacstrap 用のミラー選択: `rankmirrors`
+  2-6.  パッケージのインストール: `pacstrap`
+  2-7.  fstab, bootloader の設定: `grub, genfstab`
+  2-8.  新規システムに移行: `arch-chroot`
+  2-9.  必要なパッケージをダウンロード: `pacman, emacs, iproute2`
+  2-10. HostName, Locale, Timezon をそれぞれ設定する: `locale, hostname, vconsole`
+  2-11. initramfs 作成, grub インストール: `mkinitcpio, grub-install, grub-mkconfig`
+  2-12. ルートユーザーのパスワード作成: `passwd`
+  2-13. swap の有効化: `swapon, fstab`
+3. インストール完了後の初期セットアップ
+  3-1. ホスト名, ネットワークのセットアップ: `proxy, hostnamectl, systemctl enable dhcp@eth0`
+  3-2. 新規ユーザーの追加: `adduser`
+  3-3. yaourt のインストール: (archlinuxfr, http://repo.archlinux.fr/$arch)
+  3-4. 開発環境の設定: (zsh, tmux, emacs)
+  3-5. ビープ音を消す
+  3-6. windows をインストールしている場合は, windows のブートプログラムを grub に書く
+  3-7. proxy で接続している場合は proxy 越しの ssh 設定
+  3-8. ビープ音を消す
+4. GUI システムへの移行
+  4-1. xorg の基本パッケージインストール: `xorg, xf86-video, xorg-twm, xorg-xclock, xterm`
+  4-2. gnome 関連のパッケージをインストール: `gnome, gdm, gpointing-device-settings`
+  4-3. ホームに .xinitrc を作り, GUI 環境を立ち上げる: `exec gnome-session`
+  4-4. ホームディレクトリを日本語から英語に変更
+  4-5. キーボードレイアウトの変更: `gnome-cntrol-center`
+  4-6. 日本語環境の設定 (ibus-anthy のセットアップ)
+    4-6-1. パッケージのインストール: `ibus, ibus-qt, ibus-anthy`
+    4-6-2. .xinitrc, .xprofile に環境変数の追加
+    4-6-3. `/usr/bin/ibus-deamon -drx` を GUI ログイン時に自動起動の設定
+    4-6-4. ibus のショートカット, 自動変換の変更: `ibus-setup`, 
+      キー割り当ての on_off は Henkan, Muhenkan, Zenkaku_Hankaku に設定する
+    4-6-5. qt のデフォルト入力メソッドを ibus に変更
+    4-6-6. フォントをインストール: `ttf-mplus-ipa, ttf-sazanami`, [ricty](https://github.com/yascentur/Ricty)
+  4-7. グラフィカルログインを有効にする: `systemctl enable gdm`
+  4-8. gdm3setup, X Window のアクセスリストの gdm を追加: `gdm3setup, xhost +SI:localuser:gdm`
+  4-9. ログオフを常に表示させる: `gsettings set org.gnome.shell always-show-log-out true`
+  4-10. 必要なアプリケーションのインストール, 設定（端末・ブラウザ・フラッシュプラグイン）: `guake, flashplugin, firefox`
+    4-10-1. Firefox にプラグインを入れる
+       * vimperator
+       * Tab Mix Plus
+       * ツリー型タブ
+       * Download Status Bar
+       * Youtebe MP3 Converter
+    4-10-2. Ctrl - T を新規タブで開けるようにする: about:config -> browser.search.openintab -> true
+    4-10-3. flashplugin をインストールする: `pacman -S flashplugin`
+  4-11. gnome window のショートカットキーの変更: システム -> 設定 -> キーボードショートカット -> ナビゲーション
+
+X Window 設定
+----------------------------
+
+### 基本設定 ###
+X の基本パッケージをインストール
+
+    $ sudo pacman -S xorg-server xorg-xinit xorg-server-utils
+
+ビデオドライバをインストール
+まずはどのビデオドライバーを使っているか調べる.
+
+    $ lspci | grep VGA
+
+インテル製の場合、下記のドライバをインストール
+
+    $ pacman -S xf86-video-intel xf86-video-vesa mesa
+
+1366x768 の intel VGA を使っている場合は解像度を変更する
+
+    $  pacman -S xf86-video-intel
+    $ emacs /etc/X11/xorg.conf
+    # driver を vesa から intel に変更する
+
+タッチパッド用のドライバをインストール
+
+    $ pacman -S xf86-input-synaptics
+    
+window manager のインストール。awesome を使う
+
+    $ pacman -S awesome rlwrap
+
+~/.xinitrc に以下を追記
+
+    $ cp /etc/skel/.xinitrc ~/.xinitrc 
+    $ echo "exec awesome" >> ~/.xinitrc
+    $ chmod +x ~/.xinitrc
+
+xorg.conf を生成する
+
+    $ Xorg :0 -configure
+
+### キーボード設定 ###
+
+日本語キーボードの設定。
+新しく `/etc/X11/xorg.conf.d/30-keyboard.conf` に以下の内容を入れる
+
+    Section "InputClass"
+        Identifier             "Keyboard Defaults"
+        MatchIsKeyboard        "yes"
+        Option                 "XkbLayout" "jp"
+        Option                 "XkbModel" "jp106"
+    EndSection
+
+再起動し、以下のコマンドで正しく設定が確認できれば OK
+
+    $ localectl
+
+setxkbmap で変更する場合は `~/.xinitrc` に以下のように記述する
+
+    $ setxkbmap -rules evdev -model jp106 -layout jp
+
+次に、Escape Key, や Controle Key などのキーコードを調べる。
+
+    $ showkey
+
+xmodmap にて Escape key を Contorl key に, Insert key を無効にする。
+
+    $ emacs .xmodmap
+    ! change Caps_Lock to Control
+    keycode 66 = Control_L
+    clear Lock
+    add Control = Control_L
+    
+    ! diable insert key
+    keycode 118 = 
+
+設定を適用する
+
+    $ xmodmap .xmodmap
+
+実際にどの keymap が適用されたかは `xmodmap` コマンドで確認できる
+
+    $ xmodmap -pke
+    $ xmodmap -pm
+
+起動時に読み込ませる
+
+    $ emacs .xinitrc
+    ...
+    xmodmap ~/.xmodmap
+    exec awesome
+
+### ログインマネージャー設定 ###
+
+#### cmd-git ####
+
+インストール
+
+    $ yaourt -S cmd-git
+
+設定ファイルの修正。
+X window とコンソールを表示できるように設定する
+
+    $ cp /etc/cmdrc ~/.cdmrc
+    $ emacs ~/.cdmrc
+    binlist=(
+      '~/.xinitrc'
+      '/bin/zsh --login'
+    )
+    namelist=('X win' Console)
+    flaglist=(X C)
+    dialogrc=/usr/share/cdm/themes/elinks
+
+### 日本語設定 ###
+
+mozc 用にレポジトリを追加
+
+    $ emacs /etc/pacman.conf
+    [pnsft-pur]
+    SigLevel = Optional TrustAll
+    Server = http://downloads.sourceforge.net/project/pnsft-aur/pur/$arch
+    
+    $ pacman -Syy
+
+日本語入力に必要なソフトをインストール
+
+    $ pacman -S ibus ibus-qt
+    $ pacman -S mozc ibus-mozc emacs-mozc
+
+~/.xinitrc に以下の内容を追加する
+
+    export GTK_IM_MODULE="ibus"
+    export QT_IM_MODULE="ibus"
+    export XMODIFIERS=@im=ibus
+    ibus-daemon -x -d
+    ...
+    exec awesome
+
+リブート後 ibus-setup でインプットメソッドを Mozc に設定する。
+また、変換を Control + Space から Zenkaku_Hankaku に変更しておく（Emacs で Mark Set を有効にするため）
+
+    $ reboot
+    $ ibus-setup
+
+qt 環境の場合は qtconfig で "デフォルトのインプットメソッド" を ibus に設定する
+
+    $ qtconfig-qt4
+
+*mozc は root で正常実行できないので注意！*
+
+#### 日本語フォントの設定 ####
+
+日本語フォント用のレポジトリを加える
+
+    $ emacs /etc/pacman.conf
+    [arch-fonts]
+    SigLevel = Never
+    Server = http://huulivoide.pp.fi/Arch/arch-fonts
+    
+    $ pacman -Syy
+
+好きな日本語フォントをインストール
+
+    $ pacman -Ss japanese
+    $ pacman -S ttf-ipa-mona ttf-mplus-ipa ttf-ricty ttf-dejavu ttf-meslo
+
+利用できるフォントの名前を確認
+
+    $ fc-list :lang=ja
+
+ホームディレクトリに ~/.fonts.conf を作成し、フォント設定を行う。
+
+    $ emacs ~/.fonts.conf
+    <?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+    <fontconfig>
+      <alias>
+        <family>serif</family>
+        <prefer>
+          <family>DejaVu Sans</family>
+          <family>Ricty</family>
+        </prefer>
+      </alias>
+      <alias>
+        <family>sans-serif</family>
+        <prefer>
+          <family>DejaVu Sans</family>
+          <family>Ricty</family>
+        </prefer>
+      </alias>
+    </fontconfig>
+
+#### xterm の日本語フォント設定 ####
+
+下記の内容で .Xresources を作成する
+
+    $ emacs ~/.Xresources
+    ! XTerm Setting
+    XTerm*utf8        : 1
+    XTerm*locale      : true
+    XTerm*metaSendsEscape : true
+    XTerm*faceNameDoublesize    : Ricty:size=8
+    XTerm*faceName    : Meslo LG S:style=Regular:size=8
+    XTerm*background  : black
+    XTerm*foreground  : white
+    XTerm*saveLines   : 1000000
+    XTerm*termName    : xterm-256color
+
+~/.xinitrc にて .Xresource を読みこませる
+
+    $ emacs ~/.xinitrc
+    ...
+    xrdb $HOME/.Xresources
+    ...
+    exec awesome
+
+### その他のアプリケーション ###
+
+* `Firefox`
+  次のアドオンをインストールする
+  * `NoSquint`: ページの拡大率を操作できる
+  * `vimperator`: vim 形式のショートカット
+  * `Tree Style Tab`: タブを横に表示
+
+* `evince`: PDF ビュワー
+
+GNOME のセットアップ
+----------------------------
+
+* 自動起動プログラムの設定: `gnome-session-properties`
+* スクリーンセーバーの設定: `gnome-screensaver-preferences`
+* キーボードレイアウトなどの設定: `gnome-control-center`
+* ホームディレクトリのフォルダ名を日本語から英語に変更: `LANG=C xdg-user-dirs-gtk-update`
+ちなみにこの設定を行うと $HOME/.config/user-dirs.dir に新しく変数が設定される.
+この部分を gnome は見て設定を変更しているらしい.
+
+    $ cat ~/.config/user-dirs.dir
+    XDG_DESKTOP_DIR="$HOME/Desktop"
+    XDG_DOWNLOAD_DIR="$HOME/Downloads"
+    XDG_TEMPLATES_DIR="$HOME/Templates"
+    XDG_PUBLICSHARE_DIR="$HOME/Public"
+    XDG_DOCUMENTS_DIR="$HOME/Documents"
+    XDG_MUSIC_DIR="$HOME/Music"
+    XDG_PICTURES_DIR="$HOME/Pictures"
+    XDG_VIDEOS_DIR="$HOME/Videos"
+    
+* ログオフを常に表示させる
+
+    $ gsettings set org.gnome.shell always-show-log-out true
+    
+* GNOME shell をリスタートさせる: Alt+F2 -> r -> Enter を押す
+
+* GDM の設定
+
+gdm を有効にする
+
+    $ systemctl enable gdm
+
+gdm3setup をインストール
+
+    $ yaourt -S gdm3setup
+
+X Server のアクセスリストに gdm を加える
+
+    $ xhost +SI:localuser:gdm
+
+### 日本語入力の設定 ###
+
+まず, ibus-anthy のインストールyを行う
+
+    $ sudo pacman -S ibus ibus-qt ibus-anthy
+
+ホームディレクトリの .xinitrc or .xprofile に以下の内容を追加する
+
+    export GTK_IM_MODULE=ibus
+    export XMODIFIERS=@im=ibus
+    export QT_IM_MODULE=ibus
+    
+ibus のデーモンをログイン時に自動起動するように設定する
+
+    $ gnome-session-properties
+    [add]
+    name : ibus 
+    command : /usr/bin/ibus-daemon -drx
+
+X Window を起動し, ibus のセットアップを行う
+
+    $ ibus-setup
+
+インプットメソッド > インプットメソッド選択
+日本語の Anthy を設定する. その後インプットメソッドに 日本語 - Anthy が選択できるようになるので
+"設定" からショートカットキータイプを ATOK に変更する.
+また、句読点入力時の動作を自動変換にしていると、"." や "," を入力した時2回入力されてしまうので、
+"自動変換 ⇒  何もしない" に設定しておく.
+
+次に, qt の入力メソッドを ibus に設定しなければならない
+    
+    $ qtconfig
+    
+「インターフェース」の下のところにある「デフォルトのインプットメソッド」を ibus に変更すれば OK.
+
+gnome チートシート
+----------------------------
+
+* `F11`: フル画面
+* `Alt + F2`: コマンド指定
+* `Ctrl + Alt + 方向キー`: 画面切り替え
+* `Ctrl + 方向キー`: ワークスペースの切り替え
+* `Ctrl + Shift + 方向キー`: アクティブウインドウを方向キー方向のワークスペースへ切り替え
+* `Ctrl + Shift + C`: コピー (gnome-terminal)
+* `Ctrl + Shift + V`: 貼り付け (gnome-terminal)
+
+ソフトウェア
+----------------------------
+
+* ターミナル: guake
+* システム・モニタ: Conky
+* 日本語変換: ibus + Mozc
+* フォント: M + 1P + IPA
+* 画像ビュアー: gpicvie, nomacs
+* マウスカーソルを隠す: unclutter
+  `unclutter -idle 1 -jitter 2 -root &' add to my ~/.xinitrc
+
+compiz を使う
+----------------------------
+
+compiez をインスートール
+
+    $ sudo pacman -S fusion-icon
+    
+fusion-icon, emerald をインストール
+
+    $ sudo pacman -S emerald emerald-themes    
+
+その他
+----------------------------
+
+便利なライブラリなど
+
+* 3D デスクトップ: `compiz-fusion-gtk`
+* 端末: `guake`
+* フラッシュプレイヤー: `flashplugin`
+* ブラウザ: `chrome, firefox`
+

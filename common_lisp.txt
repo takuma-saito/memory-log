@@ -1,0 +1,14 @@
+
+
+Common Lisp 環境構築
+--------------------
+
+http://www.mohiji.org/2011/01/modern-common-lisp-on-linux/
+
+### ショートカット ###
+
+* 
+
+
+
+

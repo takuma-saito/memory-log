@@ -1,0 +1,46 @@
+オンラインツール
+================
+
+* 被リンクチェック: http://hanasakigani.jp/blurl/
+* md5 decrypter: http://www.md5online.org/
+* ssh free: http://sharesshfree.com/
+* online SMS:
+  * http://receivefreesms.com/
+  * http://www.freeonlinephone.org/
+  * http://receiveonlinesms.com/
+* sending SMS: https://www.brastel.com/Pages/jpn/spc/SPC_ApplyForm.html
+* SIP: https://www.getonsip.com/webrtc/
+* ISP IP Range: https://wq.apnic.net/whois-search/static/search.html
+* MY IP: http://myhostname.net
+* ssh free:
+  * http://trienpham.blogspot.com/search/label/sshfree?&max-results=8
+  * https://socksshfree.wordpress.com/
+  * http://sharesshfree.com/category/
+  * http://ssh4work.ru/
+* IP blacklist check: http://whatismyipaddress.com/blacklist-check
+* safe-maile: http://safe-mail.net/
+* Mac Address: http://mac.uic.jp/tool (http://standards-oui.ieee.org/oui.txt)
+* whois list: http://www.nirsoft.net/whois_servers_list.html
+* bitcoin wallet: https://www.coinbase.com/
+* bitcoin mining: https://mining.bitcoin.cz
+* local bitcoin wallet: https://bitcoin.org/en/choose-your-wallet
+* cpuminer: https://github.com/pooler/cpuminer
+* webpagetester: http://www.webpagetest.org/
+* gtmetrix: https://gtmetrix.com
+* ngrok: [https://ngrok.com/](proxy トンネリングサービス)
+* proxylocal: [http://proxylocal.com/](proxy トンネリングサービス, gem バージョン)
+
+html など
+---------
+- facebook og checker: https://developers.facebook.com/tools/debug/og/object/
+
+seed
+-----
+- IPアドレスから都道府県(地理情報)を特定: http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+- alexa 1 million sites: http://s3.amazonaws.com/alexa-static/top-1m.csv.zip
+
+アプリケーション
+----------------
+* PSI
+* bitcoin-core
+

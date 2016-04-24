@@ -1,10 +1,10 @@
-ssh 入門
-============================
+ssh の小技など
+==============
 
-mac用の設定
+Mac OSX で ssh-copy-id
 ----------------------------
 
-macでssh-copy-idを使う方法:
+スクリプトをダウンロードする
 
     $ sudo curl "http://www.chiark.greenend.org.uk/ucgi/~cjwatson/cvsweb/openssh/contrib/ssh-copy-id?rev=1.8;content-type=text%2Fplain" -o /usr/bin/ssh-copy-id
 
@@ -12,16 +12,145 @@ ssh-copy-idをインストールすると公開鍵の登録を一行で行える
 
     $ ssh-copy-id username@server
 
+
 Proxy設定
 ----------------------------
 ssh を利用すれば比較的簡単にポートフォワーディングできる
 
-    ssh -N -f -L 5025:localhost:25 user@host
+    $ ssh -N -f -L remote-port:localhost:local-port user@remote-host
 
-* `-N` トンネルだけでコマンドなし
-* `-f` バックグラウンド実行
-* `-R` 手元のマシンの 5025 番ポートへの接続をサーバーの 25 番ポートに飛ばしてる
+* `-N`: トンネルだけでコマンドなし
+* `-f`: バックグラウンド実行
+* `-R`: 手元のマシンの 25 番ポートへの接続をサーバーの 5025 番ポートに飛ばしてる
   (.ssh/config ではRemoteForwardで設定する）
-* `-L` リモートの 5025 番ポートへの接続をローカルの25番ポートに飛ばす
+* `-L`: リモートの 25 番ポートへの接続をローカルの 5025 番ポートに飛ばす
   (.ssh/config ではLocalForwardで設定する）
+* `-g`: リモートのホストがフォワーディングしているポートにアクセスできるようにする
+
+ダイナミックポートフォワーディング,
+ポートは *socks として*利用できるようになる
+
+    $ ssh -D 2348 admin@hostname
+
+
+proxy 経由でアクセスを行う
+----------------------------
+
+まず connect.c をダウンロードする.
+（google で connect.c で検索を行うと該当のページがトップに出る）
+
+    $ wget http://www.meadowy.org/~gotoh/ssh/connect.c
+    
+コンパイル
+
+    $ gcc connect.c -o connect
+    $ mv connect ~/bin
+
+.ssh の config にて設定を行う.
+proxy.net:8080 を通して myHost@myIP に接続する例
+
+    $ emacs .ssh/
+    Host MyHost
+      HostName myHost
+      User myIP
+      ProxyCommand connect -H proxy.net %h %p
+
+### proxy の名前プロトコルを見る ###
+
+proxy サーバーに接続して yahoo のコンテンツを取得する.
+
+    $ telnet proxy.com 8080
+    Trying 100.100.100.100
+    Connected to proxy.com
+    Escape character '^]'
+    
+    # 通常の GET コマンドを入力する
+    GET http://yahoo.co.jp/ HTTP/1.0
+
+このように telnet で接続する際は ホスト名 + パス を同時に入力しなければならない.
+ちなみに CONNECT メソッドを使うと, その他のポートとも通信できる.
+
+    $ telnet proxy.com 8080
+    Trying 100.100.100.100
+    Connected to proxy.com
+    Escape character '^]'
+ 
+    # CONNECT メソッドで proxy を踏み台に my-server へ接続する
+    CONNECT my-server:22 HTTP/1.0
+    
+    HTTP/1.0 200 Connection established
+    Server: CacheServer(CS Series)
+    Date: Thu, 13 Dec 2012 06:55:36 GMT
+    Pragma: no-cache
+    
+    # 接続成功, セッションは確立済
+    SSH-2.0-OpenSSH_5.3
+    ...
+
+
+ssh の tun, tap を使って VPN 構築
+---------------------------------
+
+まず固定アドレスが割り振らているサーバー側の設定を行う
+最初に tun のカーネルモジュールが読み込まれているかどうかを確認する
+
+    $ lsmod | grep tun
+
+読み込まれていない場合はモジュールをロードする
+
+    $ sudo modprobe tun
+    $ lsmod | grep tun
+
+tuntap 用のインターフェイスを作成する
+
+    $ ip tuntap add dev tun0 mode tun user admin
+    $ ip a
+    ...
+    4: tun0: <POINTOPOINT,MULTICAST,NOARP> mtu 1500 qdisc noop state DOWN qlen 500
+        link/none
+
+tun0 のインターフェイスが新しく表示されていれば成功
+
+sshfs
+-----
+
+sftp, ssh などを用いてリモートディレクトリをローカルディレクトリにマウントさせる。
+sshfs のインストールを行う。
+
+    $ brew install sshfs
+
+その後はマウント用のディレクトリを作成し、リモートディレクトリをマウントする。
+
+    $ sshfs -d -f -o reconnect,defer_permissions username@hostname:remoteDirectory localDirectory
+
+`-o` で defer_permissions を指定しているのは、Mac の場合一般ユーザーでマウントすると
+permission error が発生し書込、読込が行えないため。
+
+ 
+メモ
+----
+
+ssh で特定ユーザーのみパスワード認証を許可したい場合は Match 構文を使う。
+/etc/ssh/sshd_config の最下部に以下を挿入する。
+    
+    Match User username
+      PasswordAuthentication yes
+
+proxy サーバーに大量の TIME_WAIT が発生している場合。
+/etc/sysctl.conf の次のパラメータの設定を行う
+
+     net.ipv4.tcp_tw_recycle = 1 
+
+上記を追加後、反映を適用させる。
+
+     $ sysctl -p
+
+
+参考webサイト
+----------------------------
+
+* [How to make any tunnel via any proxy](http://www.monperrus.net/martin/howto-tunneling-via-proxy.html)
+* [How to test an HTTP proxy by using telnet](http://www.anta.net/misc/telnet-troubleshooting/http-proxy.shtml)
+
+
 

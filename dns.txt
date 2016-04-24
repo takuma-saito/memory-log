@@ -1,18 +1,73 @@
+DNS のソフトウェア
+==================
 
-# DNS の仕組み
+ネームサーバーの設定
+--------------------
 
-# DNS に関係するコマンド
+*** unbound の設定 ***
+$ sudo emacs /etc/unbound/unbound.conf
+server:
+  interface: 192.168.39.1
+  do-ip6: no
+  access-control: 192.168.39.0/24 allow
+  
+forward-zone:
+  name: "home.me"
+  forward-addr: 192.168.39.1@10053
 
-% host <domain>
-domain の正引きを行う
+# 確認
+$ sudo /etc/init.d/unbound start
+$ dig @127.0.0.1 google.co.jp
 
-% host -v -t <type> <domain>
-検索対象のリソース・レコード（RR）のタイプを指定して, domainを検索する.
-その際に詳細な出力を行うようにする.
-<type> - CNAME, NS, MX, ANY が設定できる
 
-% dig <domain> <type>
-リスソースレコード（<type> ）を指定して, domainを検索する
+*** nsd の設定 ***
 
-光接続
-60.56.0.135
+# zone ファイルの作成
+$ sudo emacs /etc/nsd/home.me.zone
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.3 <<>> @192.168.39.1 home.me
+$ORIGIN home.me.    ; default zone domain
+$TTL 86400           ; default time to live
+
+@ IN SOA  home.me. ns1.home.me. (
+      2015071404  ; serial number
+      28800       ; Refresh
+      7200        ; Retry
+      864000      ; Expire
+      86400       ; Min TTL
+      )
+      IN NS ns1.home.me.
+      IN A 192.168.39.1
+;
+
+$ sudo emacs /etc/nsd/nsd.conf
+server:
+  interface: 192.168.39.1
+  ip4-only: yes
+  port: 10053
+  verbosity: 1
+
+zone:
+  name: home.me
+  zonefile: home.me.zone
+  allow-notify: 192.168.39.1 NOKEY
+
+# 確認
+$ sudo /etc/init.d/nsd start
+$ dig @127.0.0.1 home.me
+
+
+dnsmasq
+-------
+
+[host 名] -> [IP アドレス] の組を hosts ファイルに追加すれば DNS で正引きできる
+
+* `dnsmasq -d`: フォアグランドモードで実行
+
+
+DNS に関係するコマンド
+---------------------
+
+* domain の正引きを行う: `host <domain>`
+* 検索対象のリソース・レコード（RR）のタイプを指定して, domainを検索する: `host -v -t <type> <domain>`
+* リスソースレコード（<type> ）を指定して, domain にクエリを投げる: `dig @<domain> <type>`
+

@@ -1,0 +1,7 @@
+
+チュートリアル
+----------------------------
+
+* [Introduction | Learn You Some Erlang for Great Good!](http://www.ymotongpoo.com/works/lyse-ja/#id2)
+
+

@@ -1,0 +1,28 @@
+gnuplot の使い方
+================
+
+* データのプロット: `plot "filename"` ダブルクオート "" でファイル名は括らなければならない
+
+* タイトルを入れる: `set title "title name"`
+
+* xlable, ylabel にタイトルを入れる: `set xlabel "xlable_title"`, `"set ylabel "ylable_title"`
+
+* データを線で結ぶ: `plot "file" with linepoints`
+
+* 矢印を表示する: `set arrow 1 from (x,y) to (x,y)`
+
+* png として出力する:
+
+    gnuplot > set terminal png
+    gnuplot > set output "filename"
+
+参考資料
+--------
+
+* [Demo scripts for gnuplot version 4.6 ](http://gnuplot.sourceforge.net/demo/)
+
+
+
+
+
+

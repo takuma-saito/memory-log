@@ -1,6 +1,15 @@
 mod_rewriteの法
 ============================
 
+モジュール確認方法
+----------------------------
+
+以下のコードをサーバーに保存し、URLにアクセスする。
+mod_rewrite でページを検索する。
+
+    <?php phpinfo(); ?>
+
+
 基本ディレクティブの解説
 ----------------------------
 
@@ -16,7 +25,7 @@ mod_rewriteの法
     RewriteCond を複数指定する場合 and マッチになる
   
 - RewriteRule "正規表現" rewrite先URL:
-    "正規表現" でマッチしたURLを"rewrite先URL"で書き換える
+    "正規表現" でマッチしたURLを "rewrite先URL" で書き換える
 
 基本的にはRewriteCond で条件を指定し、RewriteRule で書き換えを行う
 

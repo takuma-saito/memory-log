@@ -1,0 +1,163 @@
+> I'm currently doing a paper in HTML, which I've done before, using
+> Emacs, html-helper-mode, and Netscape. However _this_ paper needs to
+> have endnotes. I can do this also, via two-way anchors, though hints
+> toward automating the process (especially the numbering) would
+> certainly be accepted. The problem is that, if I rearrange the text, I
+> need to renumber the endnotes, which gets messy. Accordingly I (for
+> now) simply tag my endnote text, e.g.
+>  
+> [[Endnote text here.]]
+>  
+> and then, when I need to output, I number and embed the anchors, move
+> the text, and nuke the tags as needed (in a copy of the file with the
+> tagged notes).
+>  
+> 
+> This appears suboptimal :-) However, it beats StarOffice 5.2: while it
+> worked, it nicely handled the endnote renumbering, but then it began
+> to GPF whenever I inserted a new endnote. So: is there a better way to
+> do endnotes in HTML in Emacs? Or another tool one would recommend?
+> (Please, no non-freeware M$ products: I don't have a license, and
+> won't be able to get one until after the paper's due.)
+>  
+>Please reply directly to me as well as the list/group, and TIA,
+>Tom_Roche@ncsu.edu
+
+
+   Tom, here's an idea that works. The following paragraph will show
+you how it's done.[##] First, select a string which will *never* occur
+in your file. The string can be one character or longer; it will be
+used to generate the sequential[##] endnote digits in the output file.
+The string will be used two times: once for the note numbers in the
+text, and once for the corresponding note numbers in the endnotes.
+[[
+##. I must give credit to this idea where it's due. It's taken
+entirely from Eric Meyer (author of VDE, a DOS text editor). He also
+wrote a program called WSNOTE using a system similar to the one I
+describe here. WSNOTE, now issued as freeware, was designed for
+WordStar files and has special features for that word processor.
+
+##. This will be endnote reference 2. It corresponds to the word
+"sequential" in the text paragraph above, whose in-text pound signs
+will be replaced by the numeral 2.
+]]
+
+   Below each paragraph of body text (ideally, on the line following
+the paragraph), add the endnote references, properly spelled out. Put
+them in the same order as the notes for that paragraph. In editing the
+source file, you no longer need to worry about moving the "[[Endnote
+text]]" to the end of the file yourself. Awk will do it for you.
+
+   You can rearrange paragraphs, cut-and-paste, and edit more quickly.
+Your only concern is that the body text has the same number of note
+symbols[##] in it as the "[[Endnote text block]]" has. The Endnote
+block should be placed immediately below that paragraph. In my system,
+the "[[" and "]]" stand alone on a line. It makes it easier to move
+whole lines that way.
+[[
+##. By "note symbols", I mean the in-text placeholders, which will
+later be converted to incrementing numbers. I've placed them in square
+brackets, but brackets or braces aren't necessary.
+]]
+
+   Go ahead and edit your thesis. When done, save the file, and run
+this awk script on it.[##] From a shell prompt (or a DOS command
+prompt), use a command-line that looks something like this:
+[[
+##. Binaries for GNU awk v3.0.6 for Win32 are available here:
+
+   ftp://ftp.simtel.net/pub/simtelnet/gnu/djgpp/v2gnu/gwk306b.zip
+
+]]
+
+        awk -f endnote.awk infile >outfile
+
+Here is the awk script "endnote.awk", written in haste for this
+particular task. It outputs to plain text.
+
+# Filename: endnote.awk
+#  Version: 1.0
+#   Author: Eric Pement - pemente@northpark.edu
+#     Date: 13 Dec. 2000
+#  Purpose: To convert in-text notes and references to endnotes
+# Requires: GNU awk; blank lines between paragraphs of input file
+#   Output: Plain ASCII text. Can be modified for HTML.
+
+BEGIN { a=b=0; str = "" }  # initialize some variables
+
+/^\[\[$/,/^]]$/ {          # handles all endnote references
+  if ( /^\[\[$/) next
+  sub( /^]]$/, "")
+  gsub(/\#\#/, ++a)
+  str = str $0 "\n"
+  next
+}
+
+{                          # handles all in-text note numbers
+  gsub(/\#\#/, ++b)
+  print
+}
+
+END {
+  print "--------------------\nENDNOTES:\n"
+  print str
+  print "[end of file]"
+  if ( a != b ) {          # error handling. "\a\a" beeps the console
+    print "\a\a\n",
+"Your in-text numbers don't match your endnote numbers!" > "/dev/stderr"
+  }
+}
+#---end of script---
+
+
+   When the script is done running, the newly created outfile will
+have incrementing in-text note numbers (1, 2, 3...) and at the bottom
+of the file, you will see a section looks like this:
+
+     --------------------
+     ENDNOTES:
+
+only flush left, not indented like here. Following that will be the
+references themselves, all neatly gathered together.
+
+   As I said, this is a pretty basic awk script. The only
+error-checking it does is to make sure that you have the same number
+of references in the body of your paper as you have in the Endnotes
+section of the paper. It does not check for mismatched '[[' or ']]'
+brackets, so if you forgot to close the brackets, then you can expect
+to see hunks of your paper in the Endnote section.
+
+   I usually write my papers in plain ASCII with Emacs and then
+convert to HTML later on. If you want to accommodate this script to
+print HTML codes with hyperlinks, that's easily done (in two places).
+Change:
+
+   gsub(/\#\#/, ++a)
+
+to
+
+   gsub(/\#\#/, "<B><A HREF=\"#T" ++a "\" NAME=\"E" a "\">" a "</A></B>")
+
+and also change
+
+   gsub(/\#\#/, ++b)
+
+to
+   gsub(/\#\#/,
+   "<SUP><SMALL><A HREF=\"#E" ++b "\" NAME=\"T" b "\">" b "</A></SMALL></SUP>")
+
+   I know, it looks pretty hard to read, but the end result is to
+create clickable note references, so that clicking on the in-text
+reference (which appears as a raised superior figure) will take you to
+the corresponding number in the Endnote section. And vice versa.
+
+   Truth be told, I did appreciate Kai's suggestion that a file
+written in Texinfo can be converted to plaintext and also HTML, but I
+find it a bit daunting to learn texinfo right now. I prefer something
+that I can have more control over, and the awk script does that for
+me. Please let me know if you have found another solution, or if the
+script I'm sending you needs some tweaking.
+
+Kind regards,
+
+Eric Pement

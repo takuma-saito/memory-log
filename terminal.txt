@@ -1,0 +1,85 @@
+termnal 設定
+============================
+
+色の確認
+----------------------------
+
+現在の表示カラー数を確認する.
+
+    $ tput colors
+
+256colors.pl というスクリプトを使っても確認できる.
+ftp://ftp.mirrorservice.org/pub/NetBSD/NetBSD-release-6/xsrc/external/mit/xterm/dist/vttests/256colors2.pl
+
+    $ ./256colors2.pl
+
+emacs で確認する.
+
+    $ emacs -nw
+    # M-x list-colors-display
+
+幅などを設定する場合, stty を使う。
+
+* 現在の設定確認: `stty -a`
+* 幅と高さを指定: `stty columns 132 rows 45`
+
+terminfo
+----------------------------
+
+端末の大きさや情報を調べる
+
+    $ infocmp
+    $ infocmp -L
+
+C のプログラムで使う場合は -E オプションを指定する
+
+    $ infocmp -E
+
+端末の横幅
+
+    $ tput cols
+     
+端末の縦幅
+
+    $ tput lines
+
+端末の色の種類
+
+    $ tput colors
+
+termcap を更新する場合は以下のように行う。
+まず、現在の設定をファイルにダンプする。
+
+    $ infocmp > term.txt
+
+なお、infocmp には現在のターミナル設定の名前を指定しなければならない。引数の指定がなければ `$TERM` 変数を見にいく。
+term.txt はテキスト形式で各変数が設定されるので、更新したい部分の修正を行う。
+その後は tic コマンドでコンパイルして終了。
+
+    $ sudo tic term.txt
+
+ワイドモードで起動したい場合は $TERM 変数の後に -w を付ければよい
+
+    $ echo $TERM
+    screen
+    
+    $ tput cols
+    80
+    
+    $ export TERM=screen-w
+    
+    $ tput cols
+    132
+
+termcap
+----------------------------
+    
+terminfo の場合は以下のように設定をダンプするには tset
+
+    $ tset -S > term.txt
+
+環境変数を設定ファイルに追加する場合
+
+    $ tset -s >> ~/.bashrc
+
+その後, 指定したい値を TERMCAP 内の変数を修正し設定を行う。

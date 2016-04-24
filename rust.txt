@@ -1,0 +1,13 @@
+Rust についての情報など
+=======================
+
+参考URL
+-------
+
+* [公式Wiki](https://github.com/rust-lang/rust/wiki)
+* [Rust Examples](http://rustbyexample.com/)
+
+
+
+
+

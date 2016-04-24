@@ -1,0 +1,62 @@
+fortran の文法
+==============
+
+pass by value -> (())
+pass by reference -> ()
+
+多次元配列は reshape と shape を組み合わせると簡潔に表現できる
+配列の宣言では (//) で数値をくくらなければならない
+配列が長くなった場合は & で改行をキャンセルし、次の行へ引き継げる
+
+do 文にはラベルは必要ない
+do の引数に 3 つ目の値を入れることで、インクリメントの値を指定できる
+例）
+
+    do N = 1, 10, 3
+    print *, N
+    end do
+    out) 1, 4, 7, 10
+    
+do 文中の制御構文
+* continue -> cycle
+* break -> exit
+do では while 式も使うことができる
+例）
+
+    do while (条件）
+    end while
+
+文字列を引数として渡す場合の宣言: character(*) ::
+
+論理演算子は logical 型
+* 疑問: function に行列を引数に渡す場合、allocate するのがよいのか、それとも n, m を明示的に渡した方がよいのか
+* 部分ピポット選択法を実装した際、加点されるのかどうか
+
+### fortran で値渡しを行う ###
+
+呼び出し側の関数で値渡しする関数を value で指定すればよい。
+
+    Program validexm1
+      integer :: x = 10, y = 20
+      print *, 'before calling: ', x, y
+      call intersub(x, y)
+      print *, 'after calling: ', x, y
+        
+    contains
+      subroutine intersub(x,y)
+        integer, value ::  x
+        integer y
+        x = x + y
+        y = x*y
+        print *, 'in subroutine after changing: ', x, y
+      end subroutine
+    end program validexm1
+      
+Expected output:
+                                  
+    before calling: 10 20
+    in subroutine after changing: 30 600
+    after calling: 10 600
+
+
+

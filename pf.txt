@@ -1,0 +1,134 @@
+pf 関係
+----------
+
+** 基本機能 **
+# pf.conf ファイルを読み込み
+$ pfctl -f  /etc/pf.conf
+
+# ファイルの構文チェック
+$ pfctl -nf /etc/pf.conf
+
+# ファイルから NAT ルールだけを読み込み
+$ pfctl -Nf /etc/pf.conf
+
+# ファイルからフィルタルールだけを読み込み
+$ pfctl -Rf /etc/pf.conf
+
+# 現在の NAT ルールを表示
+$ pfctl -sn
+
+# 現在のフィルタルールを表示
+$ pfctl -sr
+
+# 現在の状態テーブルを表示
+$ pfctl -ss
+
+# フィルタの状態と計数を表示
+$ pfctl -si
+
+# 現在表示できるすべてのものを表示
+$ pfctl -sa
+
+# ルールをフラッシュする
+$ pfctl -F rules
+$ pfctl -F nat
+
+# pfの有効化
+$ pfctl -e 
+
+# pfの無効化
+$ pfctl -d
+
+# 稼働時間を見る
+$ pfctl -si | grep Status
+
+# 通信状態を表示
+$ pfctl -s state
+
+# 詳細を表示しつつファイルをロード
+$ pfctl -v -n -f /etc/pf.conf
+
+# scopedroute=1 に設定しないとダメだが kernel のバグで不可能
+$ sudo sysctl -w net.inet.ip.scopedroute=1
+
+** debug **
+# ログインインターフェースを作成, /etc/pf.conf 先頭に記述
+set loginterface pflog0
+set debug loud
+pass out log on $exit_if from any to any
+pass in log on $exit_if from any to any
+
+# 確認
+$ pfctl -f /etc/pf.conf
+$ pfctl -sa | egrep 'Debug|log'
+
+# ログインターフェースを作動させる
+$ ifconfig pflog0 create
+$ tcpdump -vlnettti pflog0
+
+
+
+** pf で NAT を使う **
+# forwarding を有効にする
+$ sudo sysctl -w net.inet.ip.forwarding=1
+# 確認
+$ sudo sysctl net.inet.ip.forwarding=1
+net.inet.ip.forwarding: 1 -> 1
+
+# 以下の内容は全て pf.conf に記述する
+# pf.conf の nat の基本構成
+nat pass log on interface <af> from src_addr <port src_port> to \
+   dst_addr <port dst_port> -> ext_addr <pool_type> <static-port>
+
+# 例: en0, 192.168.1.0/24 からの着信パケットを全て 24.5.0.5 に変換する
+nat on en0 from 192.168.1.0/24 to any -> 24.5.0.5 
+
+# port redirection
+# en0 192.0.2.1:80 に対して [to 24.65.1.13:80] <-> [to 192.168.1.5:8000]
+rdr on en0 proto tcp from 192.0.2.1 to 24.65.1.13 port 80
+
+# ネットワークの変数を定義
+interface="{en0, en1}"
+my_ip="192.168.11.2"
+router_ip="192.168.11.1"
+
+# 最初に対象ポートが全て lo0 に向かうように設定
+# in -> me -> out に対して
+# rdr が掛かるのは in だけなので注意すること
+pass out log on $exit_if route-to lo0 inet proto tcp from any to any keep state
+
+# port:9999 -> port:9998 の変換
+rdr pass on $interface proto tcp from $my_ip to $router_ip port 9999 \
+    -> 127.0.0.1 port 9998
+
+# rdr を有効にしチェックする
+# 構文チェック
+$ pfctl -nf /etc/pf.conf
+# 有効にするかファイルをロード, 中身を確認
+$ pfctl -e
+$ pfctl -f /etc/pf.conf
+$ pfctl -sa | head
+$ pfctl -sn
+# パケットキャプチャ
+$ tcpdump -v -nn dst <host>
+# 外部ネットワークにパケットを送る
+$ socat -v -d -d - TCP:<host>:<port>,sourceport=9999
+
+# localhost:8080 -> localhost:80
+rdr pass on lo0 inet proto tcp from any to 127.0.0.1 port 8080 -> 127.0.0.1 port 80
+
+# エフェメラルポートの数を調べる
+$ sysctl -a | grep forwarding
+# localhost: 1000 ~ 49152 -> localhost:80
+rdr on lo0 inet proto tcp from any to 127.0.0.1 port 1000:49152 -> 127.0.0.1 port 80
+# 確認
+$ socat -v -d -d - TCP-LISTEN:80,reuseaddr,fork
+$ socat - TCP:localhost:49111
+
+# 80, 443 を 8080 ポートに redirect
+rdr pass log on lo0 proto tcp from $exit_if to any port {80, 443} -> 127.0.0.1 port 8080
+
+# 53,5553:udp を 5553:udp ポートに redirect
+rdr pass log on lo0 proto udp from 127.0.0.1 to any port {53, 5553} -> 127.0.0.1 port 5553
+
+

@@ -1,0 +1,30 @@
+polipo の使い方
+===============
+
+個人で利用できるキャッシュプロキシ
+
+* https://github.com/jech/polipo/
+
+# インストール後, 設定ファイルをホームディレクトリに
+$ cp config.sample ~/.poliporc
+# 起動
+$ polipo -c ~/.poliporc
+
+# ファイルの設定
+$ mkdir ~/.plipo-cache ~/.polipo-docs
+$ emacs ~/.poliporc
+proxyAddress = "127.0.0.1"
+diskCacheRoot = "~/.polipo-cache/"
+disableLocalInterface=true
+# web コントールパネルで設定を見れるように
+disableIndexing=false
+disableServersList= false
+# ipv6 を disable
+dnsQueryIPv6 = no
+# tor プロキシに relay
+socksParentProxy = localhost:9050
+socksProxyType = socks5
+
+# 起動
+$ polipo -c ~/.poliporc
+

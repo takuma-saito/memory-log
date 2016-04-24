@@ -1,32 +1,55 @@
-# 外部変数のサニタイズ（php編）
+web セキュリティ対策
+============================
 
-##XSS攻撃対策
-・htmlの特殊タグを禁止にすることで対策することができる
-    ⇒ 入力にjavascriptを受け付けないようにする
-    ⇒ 入力フォームから第三者に勝手なjavascriptを実行できると危険なため
+逆引きセキュリティ
+----------------------------
 
-・phpの場合htmlspecialcharsを用いて外部変数を変換すればよい
-    ⇒ ENT_QUOTES を付けるのはデフォルトでシングルクオートが変換されないため
-function sanitize( $arr ) {
-    if ( is_array( $arr ) ) {
+* サクラサーバーでディレクトリにアクセスした場合に、ファイル一覧が表示されないようにする.
+  サーバー側で以下のように .htaccess を作成すればよい
+  
+    $ echo "DirectoryIndex index.html index.php .ht" > .htaccess   
+
+.htaccess は web サーバーの設定をディレクトリごとにカスタマイズできるファイルのこと。
+ディレクトリに最初にアクセスした場合、どのファイルを表示させるかは DirectoryIndex で設定できる。
+この値を index.php index.html .ht のように設定しておけば、最初のファイルから順にアクセスするファイルを web サーバーが探す。
+もし何もアクセスできるファイルがない場合、ディレクトリにリストを返却する。
+.ht から始まるファイルは web サーバーの設定ファイルなので、基本的にアクセスが禁止されている。
+よって、index.html index.php などの後に .ht を指定すれば 403 Forbidden を返却される。
+
+一般的なセキュリティ方法
+----------------------------
+
+### XSS攻撃対策 ###
+
+* htmlの特殊タグを禁止にすることで対策することができる
+   * 入力にjavascriptを受け付けないようにする
+   * 入力フォームから第三者に勝手なjavascriptを実行できると危険なため
+
+* phpの場合htmlspecialcharsを用いて外部変数を変換すればよい
+   * ENT_QUOTES を付けるのはデフォルトでシングルクオートが変換されないため
+    
+    function sanitize( $arr ) {
+      if ( is_array( $arr ) ) {
         return array_map( 'sanitize', $arr );
-    }
-    return addslashes(htmlspecialchars($arr, ENT_QUOTES));
-}
+      }
+      return addslashes(htmlspecialchars($arr, ENT_QUOTES));
+      }
 
-## ヌルバイト攻撃対策
-・\0 はC言語のプログラムで特殊な意味を持つ
+### ヌルバイト攻撃対策 ###
 
-・バイナリセーフでない関数の場合例えば、
-"abc\0defg" が "abc" として認識されて誤作動起きる可能性がある
+* \0 はC言語のプログラムで特殊な意味を持つ
 
-・対策は\0を文中から削除すればよい
+* バイナリセーフでない関数の場合例えば、
+ "abc\0defg" が "abc" として認識されて誤作動起きる可能性がある
 
-・例えば下記のようなサニタイズ様の変数を用意して$_GET, $_POSTなどの外部変数はチェックする
-function sanitize( $arr ) {
-    if ( is_array( $arr ) ) {
+* 対策は\0を文中から削除すればよい
+
+* 例えば下記のようなサニタイズ様の変数を用意して$_GET, $_POSTなどの外部変数はチェックする
+
+    function sanitize( $arr ) {
+      if ( is_array( $arr ) ) {
         return array_map( 'sanitize', $arr );
+      }
+      return str_replace( "\0", "", $arr );
     }
-    return str_replace( "\0", "", $arr );
-}
 

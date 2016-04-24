@@ -1,0 +1,40 @@
+Using awk's system() command to process part of a file
+------------------------------------------------------
+
+Example: I want to use awk to select PART of a file for processing, 
+but I want to use a different command (like sed or fmt) to do the 
+work. Here's how to do it against myfile.
+
+                                        
+awk '$6 > 4 {system("echo " $0 "| sed -f script.sed");next};1' myfile
+
+or more succinctly:
+
+     awk -f myscript.awk myfile
+
+where my myscript.awk is:
+
+     #---begin  myscript.awk ---
+     $6 > 4 {
+       system ("echo " $0 "| sed -f script.sed")
+       next
+     }
+     1
+     #--- end of script ---
+
+Every line will be printed, but each line in which the value of the
+6th field ($6) is greater than 4 will be passed to sed for processing.
+
+Note that the space after 'echo' is significant: "echo ".
+
+The '1' just before the end of the script tells awk to print all the 
+lines normally that were not matched by the pattern. Technically, '1' 
+is a pattern itself that resolves to TRUE, and if a pattern is 
+specified in awk without an action, the line will be printed when the 
+pattern matches or is true. Thus, '1' works to print every line.
+
+Finally, note that this is a line-oriented script. To pass a group of 
+lines to an external program, collect them in a variable and echo the 
+variable, piping the results to the program you specify.
+
+[eof]

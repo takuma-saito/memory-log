@@ -1,0 +1,86 @@
+pdnsd の使い方
+=============
+
+dns のキャッシュ専用のサーバー
+メリットは dns のキャッシュをハードディスクに直接書き出すので
+再起動した際でもキャッシュが消えることがない
+
+** pdnsd.conf の設定 **
+
+# マニュアルを読む
+$ man pdsnd.conf
+
+# サーバーの待ち受けポートは 5550 とする
+$ emacs /usr/local/etc/pdsnd.conf
+global {
+  # キャッシュサイズと保管場所を決める, 16M
+  perm_cache=16384;
+  cache_dir="/usr/local/var/pdnsd";
+  # 起動するユーザー
+  run_as="nobody";
+  # listen するサーバーのIPとポート
+  server_ip = 127.0.0.1;
+  server_port = 5550;
+  # コントロール接続を on にする
+  status_ctl = on;
+  # ipv4 だけで起動
+  run_ipv4 = on;
+  # udp だけ受付ける
+  query_method=udp_only;
+  # キャッシュに保存する時間
+  min_ttl=10m;
+  max_ttl=1w;
+  timeout=10;
+  neg_domain_pol=off;
+  udpbufsize=1024;
+  # proxy_only=on
+  # purge_cache=off
+}
+
+# tor の場合
+server {
+  label= "tor";
+  ip = 127.0.0.1;
+  port = 5553
+  timeout=4;
+  interval=10;
+  purge_cache=off;
+}
+# google の public dns を使う場合
+server {
+  label= "public";
+  ip = 8.8.8.8;
+  port = 53;
+  timeout=4;
+  interval=10;
+  purge_cache=off;
+}
+
+
+# パーミッションの設定
+$ mkdir -p /usr/local/var/cache/pdnsd
+$ sudo chown nobody:nobody /usr/local/var/cache/pdnsd
+$ sudo chown root /usr/local/etc/pdnsd.conf
+# パーミッションテスト
+$ sudo -u nobody hexdump /usr/local/var/cache/pdnsd/pdnsd.cache
+
+# 起動させる
+$ sudo pdnsd -g
+
+# テスト
+$ dig @localhost -p 5550 google.co.jp
+
+# 命令を送る
+# ドメイン一覧
+$ sudo pdnsd-ctl dump
+# サーバーの状態を表示
+$ sudo pdnsd-ctl status
+# ドメインをキャッシュから削除
+$ sudo pdnsd-ctl record hostname delete
+
+
+# 起動時にデーモンとして起動させる
+$ sudo launchctl submit -l pdnsd -- pdnsd -d
+# 確認
+$ sudo launchctl list | grep pdnsd
+

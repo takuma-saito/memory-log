@@ -144,6 +144,44 @@ IMAPのコマンド一覧
 
 IMAP の例
 ----------------------------
+
+Gmail の例
+
+$ openssl s_client -connect smtp.gmail.com:465 -crlf -ign_eof
+$ socat OPENSSL:imap.gmail.com:993,verify=0,crlf -
+? login username password
+> OK username@gmail.com authenticated
+? list "" "*"
+> ...
+? select inbox
+> ...
+? fetch 2 body[]
+> ...
+? fetch 2 body[header]
+> ...
+? logout
+> * BYE LOGOUT Requested
+
+メールボックスの中の情報を調べる
+
+? examine inbox
+> * FLAGS (\Answered \Flagged \Draft \Deleted \Seen $Phishing $NotPhishing)
+> * OK [PERMANENTFLAGS ()] Flags permitted.
+> * OK [UIDVALIDITY 1] UIDs valid.
+> * 114 EXISTS
+> * 0 RECENT
+> * OK [UIDNEXT 178] Predicted next UID.
+> * OK [HIGHESTMODSEQ 21405]
+? SEARCH unseen
+> * SEARCH 2 3 10 15 20 21 23 24 25 26 27 28 29 31 34 36 37 42 46 47 49 54 64 65 66 68 79 80 81 82 84 88 89 91 93 94 95 96 97 103 111 112 113 114
+? fetch 114 BODY[HEADER.FIELDS (SUBJECT)]
+> ...
+? fetch 114 body[]
+> ...
+? store 114 +flags \seen
+> ? OK Success
+
+
 gmailのimapサーバーに接続してメッセージのやり取りを行う。
 （CApath に許可するCAの証明書を入れたディレクトリを設定しなければならない。詳しい方法はopenssl.txtにて）
 

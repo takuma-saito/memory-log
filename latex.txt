@@ -1,0 +1,19 @@
+Latex の使い方
+==============
+
+メモ
+------------
+
+* 図表にラベルを付ける時は *caption* の後に label 命令を入れなければならない。
+
+参考URL
+-------
+
+* [brewとtlmgrによるTeX環境構築](http://qiita.com/yyamnk/items/2da2791bcee82643984f)
+
+
+
+
+
+
+

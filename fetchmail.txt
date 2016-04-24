@@ -41,10 +41,10 @@ fetchmailの設定
     # pop3を利用する場合（今回はgmailの運用の場合を想定）
     poll imap.gmail.com proto IMAP
         # ユーザー名を入力する    
-        username "takuma.saitou1"
+        username "username"
         
         # パスワードを入力する
-        password "saitaku115"
+        password "hogehoge"
         
         # ssl接続でメールを読み込む
         ssl

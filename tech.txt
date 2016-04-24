@@ -1,0 +1,921 @@
+
+** メモ **
+
+# ドメイン浸透しているかどうか直接NSサーバーにアクセスして確かめる
+$ dig +rec +trace subdomain.example.jp
+$ dig +rec +trace @xxx.xxx.xxx.xxx subdomain.example.jp
+
+# コメント付きで keygen
+$ ssh-keygen -C taku@hacker -t rsa -f ~/.ssh/github
+
+# 通信している ARP アドレスの確認
+$ arp -a
+
+# ネットワークの統計
+$ netstat -s
+
+# TCP のみ確認する
+$ netstat -atn
+
+# IP enumuration
+$ seq 1 255 | xargs -I{} -P255 ping -c 1 -t 5 192.168.100.{} |
+    grep -A 1 round-trip |
+    grep -o -E '192.168.100.[0-9]{1,4}' |
+    sort | uniq
+
+# email だけ抜き出す
+$ grep -o -E '([a-zA-Z|0-9|\.|+-|_]+)@([a-z|A-Z|\.|0-9|_|+-]+)'
+
+# Mac でプロセスが扱える File Descriptor の数を増やす
+$ ulimit -Sn 10000
+
+# zsh で history を全部見る
+$ history -E 1 | less
+
+# 特定の xpath のみ抽出する
+$ xmllint --html --xpath '//html/head' file.html 2>/dev/null
+
+# Mac Address の変更
+$ sudo ifconfig en0 ether XX:XX:XX:XX:XX:XX
+# 適当な Mac Address を生成
+$ openssl rand -hex 6 | sed 's/\(..\)/\1:/g; s/.$//'
+
+# ドメインのレコードを取得
+$ dig +nocmd yourhostname.net any +multiline +noall +answer
+
+# - を含むディレクトリを _ に変換
+$ ls -1 |
+  while read n; do echo mv $n $(echo $n | tr '-' '_'); done |
+  grep '-' |
+  xargs -I{} bash -lc "{}"
+
+# #のコメントか空白行を削除
+$ cat /etc/tor/torrc | grep -v -E '^#|^\s*$'
+
+# sha256 の値で同一性の比較を行う
+$ shasum -a 256 <filename>
+
+# bash/zsh で任意の16進数を出力する, bash の機能
+$ echo $'\xXX'
+
+# 改行
+$ echo $'\x0a'
+
+# 123
+$ echo $'\x31'$'\x32'$'\x33'
+
+# echo の機能でも出来る, 改行
+$ echo "\x0a"
+
+# バイトごとに表示, -v で asterisk(*) を表示させない, -e でフォーマット
+$ echo -ne $'\x31'$'\x32'$'\x33' | hexdump -v -e '/1 "%02x "'
+$ echo -ne $'\x31'$'\x32'$'\x33' | hexdump -v -e '/1 "%02x "' | fold -2
+$ echo -ne "hogehoge" | od -v -t x1 -A n  | tr '\n' ' ' | sed -r -e 's/ +/ /g'
+
+# バイナリ変換
+$ seq 40 127 | xargs printf "%02x\n" | while read n; do echo "\x$n"; done
+$ seq 40 127 | xargs printf "%02x\n" | xargs -I{} zsh -c 'echo "\x{}"'
+$ seq 40 127 | xargs printf "%02x\n" | xxd -r
+
+# a-z までの連番
+$ jot -w %c 25 97 $[97+25]
+$ seq 97 $[97+25] | xargs -I{} zsh -c 'echo $[[#16] {}]' | cut -d'#' -f2 | xargs -I{} zsh -c 'echo "\x{}"'
+
+# 配列の長さを調べる
+$ a=($(echo a b c d e))
+$ echo length: $#a
+
+# バイト変換, 16進数 -> 10進数, 全て大文字
+$ echo 'ibase=16; obase=A; AB'
+$ echo $[16#ef]
+$ echo $[[#10] 16#ef]
+$ echo $(([#10] 16#ef))
+$ printf "%02x" 53
+$ echo '16i 138 p' | dc
+
+# 小文字 -> 大文字
+$ tr '[a-z]' '[A-Z]'
+
+# 大文字 -> 小文字
+$ tr '[A-Z]' '[a-z]'
+
+# sqrt(2) の小数点以下4082 ~ 4092桁目を表示する
+$ echo 'scale=4092; sqrt(2)' | bc | tr -d '\\\n' | fold -1 | tail -n 10 | tr -d '\n'
+
+# base64 でデコード+エンコードする, 改行を入れないように注意する
+$ echo -ne abc | base64 -e | tr -d '\r\n'
+$ echo -ne 'YWJjCg==' | base64 -d
+
+# 16 進数文字列をバイナリに変換
+$ echo '827ccb0eea8a706c4c34a16891f84e7b' | fold -2 | xargs -I{} zsh -c "echo $'\x{}'"
+
+# バイナリを 16 進数ストリームに変換
+$ head -c 20  /dev/random | hexdump -e '/1 "%02x "' | tr -d ' '
+
+# あ ~ ん までを出力する
+$ jot -w %x 81 12354 12435 | parallel 'echo "\u{}"'
+
+# 直積を作る
+$ echo {0..10}{0..10} | tr ' ' '\n
+
+# 直積 a to z
+$ echo {a-z}{a-z} | tr  ' ' '\n'
+
+# 直積 0 to z
+$ echo {0-9a-z}{0-9a-z} | tr ' ' '\n'
+
+# md5 で文字列をチェック
+$ md5 -s 12345
+
+# 素因数分解
+$ factor 437
+$ gfactor 437
+
+# 8-10 文字目だけを表示
+$ echo 'hogefugafuga' | cut -c8-10
+
+# <input value="hogehoge"> で hogehoge の部分を取り出す
+$ grep -o -E 'value="[0-9a-f]+"' < filename
+
+# アルファベットを 7 個順に分ける
+$ echo -en 'abcdefghijklmnopqrstuvwxyz' | gfold -7
+
+# 10進数アスキーコードポイント -> 文字列
+$ printf "\x$(printf %x 72)"
+
+# lf -> crlf への変換
+$ cat in.txt | sed -e "s;$;\x0d;g"
+
+# 差集合を取る
+$ grep -vxF -f set1 set2
+$ cat set1 set2 | sort | uniq -u
+
+# 改行にも含めて置換させる
+$ echo 1 2 3 4 5 | tr ' ' '\n' | perl -pe 's/\n/ \+ /g'
+
+# 先頭から n byte 読み込む
+$ cat file | cut -b1-n
+
+# 先頭から n byte 以降を読み込む
+$ cat filie | cut -b$[n + 1]-
+
+# 2 番目のフィールドに対して uniq
+$ cat file | uniq -c -f 1
+
+# unicode の 1 から 1000 番目までを表示
+$ seq 1 1000 | while read n; do echo $n "\u$(echo "16o $n p" | dc)";  done
+
+# 16 進数で 0 から 255 まで表示
+$ seq 0 255 | xargs printf "%02x\n"
+
+# zsh で部分文字列, 末尾2文字
+$ n=1bebb65
+$ echo $n[-2,-1]
+
+# unicode 表を作る
+$ seq 1 130000 | tr ' ' '\n' | xargs -I{} printf "%02x\n" {} |
+   while read n; do echo $n $(echo -ne "\u$n") $(echo -en "\u$n" |
+   hexdump -e '/1 "%02x"'); done | 
+   tee unicode-point.txt
+
+# 末尾の改行コードが a0 を探す
+$ cat unicode-point.txt | sed -e '1,100d' | 
+   while read n; do a=($(echo $n)); m=$a[3]; echo $a[1] $a[2] $m[-2,-1]; done | 
+   head -n 2000 | 
+   awk -d' ' '{if ($3 == "a0") {print $0}}' | 
+   tee a0-unicode.txt
+
+# 文字一覧
+$ seq 40 127 | xargs printf "%02x\n" | while read n; do echo "\x$n"; done | tr '\n' ' ' | fold -16
+
+# ASCII -> BINARY 変換
+$ echo '%70%61%73%73%77%6F%72%61' | tr -d '%' | xxd -r -p
+
+# html で unicode point で表現されている文字だけ取り出す
+$ cat index.html | grep -o -E '\\u[0-9a-z]{1,4}'
+$ cat index.html | grep -o -E '\\u[0-9a-z]{1,4}' | parallel -P1 echo -en "\{}"
+
+# 空行とコメントを削除
+$ cat ~/.torrc | grep -v '#' | grep -v '^\s*$'
+
+
+** 数値計算 **
+# 16進数 -> 10 進数
+$ echo '16i FFFE8 p' | dc
+# 10進数 -> 16進数
+$ echo '16o 69283 p' | dc
+# 16進数入力 -> 計算 -> 16進数で出力
+$ echo '16o 16i 7E 5 + p' | dc
+
+** cron 関係 **
+# ユーザー定義ファイルを定期実行
+$ echo '* * * * * echo 'hoge' ~/a.txt' > ~/.crontab
+$ crontab > ~/.crontab
+$ crontab -l
+
+# 現在自分のユーザー名で登録されている cron
+$ crontab -l
+
+# 現在の登録を全て消去
+$ crontab -r
+
+# cron エラーの時
+$ sudo cat /var/log/cron
+
+# % はエスケープする
+$ echo '* * * * * touch ~/$(date +"\%Y-\%m-\%d_\%h:\%m:\%s").txt' >> ~/.crontab
+
+# 2 重代入は不正なのでエラー
+HOGE=hoge
+FUGA=$HOGE
+
+# 基本形
+分  時  日  月  曜日  ユーザ  コマンド
+# 7月10日10時23分の場合
+23 10 10 7 * echo '' >> ~/out.txt
+# 変数, シェルなど
+SHELL=/bin/zsh
+E1=8221197652
+* * * * * echo "$E1 $SHELL" >> ~/out.txt
+
+
+** オンラインツール **
+* md5 decrypter: http://www.md5online.org/
+
+
+** 日付関係 **
+# unix timestamp を取得
+$ date +"%s"
+# 特定の時間 (2013/06/05) のタイプスタンプ
+$ date --date "2013/06/05" "+%s"
+# 現在時刻 (Y/m/d H:M:S)
+$ date +"%Y/%m/%d %H:%M:%S"
+# unix timestamp から現在時刻 (Y/m/d H:M:S)
+$ date --date @1428497578 +"%Y/%m/%d %H:%M:%S"
+# 現在から1日後
+$ date --date '1 day' +"%Y-%m-%d"
+# 現在から1日前
+$ date --date '1 day ago' +"%Y-%m-%d"
+# 時刻の誤差を問い合わせる
+$ ntpdate -q 'ntp.jst.mfeed.ad.jp'
+# 時刻を権威サーバーに合わせる
+$ sudo ntpdate -v 'ntp.jst.mfeed.ad.jp'
+
+
+** 写真関係 **
+# 情報
+$ identify -verbose in.jpg
+# 90度写真を回転させる
+$ convert -rotate 90 in.jpg out.jpg
+# 写真のサイズを 20% に
+$ convert -geometry 20% in.jpg out.jpg
+# 写真を明るくする
+$ convert -modulate 120 in.jpg out.jpg
+# 写真を暗くする
+$ convert -modulate 80 in.jpg out.jpg
+# exif 情報の削除
+$ exiftool -all= a.jpg b.jpg ...
+# ある色（白）を透過させる
+$ convert -transparent white in.png out.png
+# 複数画像を一枚に
+$ montage -tile 3x2 -geometry 100x100 0.jpg 1.jpg 2.jpg 3.jpg 4.jpg out.png
+# 色相を変化させる
+# オプションの値は輝度(Lightness), 彩度(Saturation), 色相(Hue) の順番
+$ convert -modulate 100,100,20 in.jpg out.jpg
+$ convert -modulate 100,100,180 in.jpg out.jpg
+$ convert -modulate 100,100,320 in.jpg out.jpg
+# txt を標準出力
+$ convert in.png txt:-
+# 画像切り出し
+$ convert -crop 960x720+80+80 in.png out.png
+# 静画から animation gif 変換
+$ convert  work/*.png out.gif
+$ convert -loop 0 -layers optimize -delay 20 work/*.png out.gif
+# 写真の画質を落とす
+$ convert -quality 20% in.jpg out.jpg
+$ convert -colors 32 in.gif out.gif
+# 写真をリサイズする
+$ convert -geometry 50% in.jpg out.jpg
+
+
+** ユーザー管理 **
+# admin ユーザーを作成, パスワード作成, sudo 設定, sshd 設定, シェルの変更
+$ vim /etc/ssh/sshd_config
+PasswordAuthentication no
+PermitRootLogin no
+$ useradd -m admin
+$ passwd admin
+$ visudo
+%wheel  ALL=(ALL)       ALL
+$ usermod -G wheel admin
+$ chsh -s /bin/zsh
+
+# 実行時のパスを引き継ぐ
+$ visudo
+# 追加
+Defaults    env_keep +=  "PATH"
+# コメントアウトする
+# Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin
+
+
+** 動画編集 **
+# mp4 -> 静画
+$ ffmpeg -i in.mp4 -an -r 15 -s 320x180 work/%04d.png
+
+# mkv から音楽部分を抽出
+$ ffmpeg -i in.mp4 2>&1 | grep Audio
+$ ffmpeg -i in.mkv -acodec mp3 -ab 192k out.mp3
+
+
+** 暗号化・圧縮 **
+# AES-256-CBC で暗号化する
+$ openssl enc -e -aes-256-cbc  < <(echo hoge fuga) > file-encrypted
+# 復号化
+$ openssl enc -d -aes-256-cbc < file-encypted
+
+# AES-256-EBC 暗号化+復号化 key を直接入力する
+$ openssl enc -e -p -aes-256-ecb < <(echo hoge fuga) > e.txt
+# 暗号化文章を分離
+$ cat e.txt | sed -n '3,3p' > a
+# 復号
+$ openssl enc -d -aes-256-ecb -K $(cat e.txt | sed -n '2,2p' | cut -d'=' -f2) < a
+
+# AES-256-CBC 暗号化
+$ echo echo 'someTextIWantToEncrypt' | \
+  openssl enc -base64 -e -aes-256-cbc -nosalt -pass pass:mySecretPass
+$ echo "KPkBkGJ9bs4YHvh24xz7m9jTlYWm1LcIFcWR0DwY4PU=" | \
+  openssl enc -base64 -d -aes-256-cbc -nosalt -pass pass:mySecretPass
+
+# hello.txt に data.zip を追加してパスワードfugafugaを付ける
+$ 7z -pfugafuga -mem=aes256 a data.zip hello.txt
+
+# zip に格納されたファイルの名前一覧
+$ zipinfo -1 archive.zip
+
+# crypt hash で暗号化
+$ openssl passwd -crypt -salt TrOIigLp hoge
+
+# 鍵を外す
+$ openssl rsa -in in.key -out out.key
+
+
+** font 関係 **
+# iconv による文字コードの変換一覧
+$ iconv --list
+# unicode point を utf8 で表す, 16進数で指定しなければならない
+$ echo -en '\uxxxx'
+$ echo -en '\u27'
+$ echo -en '\u3f3f'
+# codepoint 12354 -> utf8 'あ'
+$ echo -en "\u$(echo 'ibase=10; obase=16; 12354' | bc)"
+
+
+** パスワードクラック **
+# password.lst の中から解析する
+$ john --show --wordlist=password.lst shadow
+$ john --show shadow
+
+
+** curl, wget **
+# curl で post する
+$ curl -d 'username=hogehoge&pass=fugafuga' http://example.com
+# header だけ見る
+$ wget --spider --server-response http://example.com
+$ curl -I http://example.com
+# リダイレクトさせる
+$ curl -L -I http://example.com
+# cookie 保存
+$ curl -c cookie.txt http://example.com
+# cookie 送信
+$ curl -b cookie.txt http://example.com
+$ curl -s -b hoge=2 http://example.com
+$ curl -s -b 'hoge=2; fuga=3' http://example.com
+# referer を設定する
+$ curl -e http://example.com/ref http://example.com
+# UA を偽装する
+$ curl -A $UA http://example.com
+# post で送信 (application/x-www-form-urlencoded)
+$ curl -d 'name=admin&password=nimdadmin' http://example.com
+# file.php をアップロード, < @ はファイル読込
+$ curl -F "input_file=@file.php" http://example.com
+# filename を指定する
+$ curl -F "input_file=@file.php; filename=hoge" http://example.com
+# response, request header を見る
+$ curl -v http://example.com
+# header だけ確認
+$ curl --head http://example.com
+# filename の中身を指定する
+$ cat > postfile
+--post
+Content-Disposition: form-data; name="comment"
+Content-Type: text/plain
+I love uploading files!
+--post--
+$ wget --header="Content-type: multipart/form-data boundary=post" --post-file postfile
+# 圧縮された http ドキュメントを取得する
+$ curl -H "Accept-Encoding:gzip,deflate" http://example.com
+# proxy を通してアクセスする
+$ curl -x 'http://proxy-host:8080' -v http://example.com
+
+
+** firewall-cmd 関係 **
+# 指定した範囲の IP アドレスからのアクセスを許可する
+$ firewall-cmd --zone=public --add-rich-rule='rule family="ipv4" source address="192.168.0.1/24" accept'
+
+# active な zone を確認する
+$ firewall-cmd --get-active-zones
+
+# tun0 インターフェースを加える
+$ firewall-cmd --zone=public --add-interface=tun0
+
+# 直接 iptables に命令する, INPUT を全て reject
+$ firewall-cmd --direct --add-rule ipv4 filter INPUT 0 -j DROP
+
+# firewalld をストップさせる
+$ systemctl stop firewalld
+
+# direct したのを確認
+$ firewall-cmd --direct --get-all-rules
+
+# port を加える
+$ firewall-cmd --add-port 38425/tcp
+# port 永続的に加える, reload で on に
+$ firewall-cmd --permanent --add-port 38425/tcp
+$ firewall-cmd --reload
+
+# 現在の状態
+$ firewall-cmd --state
+
+# リロード
+$ firewall-cmd --reload
+
+# ローカルネットワークのみアクセスを許可させる
+$ firewall-cmd --direct --add-rule ipv4 filter INPUT 1 -s <local-net>/<local-cidr> -j ACCEPT
+# 外向けの UDP は OK
+$ firewall-cmd --direct --permanent --add-rule ipv4 filter OUTPUT 1 -p udp --sport 53 -j ACCEPT
+# 外向けの TCP:80 は OK
+$ firewall-cmd --direct --permanent --add-rule ipv4 filter OUTPUT 1 -p tcp --sport 80 -j ACCEPT
+# establesh, relate 以外は DROP
+$ firewall-cmd --direct --add-rule ipv4 filter INPUT 10 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ firewall-cmd --direct --add-rule ipv4 filter INPUT 10 -j DROP
+$ firewall-cmd --direct --add-rule ipv4 filter OUTPUT 10 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ firewall-cmd --direct --add-rule ipv4 filter OUTPUT 10 j DROP
+$ firewall-cmd --direct --add-rule ipv4 filter FORWARD 10 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ firewall-cmd --direct --add-rule ipv4 filter FORWARD 10 j DROP
+
+
+** tuntap 関係 **
+# 基本事項
+tun: ip frame の仮想化
+tap: ethernet frame の仮想化
+
+# ドライバをインストールした後, カーネルモジュールを on に
+$ modprobe -c | grep tun
+$ modprobe tun
+# ロードされたか確認
+$ lsmod | grep tun
+
+# インターフェースを作成する, tap/tun の場合
+$ ip tuntap add tap0 mode tap
+$ ip tuntap add tun0 mode tun
+# 確認
+$ ip addr
+
+# ヘルプ, 削除する場合
+$ ip tuntap help
+$ ip addr del 192.168.24.53 dev tap0
+$ ip tuntap del tap0 mode tap
+# Device or resource busy の時
+$ lsof +D /dev/tap0
+$ fuser tap0
+
+
+# ssh で tun に対する VPN を作る
+$ sudo ssh -v -N -w0:0 -o Tunnel=point-to-point <user>@<hostname>
+# 確認
+$ ifconfig
+# Linux で IP を設定する
+$ ifconfig tun0 <A-ip> pointopoint <B-ip>
+# FreeBSD, Mac で IP を設定する
+$ ifconfig tun0 <B-ip> <A-ip>
+
+# 疎通テスト
+$ ping 192.168.3.1
+# 疎通テスト2, サーバー側
+$ firewall-cmd --add-port 38425/tcp
+$ socat TCP-LISTEN:38425,reuseaddr,fork -
+# クライアント側
+$ socat TCP:192.168.3.1:38425 -
+
+# 設定した ip を消す, Linux の場合
+$ sudo ip address del 192.168.3.1/32 dev tun0
+
+# ブリッジで繋げる場合, tap で接続
+# サーバー側で tap インターフェースを作る
+$ ip tuntap add tap0 mode tap
+# クライアント側で接続
+$ sudo ssh -v -N -w0:0 -o Tunnel=ethernet <user>@<hostname>
+# サーバー側で確認
+$ ifconfig tap0
+# サーバー側でブリッジを作る
+$ brctl addbr br0
+$ brctl addif br0 tap0
+$ brctl show
+# クライアント側（MAC）でブリッジを作る
+$ ifconfig bridge1 create
+$ ifconfig bridge1 addm en0 addm tap0
+$ ifconfig bridge1 up
+$ ifconfig bridge1
+# クライアント側の DHCP がきちんと動作しているかどうかを確認
+$ sudo dhcping -v -s 192.168.24.1 -c 192.168.24.53
+> Got answer from: 192.168.24.1
+# クライアント側で debug
+$ sudo tcpdump -nn -i tap0
+# dhclient によって resolver, default gateway が上書きされるのを防ぐ
+$ chattr +i /etc/resolv.conf
+$ echo 'interface "tap0" {supersede routers 0.0.0.0;}' > /etc/dhcp/dhclient.conf
+# サーバー側で DHCP client を動作させる
+$ sudo dhclient -cf /etc/dhcp/dhclient.conf -v tap0
+# arp replay が反応しないため, net.ipv4.forwading=1 とする
+$ sudo sysctl -w net.ipv4.ip_forward=1
+
+
+** Tor の通信速度改善 **
+# tor の通信速度を測る
+$ httping -5 -x localhost:9050 google.co.jp
+
+
+** MAC **
+# ネットワークの情報を見る
+$ networksetup -getinfo Ethernet
+$ networksetup -getinfo Wi-fi
+
+
+** FTP のセットアップ **
+# bftpd を /usr にインストール
+# passive mode で利用するポートを開ける (12000-12500)
+$ firewall-cmd --add-port 12000-12500/tcp
+$ firewall-cmd --add-port 20-21/tcp
+$ firewall-cmd --list-all
+# 疎通テスト
+$ socat TCP-LISTEN:12300,reuseaddr,fork -
+$ socat TCP:localhost:12300 - < <(echo 'hello world')
+
+# ipv6 を off にする
+$ sysctl -w net.ipv6.conf.all.disable_ipv6=1
+$ sysctl -w net.ipv6.conf.default.disable_ipv6=1
+$ sudo emacs /etc/sysctl.conf
+net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+# 確認
+$ sysctl -a | grep ipv6 | grep disable
+
+# bftpd の設定
+$ sudo emacs /usr/etc/bftpd
+PASSIVE_PORTS="12000-12500"
+DATAPORT20="yes"
+# 起動
+$ sudo bftpd
+# 接続確認
+$ ftp localhost
+
+
+** ネットワーク **
+# デフォルトルートを変更する
+$ route delete default
+# 通常
+$ route add default 192.168.11.1
+# インターフェースを指定
+$ route add -interface en0 default 192.168.0.1
+# 確認
+$ netstat -rn
+
+# 192.168.24.0/24 -> 192.168.24.1 に設定
+$ route add 192.168.25.0/24 192.168.25.1
+
+# ssh 経由で Local Port を外部に公開する
+$ emacs /etc/ssh/sshd_config
+AllowTcpForwarding yes
+PermitTunnel yes
+GatewayPorts yes
+# リモートのポートをローカルにフォワードする
+$ ssh -v -N -R 80:0.0.0.0:38425 <user>@<host>
+# 確認
+$ socat TCP:<host>:38425 - < <(echo 'GET / HTTP/1.0'; echo;)
+
+
+** http 通信のログ **
+
+*** mitmproxy ***
+# socks を通して通信
+$ mitmproxy -p 8080 --socks --host
+# http proxy
+$ mitmproxy -p 8080 --host
+# transparent proxy
+$ mitmproxy -p 8080 -T --host
+
+# html だけ通す場合 'l+'
+~t "text/html"
+# google だけ通す
+~d "google.com"
+# google.com の html のみ
+(~d "google.com" & ~t "text/html")
+
+# ssl 証明書をインストール
+# 最初に一度起動させる
+$ mitmproxy
+# ~/.mitmproxy/mitmproxy-ca-cert.pem をインポート
+# Firefox の場合は 環境設定 -> 詳細 -> 証明書 -> 証明書を表示 -> 証明認証局 -> 読込 で設定する
+# 確認
+$ mitmproxy -p 8080 --socks --host
+
+# browser -> localhost:6060 -> mitmproxy(localhost:7070) -> internet
+$ socat -v -d -d TCP-LISTEN:6060,reuseaddr,fork TCP:localhost:7070
+$ mitmproxy -p 7070 --socks --host
+
+# browser -> mitmproxy(localhost:7070) -> tor(localhost:90500) -> internet
+$ tor
+$ echo "strict_chain\n[ProxyList]\nsocks5 127.0.0.1 9050" > ~/.proxychains.conf
+$ proxychains4 ~/.proxychains.conf mitmproxy -p 7070 --socks --host --keepserving
+
+# browser -> localhost:6060 -> mitmproxy(localhost:7070) -> tor(localhost:90500) -> internet
+$ socat -v -d -d TCP-LISTEN:6060,reuseaddr,fork TCP:localhost:7070
+
+
+*** tcpdump ***
+# icmp のみ
+$ tcpdump 'icmp'
+
+# 特定のホストのみ
+$ tcpdump 'ip.dst_host == 192.168.0.1'
+
+# ポートと IP 指定
+$ tcpdump 'ip.src_host == 192.168.0.1 and tcp.port == 80'
+
+# PSH フラグを on にする
+$ tcpdump 'tcp[13] & 8!=0
+
+# 特定のポートのみ
+$ tcpdump 'tcp dst port 80'
+
+# ソースアドレスを指定
+$ tcpdump -i eth0 src host 192.168.1.1
+
+# 到着アドレスを指定
+$ tcpdump  -i eth0 dst host 192.168.1.1
+
+# ポート番号を数値のまま: -n
+$ tcpdump -i eth0 -n
+$ tcpdump -i eth0 -nn
+
+# a.cap ファイルを読み込む: -r
+$ tcpdump -A -r a.cap
+$ tcpdump -n -X -r a.cap
+
+# en0 の 80 番ポートを sniffer する
+$ tcpdump -n -A -i en0 tcp port 80
+
+# tcpdump の内容をファイルに保存: -w
+$ tcpdump -w save.pcap 'tcp dst port 80'
+
+# tcpdump のファイルの中身を表示させる: -X
+$ tcpdump -X -r save.pcap
+
+# 特定のホストとの通信を表示させる
+$ tcpdump -X -n -r save.pcap 'ip dst 1.1.1.1 or ip src 1.1.1.1'
+
+
+*** mitmproxy ***
+$ mitmproxy -p 8080 --host
+* ~/.mitmproxy/mitmproxy-ca.pem のルート証明書をブラウザにインストール
+* Shift+F: following mode
+* b: save file
+* l: limit + expression
+  * ~t "text/html": html ファイルにマッチ
+  * e: エディタを起動
+
+
+*** git  ***
+
+# ブランチ関連
+* 通常: feature_relase
+* 開発: develop
+* マスター: master
+* バグ: hotfix
+普段は新しい機能ごとに checkout して開発ブランチに取り込む
+一定期間終わると master ブランチに統合する.
+本番サーバーでバグが発生した場合 hotfix ブランチを作成し解決させる
+hotfix ブランチの変更を master と develop に取り入れる.
+
+# 設定の確認
+$ git config --global --list
+$ git config --local --list
+
+# ローカルレポジトリを別ディレクトリにに add
+$ git clone /home/admin/repo .
+
+# 全てを元に戻す
+$ git checkout .
+
+# [add 前] 特定のファイルの変更を取り消す
+$ git checkout <filename>
+# [add 後] 特定のファイルの変更を取り消す
+$ git reset HEAD <filename>
+$ git checkout <filename>
+
+# git add したファイルをステージングから除く
+$ git rm --cached <filename>
+
+# git で server と local の内容が違う場合, ignore してシンボリックリンクを使う
+$ ln -s config-sample.ini config.ini
+$ echo "config.ini" >> .gitignore
+$ echo "config.ini export-ignore" >> .gitattributes
+
+# エイリアスを追加
+$ git config --global 'alias.dif' 'diff --color'
+$ git dif HEAD
+
+# ブランチを新しく作る
+$ git branch experiment
+$ git checkout -b experiment
+# ブランチの切り替え
+$ git checkout experiment
+# ブランチの rename
+$ git checkout -m <old> <new>
+# 全ブランチ名の確認
+$ git branch -a
+# future_relase ブランチに develop ブランチの変更を取り込む
+$ git checkout future_release
+$ git rebase develop
+
+# indexing に間違えて反映してしまったファイルを全て戻す
+$ git reset .
+# ファイル削除を indexing に反映させる
+$ git rm <filename>
+# ファイル追加を indexing に反映させる
+$ git add <filename>
+
+# カラーを有効にする
+$ git config --global color.ui true
+# pager を有効にする
+$ git config --global core.pager cat
+# diff color をデフォルトで有効にする
+$ git config --global color.diff true
+# リモートレポジトリに対してデフォルトで同名のブランチを push する
+$ git config --global push.default matching
+# デフォルトのリモートレポジトリ, ブランチを設定
+$ git config --local branch.master.remote origin
+$ git config --local branch.master.merge master
+# 確認
+$ git config --list
+
+# 一時退避させる
+$ git stash
+# 一時退避させたリスト見る
+$ git stash list
+# 元に戻す
+$ git stash apply 'stash@{0}'
+
+# pull をデフォルト引数で実行する
+$ git checkout master
+$ git push origin master
+$ git branch --set-upstream-to=origin/master master
+$ git checkout develop
+$ git push origin develop
+$ git branch --set-upstream-to=origin/develop develop
+
+# commit メッセージを間違えた場合, 微修正を前回のコミットに反映させたい場合
+$ git commit --amend -m "message"
+
+# 特定のバージョンのファイルをzipなどで固める
+$ git archive --format=zip --prefix=project-0.1/ release-0.1 > project-0.1.zip
+
+# commit ログにタグを付ける
+$ git tag release-0.1 c82ee1d
+# タグの確認
+$ git tag -l
+# タグを消す
+$ git tag -d release-0.1
+
+# 一括で git delete したファイルを git rm する
+$ git ls-files --deleted
+$ git rm $(git ls-files --deleted)
+
+# commit メッセージの文章を変更する場合
+# 直前のメッセージを変更
+$ git commit --amend -m "changed"
+# 直前以外のメッセージを変更
+$ git rebase -i b3f97ca
+# 対象を pick -> reword に変更し保存、終了
+# その後コミットメッセージを変更する
+
+
+**** プライベートレポジトリの追加 ****
+# サーバー:プライベートレポジトリの設定
+$ git init --bare
+# クライアント:リモートレポジトリの追加
+$ git remote add origin ssh://admin@1.2.3.4:22/home/admin/repo
+# 設定を確認
+$ git config --get remote.origin.url
+$ git remote show origin
+# 削除
+$ git remote rm origin
+
+
+*** Ruby ***
+# ロードバス追加のイディオム, $: は $LOAD_PATH の別名
+$:.unshift File.dirname(__FILE__)
+
+# nill guard
+a ||= 10
+
+**** rbenv をインストールする ****
+# 実行ファイルをクローン
+$ git clone https://github.com/sstephenson/rbenv.git ~/.rbenv
+$ git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+
+# パスを追加
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
+$ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+
+$ source ~/.bash_profile
+$ rbenv --version
+rbenv 0.4.0-97-gfe0b243
+
+
+*** proxychains ***
+
+# 設定ファイル
+
+# 余分な出力はしない
+quiet_mode
+
+# プロキシを上から順に辿る
+strict_mode
+
+# dns も proxy 経由で問い合わせる
+proxy_dns
+
+# localnet には proxy を通さない
+localnet 127.0.0.0/255.0.0.0
+localnet 10.0.0.0/255.0.0.0
+localnet 172.16.0.0/255.240.0.0
+localnet 192.168.0.0/255.255.0.0
+
+# proxy リストをここに記入
+[ProxyList]
+socks5 127.0.0.1 9050
+
+# proxychain をシェルから起動
+$ proxychains4 -f ~/.proxychains.conf zsh
+
+# ssh を output にして通信
+$ ssh -N -D 4321 username@hostname
+$ PROXYCHAINS_SOCKS5=4321 proxychains4 zsh
+
+# tmux でログインに proxychains を強制 tmux.conf に以下を追記
+set-option -g default-command "proxychains4 -f /etc/proxychains.conf zsh"
+
+# proxychains から ssh に繋ぐ場合は ServerAlive を ~/.ssh/config で上げておく
+Host *
+  TCPKeepAlive yes
+  ServerAliveInterval 30
+  ServerAliveCountMax 5
+
+*** Tor 関係 ***
+
+**** DNS 解決を Tor 経由で ****
+
+# DNS 漏洩の対策, torrc に以下の行を追加
+DNSListenAddress 127.0.0.1
+DNSPort 5553
+
+# 53 -> 5553 に relay, /etc/pf.conf に以下を追加
+rdr pass on $exit_if proto udp from $exit_if to any port 53 \
+    -> 127.0.0.1 port 5553
+
+# packet filter を有効にして設定確認
+$ pfctl -nf /etc/pf.conf
+$ pfctl -f /etc/pf.conf
+$ pfctl -e
+$ pfctl -sn
+
+# インターフェースの DNS 解決を変更する
+$ networksetup -setdnsservers Wi-fi 127.0.0.1
+$ networksetup -setdnsservers Ethernet 127.0.0.1
+
+# 疎通テスト
+$ socat -x -v -d -d UDP-RECVFROM:5553,reuseaddr,fork -
+$ dig google.com
+
+# 中継ノードを挟んでテスト, まず torrc を書き換え
+DNSPort 5552
+# tor 起動
+$ tor
+# 中継ノード
+$ socat -x -v -d -d UDP-RECVFROM:5553,reuseaddr,fork UDP:127.0.0.1:5552
+# 後は適当にブラウザから, テキストでホスト名検索
+$ host google.com
+
+
+

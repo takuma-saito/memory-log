@@ -43,11 +43,11 @@ KVM コマンドを用いたセットアップ方法
 
 ゲスト OS のイメージを作成する.
 
-    $ qemu-img create -f qcow2 <Image_Name> <size>
+    $ qemu-img create -f qcow2 <image_path> <size>
 
 インストーラーを用いてゲスト OS に OS をインストールする
 
-    $ qemu-kvm -hda <Image_Name> -m 512 -cdrom /path/to/the/ISO/image -boot d -vnc :0  -virtioconsole stdio -curses
+    $ qemu-kvm -hda <image_path> -m 512 -cdrom /path/to/the/ISO/image -boot d -vnc :0  -virtioconsole stdio -curses
 
 qemu-kvm で利用できるオプションは以下.
 
@@ -69,6 +69,10 @@ qemu-kvm で利用できるオプションは以下.
 * `-daemonize`: デーモン化
 * `-k ja`: キーマップを指定
 * `-net nic,macaddr=52:54:00:00:00:03,model=e1000`: ネットワークアドレスなどを指定
+
+作成したゲスト OS の詳細情報を見る
+
+    $ qemu-img info <image_path>
 
 
 libvirt を用いたセットアップ方法
@@ -160,11 +164,11 @@ dbus が起動していないと avahi-daemon が起動できないので、最�
 
 virt-install の各オプションの意味は下記.
 
-* `--connect <hypervisor>`: 
-* `--name`: 
-* `--disk`: 
-* `--vnc`: 
-* `--cdrom`: 
+* `--connect <hypervisor>`: root 権限で kvm を利用する場合は qemu:///system を指定する
+* `--name`: VM 管理用の名前
+* `--disk <disk_path>`: ディスクイメージへのパス
+* `--vnc <port:host>`: VNC に接続する場合の待受ポートと許可ホストを指定できる. ポートは 5900 が基準値
+* `--cdrom <cdrom_path>`: インストーラーのCDを指定する
 * `-x console=ttyS0,115200`
 
 テキストモードでインストールする場合
@@ -180,16 +184,17 @@ virt-install の各オプションの意味は下記.
     --location http://ftp.riken.jp/Linux/centos/6.3/os/x86_64/ 
 
 "--location <url>" にてインストールディスクのURLを指定する.
+**コンソールから抜けるには Ctrl + ] を同時押しする.**
 
-**"--location" の指定にローカルファイルを指定をすることも出来るが基本的に難しい.**
+ちなみに, *"--location" の指定にローカルファイルを指定をすることも出来るが基本的に難しい.*
 
 virt-install を --location 指定でインストールする場合
 <url>.treeinfo というファイルを確認し, ネットワークインストールを行う.
 しかし, 普通に ISO をマウントしただけでは、一部セクションが抜けているので独自に修正する必要がある.
 この時点で既に面倒くさいが, ISO ファイルは ISO9660 という形式でファイルシステムが管理されており
-*マウントしたファイルは直接編集できない.*
+**この形式でマウントしたファイルは直接編集できない.**
 
-よって, マウントしたファイルを一旦別の場所へコピーしないといけない.
+よって, マウントしたファイルを一旦全て別の場所へコピーしてから編集しないといけない.
 
 このようにネットワークではなくローカルで --location 指定する場合非常に手間が掛かる.
 
@@ -198,27 +203,37 @@ virt-install を --location 指定でインストールする場合
 virt-install には [images-arch] セクションの boot.iso の指定が必要だが、
 普通に ISO ファイルをダウンロードしただけではこの指定が存在しないため編集が必要.
 
-boot.iso にはネットワークインストール用のメディアを指定する.
+boot.iso にはネットワークインストール用のメディア（netinstall などの名前）を指定する.
 
 注2）
 qemu-kvm コマンドから ISO ファイルを直接インストールする場合 -curses オプションでテキストインストールが出来る.
 よって virsh-install も将来のバージョンではまず間違いなく curses オプションがサポートされるだろう.
 
-注3)
+注3) 
+debian, centos の x86_64 版は以下を "--location" に設定すればOK
 
-* debian: "http://ftp.riken.jp/Linux/debian/debian/dists/squeeze/main/installer-amd64/""
+* debian: "http://ftp.riken.jp/Linux/debian/debian/dists/squeeze/main/installer-amd64/"
 * centos: "http://ftp.riken.jp/Linux/centos/6.3/os/x86_64/"
 
-リブートするので, ゲスト OS を一旦シャットダウンする.
+### vyatta のインストール ###
 
-    $ shutdown -h now
+    $ virt-install  --connect qemu:///system  \
+    --name vyatta01 \
+    --ram 512  \
+    --vcpus=1  \
+    --disk=/var/lib/libvirt/images/vyatta.img,size=5 \
+    --nographics  \
+    --network=bridge:br0 --network=bridge:br1 \
+    --cdrom=vyatta-livecd_VC6.3-2011.07.21_i386.iso
 
-その後バックグランドでスタートさせると virsh console で接続できるようになる.
-
-    $ virsh start <name>
-    $ virsh console <name>
-
-コンソールから抜けるには Ctrl + ] を同時押し.
+* `--connect <hypervisor>`: root 権限で使用する場合は quemu:///system
+* `--ram <memory>`: メモリ容量 MB 単位
+* `--vcpus=<cpu_number>`: 割り当てる vcpu の数を指定する. vcpu は QEMU が立ち上げるスレッドの数 1 〜 16 まで指定できる
+* `--disk=<path>,size=<disk_size>`: 仮想ストレージのパスを指定する. 
+    size は GB 単位で指定できる. 仮想ストレージは raw フォーマットで作成される.
+* `--graphics <type>`: ディスプレイタイプの指定. GUI 形式で利用しない場合は none を指定する
+* `--network=<type>:<interface>`: ネットワークの設定.
+* `--cdrom=<cdrom>`: インストーラーへのパス
 
 virsh による各種操作
 ----------------------------
@@ -226,6 +241,7 @@ virsh による各種操作
 仮想マシンに対する操作一覧
 
 * 状態一覧: `virsh list --all`
+* 仮想マシンに接続: `virsh console <name>`
 * 詳細情報: `virsh dominfo <name>`
 * 設定ファイルの編集: `virsh edit <name>`
 * 起動: `virsh start <name>`
@@ -236,17 +252,91 @@ virsh による各種操作
 * 電源オフ: `virsh destroy <name>`
 * 削除: `virsh undefine <name>`
 
-ディスクイメージ
+ディスクイメージに対する操作
 
 * 一覧: `virsh pool-list`
 * ストレージプール一覧: `virsh pool-list <name>`
 * ストレージプール削除: `virsh vol-delete <path>`
+
+
+その他
+----------------------------
+
+### 既存の loop back ファイルをマウントする場合 ###
+
+virt-install や qemu-img で作成されたファイルは直接マウントすることができる.
+mount で直接マウントする場合はパーティション先頭までのバイト数を計算し, オフセットを指定しなければならない.
+
+fdisk でパーティション先頭までのバイト数を計算する
+
+    $ fdisk -l -u debian.img 
+    
+    Disk debian.img: 10.7 GB, 10737418240 bytes, 20971520 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk identifier: 0x00041334
+    
+    Device Boot      Start         End      Blocks   Id  System
+    debian.img1   *        2048    20013055    10005504   83  Linux
+    debian.img2        20015102    20969471      477185    5  Extended
+    debian.img5        20015104    20969471      477184   82  Linux swap / Solaris
+
+先頭セクターが 2048 で 1 つのセクターが 512 Byte から 2048 * 512 がパーティション先頭であることが分かる.
+
+    $ mount -o loop,offset=$((2048 * 512)) debian.img /mnt 
+    $ ls /mnt 
+    bin/  boot/  dev/  etc/  home/  initrd.img@  lib/  lib32/  lib64@  lost+found/  media/  
+    mnt/  opt/  proc/  root/  sbin/  selinux/  srv/  sys/  tmp/  usr/  var/  vmlinuz@
+
+直接 mount コマンドを使うのではなく, kpartx を用いてマウントすることもできる.
+
+    $ kpartx -l centos.img
+    loop0p1 : 0 1024000 /dev/loop0 2048
+    loop0p2 : 0 9459712 /dev/loop0 1026048
+    
+    $ kpartx -av centos.img
+    add map loop0p1 (254:3): 0 1024000 linear /dev/loop0 2048
+    add map loop0p2 (254:4): 0 9459712 linear /dev/loop0 1026048
+
+ext2 のブート領域はそのまま表示できるが, LVM を使っている場合はそのままではマウントできない
+
+    $ mount /dev/mapper/loop0p1 /mnt 
+    $ ls /mnt 
+    System.map-2.6.32-279.el6.x86_64  efi/   initramfs-2.6.32-279.el6.x86_64.img  symvers-2.6.32-279.el6.x86_64.gz
+    config-2.6.32-279.el6.x86_64      grub/  lost+found/                          vmlinuz-2.6.32-279.el6.x86_64*
+    
+    $ umount /mnt
+    
+    $ mount /dev/mapper/loop0p2 /mnt
+    mount: unknown filesystem type 'LVM2_member'
+    
+LVM をマウントする場合は論理ボリュームを有効にする.
+
+    $ pvscan
+    $ vgscan
+    $ vgchange -ay
+    $ ls /dev/mapper/
+
+これで /dev/mapper/ に新しく論理ボリュームが追加されているので, そのボリュームをマウントすればよい.
+終了する時は LV を INACTIVE 状態にした後に kparted で削除を行う
+
+    $ vgchange -an
+    $ kpartx -dv centos.img 
+    loop deleted : /dev/loop0
 
 CPU 
 ----------------------------
 
 ネットワーク
 ----------------------------
+
+### 参考 ###
+
+* [libvirt: Wiki: Networking](http://wiki.libvirt.org/page/Networking)
+* [brctl でLinuxマシンをHUBにする - いますぐ実践! Linuxシステム管理 / Vol.162](http://www.usupi.org/sysad/162.html)
+* [CentOS/KVMによるサーバ仮想化 - OSSでLinuxサーバ構築](http://www.oss-d.net/virt/kvm)
+
 
 ストレージ
 ----------------------------

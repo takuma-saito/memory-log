@@ -1,0 +1,212 @@
+FTP サーバー 設定・入門
+============================
+
+vsftpd インストール
+----------------------------
+パッケージ管理ソフトからftpサーバーのvsftpdをインストール
+
+    sudo yum -y install vsftpd
+
+vsftp.conf の設定
+----------------------------
+vsftpd.confの各ディレクティブの解説。
+推奨値は内部向けFTPサーバーとして利用する場合の設定。
+またパッシブモードでの設定は必ず行うこと。
+この設定をしないとユーザーが利用するFTPクライアントでログインできないことがある。
+またパッシブモードで利用するポートを空けておくことも忘れず行うこと。
+
+FTPサーバーが利用するポートは21番, 20番。
+21は制御用に、20はデータ転送用にそれぞれ利用する.
+
+PASVモードの場合、データ転送ポートをサーバーが任意に設定できる。
+
+* `anonymous_enable = [NO | YES]`: 
+  推奨: NO
+  匿名ユーザーのログインを許可するか。
+  FTPサーバーを外部に公開する場合はYES。内部で利用する場合は必ずNOにすること。
+  
+* `local_enable = [NO | YES]`:
+  推奨: YES
+  ローカルユーザーのログインを許可するかどうか。
+  デフォルトではローカルユーザーがログインできないので、YESに設定する。
+
+* `dirmessage_enable = [NO | YES]`:
+  推奨: YES
+  ディレクトリメッセージの設定。
+  ログインした時にディレクトリメッセージが表示されるかどうかを決める。
+  YESの場合はユーザーのHOMEに.messageファイルを置くとログイン時にそのメッセージが表示される。
+  
+* `ascii_upload_enable = [NO | YES]`:
+  推奨: YES
+  デフォルトではアスキーモードでのダウンロード・アップロードが出来ない。
+  必ずコメントアウトを外すこと。
+  
+* `chroot_local_user = [NO | YES]`:
+  推奨: YES
+  ローカルユーザーはchrootされホームディレクトリ以下しかアクセスできない。
+  NOの場合はホームディレクトリより上位層のディレクトリも閲覧できてしまう。
+  
+* `chroot_list_enable = [NO | YES]`:
+  推奨: YES
+  YES の場合、chroot_local_user の設定をユーザーごとに行える。
+  chroot_local_user が YES の場合、chroot_list にユーザーを追加することで、
+  そのユーザーのみ全ディレクトリにアクセスすることができるようになる。
+
+* `use_localtime = [NO | YES]`:
+  推奨: YES
+  時刻表示はデフォルトでGMT。
+  日本を対象にする場合、localtimeを有効にすることで正しい時刻が表示される
+  
+* `Listen = [NO | YES]`:
+  推奨: Yes
+  YESの場合スタンドアロンモードで起動させる。
+
+* `pasv_enable = [NO | YES]`:
+  推奨: YES
+  パッシブモードを有効にさせる。
+
+* `port_enable = [NO | YES]`:
+  推奨: NO
+  PORT モードを有効にさせる（データの転送モード）
+
+* `pasv_min_port/pasv_max_port = <number>`:
+  パッシブモードで利用するポート番号の範囲を指定する。
+  iptablesで使用するポートを開けることを忘れず行う。
+
+* `pasv_addr = [IP Adress | Host Name]`:
+  pasv_modeを利用するホスト名・IPアドレスを利用する。
+  ホスト名を指定した場合、pasv_addr_resolve がYESになっていれば、
+  DDNSホストもパッシブモードに対応できる。
+  *ただし基本的には HostName ではなく、IP アドレスを記入すること.*
+  というのも、上記の pasv_addr_resolve の設定を正しく行わないと、
+  パッシブモードでの接続が正常に行えないため。
+  該当ホストではなく、127.0.0.1 に接続を行うようにメッセージが送信されてしまう。
+
+telnet を使って FTP プロトコルを見てみる
+----------------------------
+何らかの障害があった時のために、
+生のFTPプロトコルを理解しておいた方がよいでしょう.
+ただし telnet で出来ることは多くない.
+
+    $ telnet domain.com 21
+    Trying IP...
+    Connected to domain.com
+    Escape character is '^]'.
+    220 Welcome to  FTP service.
+    
+    # ユーザー名を入力する
+    USER UserName
+    
+    331 Please specify the password.
+    
+    # パスワードを入力する
+    PASS Password         
+    
+    230 Login successful.
+    
+    # パッシブモードで接続する
+    PASV
+    
+    227 Entering Passive Mode (127,0,0,1,234,125)
+
+パッシブモードで接続後, 最後尾に接続先のアドレスとポート番号が表示される。
+上記の場合は, 最初の 4 つ 127,0,0,1 までが IP アドレスで 234,125 がポート番号を表す.
+ポート番号は16進数で表示されているので、実際の値は 234 * 256 + 125 = 60029 である.
+ここで別のウインドウから Passive Mode で指示されたアドレスに telnet する.
+      
+    $ telnet 49.212.125.20 $((234 * 256 + 125))
+    Connected to www42226u.sakura.ne.jp.
+    Escape character is '^]'.
+    
+ここで先ほど LIST コマンドを行うと
+
+    # ディレクトリ中のファイルを表示させる
+    LIST
+    150 Here comes the directory listing.
+    226 Directory send OK.
+
+とメッセージが返る.
+別ウインドウのメッセージを確認すると、
+しっかりディレクトリ中のファイル名が表示されている.
+
+    drwxr-xr-x    2 501      501          4096 Apr 02  2012 log
+    drwxr-xr-x    9 501      501          4096 Nov 05 18:00 www
+    Connection closed by foreign host.
+
+FTP 接続を辞めるには QUIT コマンドを送ればよい.
+
+    QUIT
+
+curlftpfs
+----------------------------
+curlftpfs では FTP 上のファイルをローカルホストのディレクトリにマッピングし,
+あたかもローカルで作業しているかのように FTP 上のファイルにアクセスできる.
+
+FTP で様々な作業を行う場合, ftp コマンドではディレクトリが送信出来ないので表示に不便なので
+curlftps などを用いた方がよい.
+
+curlftp のインストール.
+
+    $ sudo yum install fuse-curlftpfs
+    
+*（注意）もし検索しても存在しない場合は rpmforge のレポジトリを加える*
+http://pkgs.repoforge.org/rpmforge-release/ にアクセスし、最新の rpmforge-release の名前を確認する。
+アーキテクチャによって、インストールするパッケージが異なるのでアーキテクチャを確認。
+
+    $ uname -r
+
+最新のパッケージをダウンロードする。
+
+    $ wget http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm
+
+パッケージのインストール。
+
+    $ rpm -ivh rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm
+
+これで rpmforge のパッケージも yum 経由でインストールできようになった。
+
+ファイルのマウント
+
+    $ mkdir MountPoint
+    $ curlftpfs -o user=UserName:Password ftp://HostName MoutPoint
+    $ cd MountPoint
+    cd: permission denied: MountPoint
+
+permission denied と言われてしまった場合は、/dev/fuse を一般ユーザーで使用できないため。
+fuse グループにユーザーを追加すればよい。
+
+    $ gpasswd -a username fuse
+
+ファイルのアンマウント
+
+    $ fusermount -u MountPoint
+
+ファイルのマウント後は通常のローカルファイル上と同じ様に作業できる.
+上記のファイルのマウントコマンドでは ps コマンドでパスワードが表示されてしまうので、
+基本的にはテスト用のみで行うこと.
+以下で述べるように ~/.netrc にアカウント情報を記入しておけば、
+パスワードが表示されなくて済む.
+
+~/.netrc に記述する内容.
+
+    machine doman.com
+    login UserName
+    password Password 
+
+~/.netrc のパーミッションは 600 に設定しておく.
+600 の設定でない場合, エラーが出て接続できない.
+
+    $ chmod 600 ~/.netrc
+
+設定後は以下のようにオプションを入れず接続できる.
+
+    $ curlftpfs domain.com MountPoint
+
+curlftpfs に何らかの理由でアクセスできない場合がある.
+その場合はデバックモードで接続する.
+
+    $ curlftpfs -d -v user=UserName:Password ftp://HostName MoutPoint
+
+
+
+

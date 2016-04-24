@@ -1,0 +1,23 @@
+#  uniq-k1.awk
+#  purpose:
+#     To imitate the operation of uniq, on first field only. It
+#     mimics the behavior of the Unix command, "sort -u -k1,1".
+#
+#  This script is not useful in itself, but suggests how to delete
+#  duplicate records or duplicate sets of data in different contexts.
+#
+#  Input files must already be sorted on 1st field. If the 1st field
+#  of two consecutive lines match, discard the top line. Resume the
+#  comparison with the next line. If the 1st field of two consecutive
+#  lines do NOT match, print the top line and loop.
+# 
+#  Syntax:  sort -switches input.file | awk -f uniq-1.awk
+BEGIN { FS = " " }          # set field separator to a blank space
+{
+ if (var != $1 && NR != 1)  # If 1st field != previous var and if
+    print line              # the record number != 1, print line.
+                
+ var = $1                   # For each line, set 'var' to field #1
+ line = $0                  # For each line, set 'line' variable.
+}
+END { print line }          # Print last line in buffer!

@@ -15,17 +15,15 @@ Linux でよく使うコマンド集
   * -d ユーザー名: グループからユーザーを削除
   * -A ユーザー名: グループの管理者を定義
 
-
 * `useradd`: ユーザーを追加する
-  * `-M`: ディレクトリを作らない
-  * `-d`: ホームディレクトリを指定する
+  * `-M`: ホームディレクトリを作らない
+  * `-m`: ホームディレクトリを作る
+  * `-d`: ホームディレクトリを指定する, ホームディレクトリを指定しないと、パーミッションが 755 で設定されるので非常に危険
   * `-s`: デフォルトシェルを指定する(/bin/bash, /bin/false, /bin/nologin)
     ⇒ どのシェルが使えるかどうかは`/etc/shells`に書いてある
     
-
 * `userdel`: ユーザーを削除する
   * -r: ホームディレクトリごと削除する
-
 
 * `mkpasswd`: ランダムな文字列を生成する
   コマンドが見つからない場合はパッケージ管理ソフトで`expect`をインストールする
@@ -33,13 +31,11 @@ Linux でよく使うコマンド集
       * `-l 長さ`: パスワードの長さを指定する
       * `-s 長さ`: 特殊文字の長さを指定する
 
-
 * `sort`:
     レコードをソートする。
     * レコードが何種類か見たい場合: `sort -u`
     * 逆順にソートする: `sort -r`
     * レコード別の分布が見たい場合: `sort | uniq -c`
-
 
 * `tee`:
     標準入力から読み込んだ内容を標準出力とファイルの両方に出力する
@@ -52,7 +48,6 @@ Linux でよく使うコマンド集
          $ cat file.txt
          drwxr-xr-x  18 user staff  612  4 10 05:51 ./
          drwxr-xr-x 162 user staff 5.4K  4 10 06:02 ../
-
 
 * `nkf`:
     文字コードの変換を行える
@@ -73,35 +68,16 @@ Linux でよく使うコマンド集
             * -Lw: windows(CRLF)
             * -Lm: mac(CR)
 
-
 * `nastat`:
     * `-a, --all`: 全ての接続を表示
     * `-r, --route`: ルーティングテーブルを表示
     * `-n, --numeric`: 名前解決しないで表示
     * `-l, --listen`:有効な接続を除いて、LISTEN状態になっているもの表示
 
-
 * `dig`:
     DNSの問い合わせを行う。@を付けることで問い合わせ先サーバーを指定できる。
     `dig [@DNSサーバー] ドメイン名 タイプ オプション`
     例）dig @localhost co.jp ns : ローカルホストのネームサーバーに、co.jpのIPアドレスを問い合わせる
-
-
-* `nmap`:
-    ポートスキャンツール。
-    サーバーがどのポートを使用しているか調べてくれる。
-    * `-p number`: port range, 0-65535までのポートを指定できる
-    * `-s[T | U | S | P]`: 
-        * T: TCPスキャン tcpコネクションが張れるかどうかを調べる
-        * U: UDPスキャン 0バイトのパケットをUDPで送る。ICMP返却された場合閉じてると判断
-        * S: TCP SYNスキャン SYNパケットを送って SYN/ACK が送られて来るかどうかを調べる
-        * P: Ping スキャン echoリクエストを送る
-    * `-v`: verboseモード
-    * `-P0`: スキャン時にpingを送らない
-    * `-O`: 対象ホストを調べる
-    * `-o filename`: 結果をファイルに出力する
-    * `-i filename`: スキャン対象をファイルから読み込む
-   
    
 * `tcpdump`:
     CLIベースのパケットフィルタリングツール
@@ -110,7 +86,6 @@ Linux でよく使うコマンド集
     * `host ポート番号`: フィルタリング対象のポート番号を指定
     * `host IPアドレス | ホスト名`: フィルタリング対象のIPアドレス・ホスト名を指定
     * `ip proto プロトコル名`: プロトコル名を指定 - icmp, tcp, udp
-
 
 * `arp`:
     アープテーブルに関する操作を行う。
@@ -121,11 +96,9 @@ Linux でよく使うコマンド集
     * `-d ホスト名 | IPアドレス`: IPアドレスに関するMACアドレスを削除
     * `-d -a`: 全てのarpテーブルを削除
 
-
 * `mail`:
     メールを送信するコマンド。
     例）echo "本文" | mail -s "タイトル" 宛先 -- -f 送信主
-
 
 * `jot`:
     連番・ランダムなデータを生成する。    
@@ -136,13 +109,13 @@ Linux でよく使うコマンド集
       *0 ~ 100までの数値をランダムに5つ出力する*
       `jot -r 5 0 100`
     
-    
 * `ffmpeg`:
     万能な動画エンコーダー。
     * `-formats`: 利用できるフォーマット一覧を出力する
     * `-i 動画・音声ファイル名`: 動画・音声ファイルの情報を習得する
     * 0 〜 300秒までを抜き出す: `ffmpeg -i input.mp3 -ss 0 -t 300 output.mp3`
-
+    * .mkv ファイルに字幕の .srt を追加する: `ffmpeg -i movie.mkv subtitle.srt -map 0 -map 1 -c copy output.mkv`
+    * while loop でまわす場合、 < /dev/null を入れる
 
 * `paste ファイル1 ファイル2 ...`:
     同じ行を結合して表示する。
@@ -176,6 +149,7 @@ Linux でよく使うコマンド集
       * `convert -resize 960x640 元画像 変換先画像`: jpg画像を960px x 640px に変換する
       * `convert -resize 200% 元画像 変換元画像`: 画面サイズを倍にする
     * `convert -transparent white 元画像 変換先画像`: 白背景を透過に変換する
+    上書きする場合は mogrify を使う
 
 * `gunzip, gzip`:
     .gz 形式のフィアルの圧縮・解凍
@@ -220,6 +194,24 @@ Linux でよく使うコマンド集
 * `patch -u 元ファイル < パッチファイル`: パッチの適用
 * `patch -R -u 元ファイル < パッチファイル`: 適用したパッチを元に戻す
 
+* `hexdump [option] file ...`: 
+    * `-s offset`: 先頭からのオフセットを指定する
+    * `-n length`: 表示する長さを指定する
+    * `-e 'format_string'`: 書式指定子
+       * `%x`: 16進表示
+       * `%d`: 数値
+       * 16/1 は 1 バイトごと 16 回繰り返す指定
+       * 2/4 の場合は 2 バイトごと 4 回繰り返す指定
+       * 例) "2/4 '%x'" の場合 2 バイトずつ 4 回繰り返す
+
+* `bc file ...`: 
+    通常はパイプを経由する:  `echo "format" | bc`
+    * 16進数から10進数の変換, 16進数は**大文字・0xを入れない**: `echo "obase=10; ibase=16; 0xFF" | bc`
+
+* `top`: 
+    * `c`: コマンドも表示する
+    * `M`: メモリ消費順に並び替え
+    * `P`: cpu 使用率で並び替え
 
 コマンド逆引きリスト
 ----------------------------
@@ -268,8 +260,242 @@ Linux でよく使うコマンド集
 
 * fstab の内容を反映させる: `sudo mount -a`
 
-Mac OS X のみ
+* bios 内の cmos の内容をダンプする: `dd if=/dev/mem bs=1k skip=768 count=256 2>/dev/null | strings -n 8`
+
+* 大文字, 小文字変換
+    * 大文字を小文字に変換: `echo $word |tr '[A-Z]' '[a-z]'`
+    * 小文字を大文字に変換: `echo $word |tr '[a-z]' '[A-Z]'`
+
+* 特定のDNSサーバーに対して名前検索を行う: 
+    通常: `dig @dns-server <domain>`
+    ポートを指定する: `dig @dns-server -p <port> <domain>`
+
+* リゾルバの書き換え: `emacs /etc/resolv.conf`
+
+* プロキシの設定: "http://" 入れるのを忘れない! 
+
+    $ export http_proxy="http://proxy.com"
+    $ export HTTP_PROXY="http://proxy.com"
+
+* ISO ファイルの md5 をチェックする: `md5sum -c md5sum.txt`
+
+* グループに追加（Mac): `sudo dscl . -append /Groups/GroupName GroupMembership MemberName`
+
+* レスキューブート時, /dev/sda を作る: `mknod /dev/sda b 8 0`
+
+* ログイン成功履歴: `last`
+* ログイン失敗履歴: `lastb`
+
+* IPアドレスを確認する: [確認くん(VIA the UGTOP)](http://www.ugtop.com/spill.shtml), ipcheck.ieserver.net
+
+* /etc/hosts の確認: **pingコマンドを使う** というのも host, nslookup, dig はDNSの呼び出ししか行わないため
+
+* プロセス調査: `htop`
+
+* less に色を付ける:
+
+    $ sudo yum install -y source-highlight
+    $ export LESS='-R'
+    $ export LESSOPEN='| /usr/bin/src-hilite-lesspipe.sh %s'
+
+* *.tar.bz2 の解凍: `tar jxvf package.tar.bz2`
+
+* tar コマンドの使い方:
+  * `-`: を単体で付けると、標準出力 or 標準入力 へリダイレクトさせることができる
+  * `x`: extract, 解凍
+  * `c`: compress, 圧縮
+  * `j`: bzip2 モード
+  * `z`: gzip モード
+  * `p`: 全てのパーミッションを保存, 解凍させる
+
+    # 通常
+    $ tar cvfp archive.tar.gz archive
+    
+    # 標準出力へデータ出力
+    $ tar czvf - archive > archive.tar.gz
+    
+    # 通常
+    $ tar zxvf archive.tar.gz
+    
+    # 標準入力からデータ入力
+    $ cat archive.tar.gz | tar xvzf -
+
+* メールを送る: `echo 本文 | mail -s タイトル メール送信先`
+
+* シンボリックリンクを実体として、ディレクトリを再帰的にコピーする:
+
+    $ cp -RpL コピー元ディレクトリ コピー先ディレクトリ
+
+* プロセスを表示する
+
+    $ pstree
+    
+PID も表示させてプロセスを表示させる
+
+    $ pstree -a -p
+
+* バイナリファイルを 16 進ダンプ: `od -x`, `hexdump`
+
+* init デーモンを作る:
+
+    $ sudo emacs /etc/inittab
+    name:2345:respawn:command
+  
+  name にはそのコマンドを表す好きな文字を, command には実行するコマンドを入れる。
+  **これらは /sbin/getty の前に挿入しなければならない** ので気付けること。
+  設定後は init の設定を反映させる
+  
+    $ sudo telinit q
+
+* ユーザーのパスワードをクリアする: `passwd -d username`
+
+* su の権限を制限する:
+    wheel のグループに属するユーザーのみしか su を実行できないように設定する
+
+    $ sudo emacs /etc/pam.d/su
+    auth       required     /lib/security/pam_wheel.so group=wheel 
+
+* メール送信テスト:
+  現在のユーザー名で空メールを送信する
+
+    $ mail -v -s "body" username@gmail.com < /dev/null  
+    
+  * `-v`: 冗長モード
+  * `-s`: タイトル
+
+* jpeg の exif 情報を削除する: 
+  * ImageMagick を使う方法: `mogrify -strip photo.jpg`
+  * jhead コマンドツールを使う: `jhead  -de photo.jpg`
+
+* flv, mp4 から mp3 への変換: `ffmpeg -i InputFile -acodec libmp3lame -ab 128 OutputFile`
+
+* 複数枚の png から pdf 画像: `convert from1.png from2.png from3.png ... to.pdf`
+
+* `-` をオプションではなく、名前として引数に渡す場合: `mkdir -- -hoge` (-- を入れることでオプションをキャンセルできる）
+
+* markdown -> html 形式への変換: `pandoc -f markdown -t html <input.md>`
+
+* parted の使い方
+  * 一覧表示: `print`
+  * ブート on: `set <number> boot on`
+
+* SELINUX 関連
+  * 現在の状態: `sestatus`
+  * オフ: `setenforce Permissive`
+  * 起動状態でオフに設定する:
+  
+     $ sudo emacs /etc/selinux/config
+     SELINUX=disabled
+
+* シンボリックリンクの実体を取得する: `readlink ${SYMBOLICK_LINK}`
+
+ハードウェア関連
 ----------------------------
+
+* 各ブロックについて調べる: `lsblk`
+
+* ブロックのラベル一覧について調べる: `blkid`
+
+* ブロックデバイスやハードウェアのより詳細情報な情報を調べる: `hwinfo | less` or `hwinfo | grep -A 30 /dev/sr0`
+  ⇒  特にドライバなどについて調べたい時に有用
+
+* システム全体のハードウェア情報を簡潔に見たい時: `lshw -short`
+
+* ネットワークについて調べたい場合: `lshw -class network`
+
+* ハードディスクにラベルを付ける: ext2/ext3/ext4 の場合  `e2label /dev/sda1 labelname`
+  * ラベルの確認は `blkid` で行える
+  
+* ファイルシステムのタイプを調べる: 
+  * マウントされている場合: `df -T`, `mount`
+  * マウントされていない場合: `sudo parted -l`
+
+ユーザー関連
+----------------------------
+
+* ログインしているユーザーを見る: `who -u`
+
+* 自分の仮想端末番号を調べる: `tty`
+
+* 他のユーザー権限で実行する: 
+
+    $ su username -c "commands ..."
+    
+    $ sudo -u username commands ...
+
+OS・ディストリビューション固有
+----------------------------
+
+### Linux デスクトップ ###
+
+* Google ツールバーの検索を新しいタブで行う: 
+  1. アドレスバーに about:config と入力
+  2. フィルタ部分に browser.search.openintab と入力
+  3. browser.search.openintab をダブルクリックして true にする
+  4. Firefox を再起動する
+
+### mac osx ###
 
 * /etc/hosts の編集を即座に反映させる: `sudo dscacheutil -flushcache`
 
+* キャッシュの削除: `purge`
+
+* ISO ファイルをマウント: `open image.iso`
+
+* MAC アドレスの変更: `ifconfig en0 hw ether 00:00:00:00:00:00`
+
+* ホストごとに DNS（リゾルバ）を指定する:
+   /etc/resolv のディレクトリを作り, その中にホスト名のファイルを作る
+   
+      $ mkdir /etc/resolv
+      $ echo "nameserver 1.1.1.1" > /etc/resolv/domain.com
+
+* Linux のコマンドとの対応
+  * システムコール調査: strace -> dtruss
+  * ライブラリ調査: ldd -> otool -L
+
+
+### debian ###
+
+* バージョン 6.0 以降の起動スクリプト登録方法:
+  6.0 以前とは異なり, 6.0 以降は update-rc.d を使ってはならない
+
+    $ sudo insserv -v apache2 
+
+* keymap がない時:
+
+    $ sudo loadkeys jp106
+    cannot open file jp106 
+
+  となる時は keymap のデータが存在しないのでダウンロードしてあげればよい
+  
+    $ sudo aptitude install console-keymaps
+    $ sudo loadkeys jp106
+    Loading /usr/share/keymaps/i386/qwerty/jp106.kmap.gz
+
+* メールが送信できない場合:
+  メール送受信を正しく設定し直す
+
+    $ sudo dpkg-reconfigure exim4-config 
+
+その他
+------
+
+* エスケープシーケンス
+  * `\[\033[ <code> \]`
+  * `color : \[\033[ <code>m\] \]`
+  * 緑色: `\033[32m Green \033[0m`
+  * 参考URL: http://en.wikipedia.org/wiki/ANSI_escape_code
+
+Linux 関係
+----------
+
+* 共有ライブラリを調べる: `ldconfig --print-cache`
+
+
+ツール類
+----------------------------
+
+### logwatch の設定 ###
+
+パッケージ管理ソフトでインストールすれば、デフォルトで毎日 1 度 root 宛にメールが送られてくる。

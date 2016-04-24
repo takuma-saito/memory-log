@@ -54,8 +54,6 @@ Cent OSでyumを使ってzshをインストールした場合
     $ echo /usr/local/bin/zsh >> /etc/shells
     $ chsh -s /usr/local/bin/zsh
 
-
-
 shell に関するtips
 ----------------------------
 
@@ -68,6 +66,102 @@ shell に関するtips
 
 * 拡張子を変更する:
     mv $file ${file%.txt}.doc;
-    
-* 
 
+* bash で **return は数値しか使えない。** 通常はエラーステータスを返す
+
+* ctrl-F: forward search, ctrl-R: Backword search
+
+* デバック: `sh -x -c "コマンド内容"` を行うと "コマンド内容" の部分を展開してくれる
+
+* 親プロセスから子プロセスを起動する場合は, 環境変数を用いて情報のやり取りを行う
+
+* ファイルの存在確認: `[ -f $FILE ]`
+
+* ディレクトリの存在確認: `[ -d $FILE ]`
+
+* 未定義変数確認: `[ -z $VAR ]`
+
+* if 文を短縮する
+
+    # 長い
+    $ if [[ ! -d build ]]; then mkdir build; fi 
+    
+    # 短い
+    $ [[ -d build ]] || mkdir build  
+    
+shell script
+----------------------------
+ 
+* 配列を作る: `(a b c d)`
+
+* 配列の長さを調べる: `${#array[@]}`
+
+* job control (fg, bg) などを行いたい時: `set -m` を最初に宣言する
+  （デフォルトでは job control を行うことは出来ない）
+
+* 関数内を再評価する時には \`\` で括る方法と $() で括る方法がある.
+  *評価が複数行に評価が渡る場合は\`\`* を使う。それ以外は $() を使う。
+  基本的に $() の方が使い勝手がよい。
+  なぜなら、そのままネストするだけで何度も中身を評価できるから。
+  \`\` の場合はクオートを行わないといけない。
+
+* ヒアドキュメントに値を代入する場合:
+  
+    command=`cat <<EOF  
+    hello 
+    world
+    !!!
+    EOF`
+
+のようにして `` cat ヒアドキュメントを組み合わせる。
+    
+    $ echo $command
+    hello
+    world
+    !!!
+
+* 引数の数: $#
+  引数へのアクセス: $0, $1, $2, ...
+
+* getopts で引数を解析する
+
+    # program -a -b bbbb -c cccc のように実行するプログラムの場合    
+    while getopts ab:c: OPT; do
+      case "$OPT" in
+        a)
+          echo aaaa
+          ;;
+        b)
+          echo bbbb
+          ;;
+        c)
+          echo cccc
+          ;;
+      esac
+    done
+    
+引数を解析した後は、解析したオプションを消去する。
+    
+    shift $(($OPTIND - 1))
+
+$OPTIND で引数の位置を管理している。
+呼び出されたオプションの総数が入っているので、その分を引数から引いてあげる。
+
+* 空白区切を配列の変換
+
+    names = "a b c d"
+    array = ($(echo "$names"))
+    
+    echo ${array[0]}
+    echo ${array[1]}
+    ...
+    
+  配列へのアクセスは $array[0] ではなく ${array[0]} であることに注意する
+
+* 正常終了時: `exit 0`
+
+* 変数が定義されていない時のみ値を代入: `${variable:=default}`
+
+* 前回のコマンドの PID: $?
+
+* バックグラウンドの PID: $!

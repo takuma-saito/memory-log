@@ -1,0 +1,42 @@
+Binary に関するアレコレ
+=======================
+
+Mach-o について
+---------------
+
+* ライブラリの依存関係を表示させる: `otool -L file`
+* メモリマップなどを表示させる: `otool -l file`
+* 逆アセンブリ: `otool -t -V file`
+
+Mach-o の ABI
+-------------
+
+* rax に 0x20000000 + call-number を入れる
+* rdi に一つ目の引数
+* rsi に二つ目の引数
+* rdx に三つ目の引数
+* rcx に四つ目の引数
+* r8 に五つ目の引数
+* r9 に六つ目の引数
+
+をそれぞれ入れて、最後に `syscall` を呼び出す
+
+
+
+アセンブリ言語の命令
+--------------------
+
+* 1byte = 8bit
+* 1word = 2 byte
+* dword = 2 word
+* qword = 4 word
+* `lea`: Load Effective Address, メモリ上のアドレスをレジスタに格納する
+
+
+
+
+
+
+
+
+

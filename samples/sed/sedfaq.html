@@ -1,0 +1,217 @@
+<HTML>
+<HEAD>
+<TITLE>Frequently-Asked Questions about sed, the stream editor</TITLE>
+<META http-equiv="content-type" content="text/html;charset=iso-8859-1">
+<META name="KEYWORDS" content="sed,stream editor,Unix,Linux,DOS,Windows,GNU,FAQ">
+<META name="DESCRIPTION" content="Frequently Asked Questions about sed">
+<STYLE type="text/css"><!--
+  BODY   { margin: 15px 25px; background-color:white; }
+  H2     { margin-top:0px;  margin-bottom:0px;
+           padding-top:0px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+
+  H2.t1  { margin-top:6px;  margin-bottom:0px;
+           padding-top:6px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+  H3.t2  { margin:1px; padding:0px; text-indent:2em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t3  { margin:1px; padding:0px; text-indent:3em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t4  { margin:1px; padding:0px; text-indent:4em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H4     { background-color:#D7EDFD; }
+  H5     { padding-bottom:0px; margin-bottom:0px; font-size:110%; }
+
+ .cent   { text-align:center; }
+ .dkblue { color:#333399; background-color:white; }
+ .sed    { margin-left:4em; margin-right:4em;
+           margin-top:4px;  margin-bottom:4px;
+           padding-top:3px; padding-bottom:3px;
+           border:1px;      border-style:solid;   border-color:#006600;
+           color:#3B3B3B;   background-color:#E9E9E9;
+           font-family: "Courier New", Courier, monospace;
+           white-space:pre;
+         }
+ .red    { color:#CC0000; background-color:#FFCCCC; }
+ .ver    { font-family: Verdana, Arial, Helvetica, sans-serif; font-size:10pt; }
+ a.t:link     { text-decoration:none; }
+ a.t:visited  { text-decoration:none; }
+ a.t:hover    { text-decoration:underline; }
+ a.t:active   { text-decoration:none; }
+--></STYLE>
+</HEAD>
+<BODY>
+
+<pre>
+Archive-Name: editor-faq/sed
+Posting-Frequency: irregular
+Last-modified: 10 March 2003
+Version: 015
+URL: <A href="http://sed.sourceforge.net/sedfaq.html">http://sed.sourceforge.net/sedfaq.html</A>
+Maintainer: Eric Pement (<A href="mailto:pemente@northpark.edu">pemente@northpark.edu</A>)
+</pre><div class='cent'>
+                            <H1>THE SED FAQ</H1>
+
+                  <H2>Frequently Asked Questions about</H2>
+                       <H2>sed, the stream editor</H2>
+</div>
+
+CONTENTS
+
+<H2 class="t1">1. <A HREF="sedfaq1.html" class="t">GENERAL INFORMATION</A></H2>
+<H3 class="t2">1.1. <A HREF="sedfaq1.html#s1.1" class="t">Introduction - How this FAQ is organized</A></H3>
+<H3 class="t2">1.2. <A HREF="sedfaq1.html#s1.2" class="t">Latest version of the sed FAQ</A></H3>
+<H3 class="t2">1.3. <A HREF="sedfaq1.html#s1.3" class="t">FAQ revision information</A></H3>
+<H3 class="t2">1.4. <A HREF="sedfaq1.html#s1.4" class="t">How do I add a question/answer to the sed FAQ?</A></H3>
+<H3 class="t2">1.5. <A HREF="sedfaq1.html#s1.5" class="t">FAQ abbreviations</A></H3>
+<H3 class="t2">1.6. <A HREF="sedfaq1.html#s1.6" class="t">Credits and acknowledgements</A></H3>
+<H3 class="t2">1.7. <A HREF="sedfaq1.html#s1.7" class="t">Standard disclaimers</A></H3>
+
+<H2 class="t1">2. <A HREF="sedfaq2.html" class="t">BASIC SED</A></H2>
+<H3 class="t2">2.1. <A HREF="sedfaq2.html#s2.1" class="t">What is sed?</A></H3>
+<H3 class="t2">2.2. <A HREF="sedfaq2.html#s2.2" class="t">What versions of sed are there, and where can I get them?</A></H3>
+
+<H3 class="t3">2.2.1. <A HREF="sedfaq2.html#s2.2.1" class="t">Free versions</A></H3>
+
+<H3 class="t4">2.2.1.1. <A HREF="sedfaq2.html#s2.2.1.1" class="t">Unix platforms</A></H3>
+<H3 class="t4">2.2.1.2. <A HREF="sedfaq2.html#s2.2.1.2" class="t">OS/2</A></H3>
+<H3 class="t4">2.2.1.3. <A HREF="sedfaq2.html#s2.2.1.3" class="t">Microsoft Windows (Win3x, Win9x, WinNT, Win2K)</A></H3>
+<H3 class="t4">2.2.1.4. <A HREF="sedfaq2.html#s2.2.1.4" class="t">MS-DOS</A></H3>
+<H3 class="t4">2.2.1.5. <A HREF="sedfaq2.html#s2.2.1.5" class="t">CP/M</A></H3>
+<H3 class="t4">2.2.1.6. <A HREF="sedfaq2.html#s2.2.1.6" class="t">Macintosh v8 or v9</A></H3>
+
+<H3 class="t3">2.2.2. <A HREF="sedfaq2.html#s2.2.2" class="t">Shareware and Commercial versions</A></H3>
+
+<H3 class="t4">2.2.2.1. <A HREF="sedfaq2.html#s2.2.2.1" class="t">Unix platforms</A></H3>
+<H3 class="t4">2.2.2.2. <A HREF="sedfaq2.html#s2.2.2.2" class="t">OS/2</A></H3>
+<H3 class="t4">2.2.2.3. <A HREF="sedfaq2.html#s2.2.2.3" class="t">Windows 95/98, Windows NT, Windows 2000</A></H3>
+<H3 class="t4">2.2.2.4. <A HREF="sedfaq2.html#s2.2.2.4" class="t">MS-DOS</A></H3>
+
+<H3 class="t2">2.3. <A HREF="sedfaq2.html#s2.3" class="t">Where can I learn to use sed?</A></H3>
+
+<H3 class="t3">2.3.1. <A HREF="sedfaq2.html#s2.3.1" class="t">Books</A></H3>
+<H3 class="t3">2.3.2. <A HREF="sedfaq2.html#s2.3.2" class="t">Mailing list</A></H3>
+<H3 class="t3">2.3.3. <A HREF="sedfaq2.html#s2.3.3" class="t">Tutorials, electronic text</A></H3>
+<H3 class="t3">2.3.4. <A HREF="sedfaq2.html#s2.3.4" class="t">General web and ftp sites</A></H3>
+
+<H2 class="t1">3. <A HREF="sedfaq3.html" class="t">TECHNICAL</A></H2>
+<H3 class="t2">3.1. <A HREF="sedfaq3.html#s3.1" class="t">More detailed explanation of basic sed</A></H3>
+<H3 class="t3">3.1.1. <A HREF="sedfaq3.html#s3.1.1" class="t"> Regular expressions on the left side of "s///"</A></H3>
+<H3 class="t3">3.1.2. <A HREF="sedfaq3.html#s3.1.2" class="t"> Escape characters on the right side of "s///"</A></H3>
+<H3 class="t3">3.1.3. <A HREF="sedfaq3.html#s3.1.3" class="t"> Substitution switches</A></H3>
+<H3 class="t2">3.2. <A HREF="sedfaq3.html#s3.2" class="t">Common one-line sed scripts. How do I . . . ?</A></H3>
+
+<UL style='MARGIN-LEFT:5em'>
+<LI> double/triple-space a file?</LI>
+<LI> convert DOS/Unix newlines?</LI>
+<LI> delete leading/trailing spaces?</LI>
+<LI> do substitutions on all/certain lines?</LI>
+<LI> delete consecutive blank lines?</LI>
+<LI> delete blank lines at the top/end of the file?</LI>
+</UL>
+<H3 class="t2">3.3. <A HREF="sedfaq3.html#s3.3" class="t">Addressing and address ranges</A></H3>
+<H3 class="t2">3.4. <A HREF="sedfaq3.html#s3.4" class="t">Address ranges in GNU sed and HHsed</A></H3>
+<H3 class="t2">3.5. <A HREF="sedfaq3.html#s3.5" class="t">Debugging sed scripts</A></H3>
+<H3 class="t2">3.6. <A HREF="sedfaq3.html#s3.6" class="t">Notes about s2p, the sed-to-perl translator</A></H3>
+<H3 class="t2">3.7. <A HREF="sedfaq3.html#s3.7" class="t">GNU/POSIX extensions to regular expressions</A></H3>
+
+<H2 class="t1">4. <A HREF="sedfaq4.html" class="t">EXAMPLES</A></H2>
+   <H4>ONE-CHARACTER QUESTIONS</H4>
+<H3 class="t2">4.1. <A HREF="sedfaq4.html#s4.1" class="t"> How do I insert a newline into the RHS of a substitution?</A></H3>
+<H3 class="t2">4.2. <A HREF="sedfaq4.html#s4.2" class="t"> How do I represent control-codes or non-printable characters?</A></H3>
+<H3 class="t2">4.3. <A HREF="sedfaq4.html#s4.3" class="t"> How do I convert files with toggle characters, like +this+, to look like [i]this[/i]?</A></H3>
+
+   <H4>CHANGING STRINGS</H4>
+<H3 class="t2">4.10. <A HREF="sedfaq4.html#s4.10" class="t">How do I perform a case-insensitive search?</A></H3>
+<H3 class="t2">4.11. <A HREF="sedfaq4.html#s4.11" class="t">How do I match only the first occurrence of a pattern?</A></H3>
+<H3 class="t2">4.12. <A HREF="sedfaq4.html#s4.12" class="t">How do I parse a comma-delimited (CSV) data file?</A></H3>
+<H3 class="t2">4.13. <A HREF="sedfaq4.html#s4.13" class="t">How do I handle fixed-length, columnar data?</A></H3>
+<H3 class="t2">4.14. <A HREF="sedfaq4.html#s4.14" class="t">How do I commify a string of numbers?</A></H3>
+<H3 class="t2">4.15. <A HREF="sedfaq4.html#s4.15" class="t">How do I prevent regex expansion on substitutions?</A></H3>
+<H3 class="t2">4.16. <A HREF="sedfaq4.html#s4.16" class="t">How do I convert a string to all lowercase or capital letters?</A></H3>
+
+   <H4>CHANGING BLOCKS (consecutive lines)</H4>
+<H3 class="t2">4.20. <A HREF="sedfaq4.html#s4.20" class="t">How do I change only one section of a file?</A></H3>
+<H3 class="t2">4.21. <A HREF="sedfaq4.html#s4.21" class="t">How do I delete or change a block of text if the block contains a certain regular expression?</A></H3>
+<H3 class="t2">4.22. <A HREF="sedfaq4.html#s4.22" class="t">How do I locate a paragraph of text if the paragraph contains a certain regular expression?</A></H3>
+<H3 class="t2">4.23. <A HREF="sedfaq4.html#s4.23" class="t">How do I match a block of specific consecutive lines?</A></H3>
+<H3 class="t3">4.23.1. <A HREF="sedfaq4.html#s4.23.1" class="t"> Try to use a "/range/, /expression/"</A></H3>
+<H3 class="t3">4.23.2. <A HREF="sedfaq4.html#s4.23.2" class="t"> Try to use a "multi-line\nexpression"</A></H3>
+<H3 class="t3">4.23.3. <A HREF="sedfaq4.html#s4.23.3" class="t"> Try to use a block of "literal strings"</A></H3>
+<H3 class="t2">4.24. <A HREF="sedfaq4.html#s4.24" class="t">How do I address all the lines between RE1 and RE2, excluding the lines themselves?</A></H3>
+<H3 class="t2">4.25. <A HREF="sedfaq4.html#s4.25" class="t">How do I join two lines if line #1 ends in a [certain string]?</A></H3>
+<H3 class="t2">4.26. <A HREF="sedfaq4.html#s4.26" class="t">How do I join two lines if line #2 begins in a [certain string]?</A></H3>
+<H3 class="t2">4.27. <A HREF="sedfaq4.html#s4.27" class="t">How do I change all paragraphs to long lines?</A></H3>
+
+   <H4>SHELL AND ENVIRONMENT</H4>
+<H3 class="t2">4.30. <A HREF="sedfaq4.html#s4.30" class="t">  How do I read environment variables with sed ...</A></H3>
+<H3 class="t3">4.31.1. <A HREF="sedfaq4.html#s4.31.1" class="t">  ... on Unix platforms?</A></H3>
+<H3 class="t3">4.31.2. <A HREF="sedfaq4.html#s4.31.2" class="t">  ... on MS-DOS or 4DOS platforms?</A></H3>
+<H3 class="t2">4.32. <A HREF="sedfaq4.html#s4.32" class="t">  How do I export or pass variables back into the environment ...</A></H3>
+<H3 class="t3">4.32.1. <A HREF="sedfaq4.html#s4.32.1" class="t">  ... on Unix platforms?</A></H3>
+<H3 class="t3">4.32.2. <A HREF="sedfaq4.html#s4.32.2" class="t">  ... on MS-DOS or 4DOS platforms?</A></H3>
+<H3 class="t2">4.33. <A HREF="sedfaq4.html#s4.33" class="t">  How do I handle shell quoting in sed?</A></H3>
+
+   <H4>FILES, DIRECTORIES, AND PATHS</H4>
+<H3 class="t2">4.40. <A HREF="sedfaq4.html#s4.40" class="t"> How do I read (insert/add) a file at the top of a textfile?</A></H3>
+<H3 class="t2">4.41. <A HREF="sedfaq4.html#s4.41" class="t"> How do I make substitutions in every file in a directory, or in a complete directory tree?</A></H3>
+<H3 class="t3">4.41.1. <A HREF="sedfaq4.html#s4.41.1" class="t">  ... ssed solution</A></H3>
+<H3 class="t3">4.41.2. <A HREF="sedfaq4.html#s4.41.2" class="t">  ... Unix solution</A></H3>
+<H3 class="t3">4.41.3. <A HREF="sedfaq4.html#s4.41.3" class="t">  ... DOS solution</A></H3>
+<H3 class="t2">4.42. <A HREF="sedfaq4.html#s4.42" class="t"> How do I replace "/some/UNIX/path" in a substitution?</A></H3>
+<H3 class="t2">4.43. <A HREF="sedfaq4.html#s4.43" class="t"> How do I replace "C:\SOME\DOS\PATH" in a substitution?</A></H3>
+<H3 class="t2">4.44. <A HREF="sedfaq4.html#s4.44" class="t"> How do I emulate file-includes, using sed?</A></H3>
+
+<H2 class="t1">5. <A HREF="sedfaq5.html" class="t">WHY ISN'T THIS WORKING?</A></H2>
+<H3 class="t2">5.1. <A HREF="sedfaq5.html#s5.1" class="t"> Why don't my variables like $var get expanded in my sed script?</A></H3>
+<H3 class="t2">5.2. <A HREF="sedfaq5.html#s5.2" class="t"> I'm using 'p' to print, but I have duplicate lines sometimes.</A></H3>
+<H3 class="t2">5.3. <A HREF="sedfaq5.html#s5.3" class="t"> Why does my DOS version of sed process a file part-way through and then quit?</A></H3>
+<H3 class="t2">5.4. <A HREF="sedfaq5.html#s5.4" class="t"> My RE isn't matching/deleting what I want it to. (Or, "Greedy vs. stingy pattern matching")</A></H3>
+<H3 class="t2">5.5. <A HREF="sedfaq5.html#s5.5" class="t"> What is CSDPMI*B.ZIP and why do I need it?</A></H3>
+<H3 class="t2">5.6. <A HREF="sedfaq5.html#s5.6" class="t"> Where are the man pages for GNU sed?</A></H3>
+<H3 class="t2">5.7. <A HREF="sedfaq5.html#s5.7" class="t"> How do I tell what version of sed I am using?</A></H3>
+<H3 class="t2">5.8. <A HREF="sedfaq5.html#s5.8" class="t"> Does sed issue an exit code?</A></H3>
+<H3 class="t2">5.9. <A HREF="sedfaq5.html#s5.9" class="t"> The 'r' command isn't inserting the file into the text.</A></H3>
+<H3 class="t2">5.10. <A HREF="sedfaq5.html#s5.10" class="t">Why can't I match or delete a newline using the \n escape sequence? Why can't I match 2 or more lines using \n?</A></H3>
+<H3 class="t2">5.11. <A HREF="sedfaq5.html#s5.11" class="t">My script aborts with an error message, "event not found".</A></H3>
+
+<H2 class="t1">6. <A HREF="sedfaq6.html" class="t">OTHER ISSUES</A></H2>
+<H3 class="t2">6.1. <A HREF="sedfaq6.html#s6.1" class="t"> I have a problem that stumps me. Where can I get help?</A></H3>
+<H3 class="t2">6.2. <A HREF="sedfaq6.html#s6.2" class="t"> How does sed compare with awk, perl, and other utilities?</A></H3>
+<H3 class="t2">6.3. <A HREF="sedfaq6.html#s6.3" class="t"> When should I use sed?</A></H3>
+<H3 class="t2">6.4. <A HREF="sedfaq6.html#s6.4" class="t"> When should I NOT use sed?</A></H3>
+<H3 class="t2">6.5. <A HREF="sedfaq6.html#s6.5" class="t"> When should I ignore sed and use Awk or Perl instead?</A></H3>
+<H3 class="t2">6.6. <A HREF="sedfaq6.html#s6.6" class="t"> Known limitations among sed versions</A></H3>
+<H3 class="t2">6.7. <A HREF="sedfaq6.html#s6.7" class="t"> Known incompatibilities between sed versions</A></H3>
+
+<H3 class="t3">6.7.1. <A HREF="sedfaq6.html#s6.7.1" class="t">Issuing commands from the command line</A></H3>
+<H3 class="t3">6.7.2. <A HREF="sedfaq6.html#s6.7.2" class="t">Using comments (prefixed by the '#' sign)</A></H3>
+<H3 class="t3">6.7.3. <A HREF="sedfaq6.html#s6.7.3" class="t">Special syntax in REs</A></H3>
+<H3 class="t3">6.7.4. <A HREF="sedfaq6.html#s6.7.4" class="t">Word boundaries</A></H3>
+<H3 class="t3">6.7.5. <A HREF="sedfaq6.html#s6.7.5" class="t">Commands which operate differently</A></H3>
+
+<H2 class="t1">7. <A HREF="sedfaq7.html" class="t">KNOWN BUGS AMONG SED VERSIONS</A></H2>
+<H3 class="t2">7.1. <A HREF="sedfaq7.html#s7.1" class="t">ssed v3.59</A></H3>
+<H3 class="t2">7.2. <A HREF="sedfaq7.html#s7.2" class="t">GNU sed v4.0 - v4.0.5</A></H3>
+<H3 class="t2">7.3. <A HREF="sedfaq7.html#s7.3" class="t">GNU sed v3.02.80</A></H3>
+<H3 class="t2">7.4. <A HREF="sedfaq7.html#s7.4" class="t">GNU sed v3.02</A></H3>
+<H3 class="t2">7.5. <A HREF="sedfaq7.html#s7.5" class="t">GNU sed v2.05</A></H3>
+<H3 class="t2">7.6. <A HREF="sedfaq7.html#s7.6" class="t">GNU sed v1.18</A></H3>
+<H3 class="t2">7.7. <A HREF="sedfaq7.html#s7.7" class="t">GNU sed v1.03</A></H3>
+<H3 class="t2">7.8. <A HREF="sedfaq7.html#s7.8" class="t">sed v1.6 (Briscoe)</A></H3>
+<H3 class="t2">7.9. <A HREF="sedfaq7.html#s7.9" class="t">sed v1.5 (Helman)</A></H3>
+<H3 class="t2">7.10. <A HREF="sedfaq7.html#s7.10" class="t">sedmod v1.0 (Chen)</A></H3>
+<H3 class="t2">7.11. <A HREF="sedfaq7.html#s7.11" class="t">HP-UX sed</A></H3>
+<H3 class="t2">7.12. <A HREF="sedfaq7.html#s7.12" class="t">SunOS sed v4.1</A></H3>
+<H3 class="t2">7.13. <A HREF="sedfaq7.html#s7.13" class="t">SunOS sed v5.6</A></H3>
+<H3 class="t2">7.14. <A HREF="sedfaq7.html#s7.14" class="t">Ultrix sed v4.3</A></H3>
+<H3 class="t2">7.15. <A HREF="sedfaq7.html#s7.15" class="t">Digital Unix sed</A></H3>
+
+
+</BODY></HTML>
+</BODY></HTML>

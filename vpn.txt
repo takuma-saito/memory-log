@@ -1,0 +1,64 @@
+VPN
+====
+
+pptpd
+------
+
+*** 基本接続 ***
+# サーバー側の設定
+
+# 割り当てる IP アドレスの設定
+$ sudo emacs /etc/pptpd.conf
+remoteip 192.168.39.3-20
+localip 192.168.39.2
+
+# 暗号化, DNS の設定
+$ sudo emacs /etc/ppp/options.pptpd
+auth
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+mtu 1280
+mru 1280
+
+# パスワードの設定
+$ sudo cat /etc/ppp/chap-secrets
+silicon pptpd passpass2525 *
+
+# サービス起動
+$ sudo /etc/init.d/pptpd start
+$ netstat -ntul | grep 1723
+
+# クライアント側で接続するか確認する
+
+*** 全ての接続を VPN 経由で行う ***
+
+# ポートフォワーディングを行う場合
+$ sudo sysctl -w net.ipv4.ip_forward=1
+$ sysctl net.ipv4.ip_forward
+$ sudo emacs /etc/sysctl.conf
+net.ipv4.ip_forward=1
+
+# IP マスカレードを行う
+# sudo iptables -t nat -A POSTROUTING -o eth0 -s 192.168.39.0/24 -j MASQUERADE && iptables-save
+$ sudo iptables -t nat -F FORWARD
+$ sudo iptables -t filter -A FORWARD -j ACCEPT
+# eth0 から出るパケットをマスカレードする
+$ sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+# ppp クライアント同士で接続する
+$ sudo iptables -t nat -A POSTROUTING -o ppp0 -j MASQUERADE
+$ sudo iptables -t nat -L
+
+# iptables のデバッグ
+$ modprobe ipt_LOG
+$ lsmod | grep ipt_LOG
+$ sudo iptables -t raw -A PREROUTING -j TRACE
+# 確認
+$ cat /proc/net/netfilter/nf_log
+$ dmesg
+
+*** セッションを継続するための ***
+$ sudo emacs /etc/ppp/options.pptpd
+lcp-echo-interval 20
+lcp-max-failure 30
+lcp-restart 30
+

@@ -1,0 +1,177 @@
+             ENDNOTE.AWK and ENDNOTE.PL (version 1.3)
+
+      A Practical Method for Handling Endnotes in Text Files
+                          by Eric Pement
+
+   Writers who work in plain ASCII text sometimes need footnotes
+in their files. While editing, it's nice to move, add, or delete
+paragraphs with notes without manually renumbering all the
+footnotes. Commercial word processors like Microsoft Word or
+Corel Word Perfect have an easy method of handling notes in which
+deletions or rearranging text is no problem. The notes are
+automatically renumbered as needed. Is such a system available to
+users of vim, Emacs, Vedit, VDE, PFE, TDE, EditPad, Notepad,
+NoteTabs, or other ASCII editors?
+
+   Yes! If you have Perl or Awk available, you can use ENDNOTE.PL
+or ENDNOTE.AWK to facilitate note creation. You execute perl or
+awk with the appropriate script plus your document file to
+generate a formatted output file. Here's how it's done from the
+command line:
+
+      awk -f endnote.awk infile.txt >outfile.txt   # for awk
+      perl endnote.pl infile.txt    >outfile.txt   # for perl
+
+   ENDNOTE has been rewritten to work with the latest versions
+of GNU awk, mawk, and Perl. The scripts are available here:
+
+      http://www.pement.org/awk/endnote13_awk.txt
+      http://www.pement.org/perl/endnote13_pl.txt
+
+   To start out, change these filenames from their *.txt formats
+to "endnote.awk" or "endnote.pl". I named them  *.txt so they
+would display as text files on my web pages.
+
+   The ENDNOTE programs generate "endnotes": note references are
+moved from the middle of the input file to the end of the output
+file, formatted for printing (as best as can be done with plain
+text). ENDNOTE puts the formatted notes at the bottom of the
+file, not at the bottom of each page (technically called
+"footnotes"). The following paragraph shows how to use ENDNOTE:
+
+   Within the paragraph, reserve a place for the note numbers by
+inserting this 4-character string: [##] The string consists of a
+left bracket "[", two pound signs "##", and a right bracket "]".
+The ##-signs will be converted to 1, 2, 3, etc. when the file is
+processed. Notes higher than 99 are fully supported without
+adding more pound signs. I will call this 4-character string a
+"numbering point", since it marks where the incrementing numbers
+should appear in the text.
+
+[[
+##. Sample reference: William Lane Craig, _Reasonable Faith_,
+rev. ed. (Wheaton: Crossway Books, 1994), pp. 67-68.
+
+]]
+
+   Below the paragraph with the ##-numbering points, you should
+add the note references, fully spelled out. The note references
+should be placed in a block delimited by '[[' and ']]', which
+must be alone on a line. I call this the "note block".
+
+   I find it easiest if the note block appears directly below the
+paragraph with the corresponding numbering point(s), though in
+fact the note block can occur anywhere at all.
+
+   List the references in the same order as the in-text notes.
+The numbering system inside the note blocks is a three-character
+string, "##." (pound, pound, period). It is customary to print
+them flush left, but not absolutely necessary. [##] Within a note
+block, ENDNOTE also supports nonprinting comment lines. If a line
+begins with ".." or "??", that line is not printed. This allows
+writers to add comments to themselves which do not appear in the
+output file.
+
+[[
+   ##.  As you can see here.
+
+.. This is an example of a nonprinting comment
+]]
+
+[[
+??  ----------------------------------------------------------
+??  In fact, an entire note block can consist of nothing
+??  but nonprinting comments, which makes it handy if you
+??  want to remind yourself to look up a stray text reference.
+??  ----------------------------------------------------------
+]]
+
+   I have three tips on spacing. First, you may put numbering
+points directly after a word (like this[##]) or you may insert a
+space before the numbering point, like this. [##]
+
+[[
+##. This keeps a bracketed reference from "wrapping" and becoming
+separated from its associated word if the paragraph is
+reformatted.
+
+##. In this example, a space before the left bracket looks nicer.
+
+]]
+
+   Second, within a note block it looks nicer to separate the
+references with a blank line, but ENDNOTE will work without them.
+
+   Third, because of the way that paragraph reformat works on
+most text editors (and I use paragraph reformat at lot!), it's
+too easy to reformat a paragraph and discover that the note block
+got pulled up into the paragraph above it. So I changed how
+ENDNOTE worked in version 1.1. Here's the new setting: Place a
+blank line both above and below the note block. This will create
+2 blank lines between paragraphs, but ENDNOTE is set up to
+discard the blank line after the ']]' placeholder.
+
+   If you don't like this setting, I added an option switch to
+revert to the original behavior, which required placing the note
+block directly below the original paragraph, with no intervening
+blank line.
+
+   ENDNOTE has an error routine to see if the body text has the
+same number of numbering points as the symbols in the note
+blocks. If the note symbols cannot be matched up, ENDNOTE will
+abort with an error message and a beep. Of course, you will need
+awk or perl to run ENDNOTE. [##]
+
+[[
+##. You can find links to obtain awk and perl here:
+      http://www.crossmyt.com/hc/htmlchek/awk-perl.html
+
+   Windows users can try these sites:
+      http://gnuwin32.sourceforge.net (gawk, mawk)
+      http://www.activeperl.com
+
+]]
+
+   ENDNOTE also has 2 option switches. If you split your files
+into multiple chapters, ENDNOTE has a switch named 'start' to
+begin numbering at any positive integer. The syntax is:
+
+      awk -v start=N -f endnote.awk infile.txt
+      perl -s endnote.pl -start=N infile.txt
+
+where "N" should be replaced by a whole number such as 8, 23,
+etc. Note that in perl, '-s' must occur before endnote.pl and
+'-start=N' must be placed afterwards.
+
+   If you prefer not to have ENDNOTE omit the blank line after
+the ']]' placeholder (thus forcing you to put note blocks
+directly after the paragraphs they reference), set the 'blank'
+switch to 1 (a positive number) like this:
+
+      awk -v blank=1 -f endnote.awk infile.txt
+      perl -s endnote.pl -blank infile.txt
+
+   With perl, an integer after the variable name isn't needed.
+"-blank" alone will set $::blank to 1 in a perl script.
+
+   Finally, I should give credit where credit is due. The idea
+for ENDNOTE comes from Eric Meyer, the author of VDE (a powerful
+DOS text editor, now issued as freeware). [##] Eric Meyer wrote
+WSNOTE, a note management program for WordStar that handles both
+endnotes and page-bottom footnotes. WSNOTE generated
+WordStar-specific output, but I adopted his system to create
+ENDNOTE to do something similar with plain ASCII files. Also,
+"digamma" provided a patch to update this script to work with the
+newer versions of awk. Thanks!
+
+[[
+##. VDE can be obtained here:
+
+      http://short.stop.home.att.net/vde/vde.htm#vdemenu
+
+]]
+
+--
+The ENDNOTE Perl and Awk scripts and this document (ENDNOTE.TXT)
+were written by Eric Pement, pemente [=at=] northpark.edu, in
+2002. This document was updated in June 2005.

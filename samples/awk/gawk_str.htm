@@ -1,0 +1,560 @@
+<html><head>
+<base href="http://www.delorie.com/gnu/docs/gawk/gawk_125.html">
+<title>The GNU Awk User's Guide - String Functions</title>
+</head>
+<body>
+<table width=100% border=0 cellspacing=0 cellpadding=3><tr>
+<td align=left valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; <a target="_top" href="/">www.delorie.com</a>/<a target="_top" href="/gnu/">gnu</a>/<a target="_top" href="/gnu/docs/">docs</a>/<a target="_top" href="/gnu/docs/gawk/">gawk</a>/gawk_125.html</b></font></td><td align=right valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; <a target="_top" href="/">delorie software</a> &nbsp; </b></font></td></tr><tr><td colspan=2 align=center><center><a href="http://www.burstnet.com/ads/ad1954a-map.cgi"><img src="http://www.burstnet.com/cgi-bin/ads/ad1954a.cgi" ismap border=0 width=468 height=60></A></center></td></tr></table>
+
+
+<!-- This HTML file has been created by texi2html 1.51
+     from gawk.texi on 14 March 1998 -->
+
+Go to the <A HREF="gawk_1.html">first</A>, <A HREF="gawk_124.html">previous</A>, <A HREF="gawk_126.html">next</A>, <A HREF="gawk_230.html">last</A> section, <A HREF="gawk_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H2><A NAME="SEC126" HREF="gawk_toc.html#TOC126">Built-in Functions for String Manipulation</A></H2>
+
+<P>
+The functions in this section look at or change the text of one or more
+strings.
+Optional parameters are enclosed in square brackets ("[" and "]").
+
+</P>
+<DL COMPACT>
+
+<DT><CODE>index(<VAR>in</VAR>, <VAR>find</VAR>)</CODE>
+<DD>
+<A NAME="IDX557"></A>
+This searches the string <VAR>in</VAR> for the first occurrence of the string
+<VAR>find</VAR>, and returns the position in characters where that occurrence
+begins in the string <VAR>in</VAR>.  For example:
+
+
+<PRE>
+$ awk 'BEGIN { print index("peanut", "an") }'
+-| 3
+</PRE>
+
+If <VAR>find</VAR> is not found, <CODE>index</CODE> returns zero.
+(Remember that string indices in <CODE>awk</CODE> start at one.)
+
+<DT><CODE>length([<VAR>string</VAR>])</CODE>
+<DD>
+<A NAME="IDX558"></A>
+This gives you the number of characters in <VAR>string</VAR>.  If
+<VAR>string</VAR> is a number, the length of the digit string representing
+that number is returned.  For example, <CODE>length("abcde")</CODE> is five.  By
+contrast, <CODE>length(15 * 35)</CODE> works out to three.  How?  Well, 15 * 35 =
+525, and 525 is then converted to the string <CODE>"525"</CODE>, which has
+three characters.
+
+If no argument is supplied, <CODE>length</CODE> returns the length of <CODE>$0</CODE>.
+
+<A NAME="IDX559"></A>
+<A NAME="IDX560"></A>
+<A NAME="IDX561"></A>
+<A NAME="IDX562"></A>
+In older versions of <CODE>awk</CODE>, you could call the <CODE>length</CODE> function
+without any parentheses.  Doing so is marked as "deprecated" in the
+POSIX standard.  This means that while you can do this in your
+programs, it is a feature that can eventually be removed from a future
+version of the standard.  Therefore, for maximal portability of your
+<CODE>awk</CODE> programs, you should always supply the parentheses.
+
+<DT><CODE>match(<VAR>string</VAR>, <VAR>regexp</VAR>)</CODE>
+<DD>
+<A NAME="IDX563"></A>
+The <CODE>match</CODE> function searches the string, <VAR>string</VAR>, for the
+longest, leftmost substring matched by the regular expression,
+<VAR>regexp</VAR>.  It returns the character position, or <STRONG>index</STRONG>, of
+where that substring begins (one, if it starts at the beginning of
+<VAR>string</VAR>).  If no match is found, it returns zero.
+
+<A NAME="IDX564"></A>
+<A NAME="IDX565"></A>
+The <CODE>match</CODE> function sets the built-in variable <CODE>RSTART</CODE> to
+the index.  It also sets the built-in variable <CODE>RLENGTH</CODE> to the
+length in characters of the matched substring.  If no match is found,
+<CODE>RSTART</CODE> is set to zero, and <CODE>RLENGTH</CODE> to -1.
+
+For example:
+
+
+<PRE>
+awk '{
+       if ($1 == "FIND")
+         regex = $2
+       else {
+         where = match($0, regex)
+         if (where != 0)
+           print "Match of", regex, "found at", \
+                     where, "in", $0
+       }
+}'
+</PRE>
+
+This program looks for lines that match the regular expression stored in
+the variable <CODE>regex</CODE>.  This regular expression can be changed.  If the
+first word on a line is <SAMP>`FIND'</SAMP>, <CODE>regex</CODE> is changed to be the
+second word on that line.  Therefore, given:
+
+
+<PRE>
+FIND ru+n
+My program runs
+but not very quickly
+FIND Melvin
+JF+KM
+This line is property of Reality Engineering Co.
+Melvin was here.
+</PRE>
+
+<CODE>awk</CODE> prints:
+
+
+<PRE>
+Match of ru+n found at 12 in My program runs
+Match of Melvin found at 1 in Melvin was here.
+</PRE>
+
+<DT><CODE>split(<VAR>string</VAR>, <VAR>array</VAR> [, <VAR>fieldsep</VAR>])</CODE>
+<DD>
+<A NAME="IDX566"></A>
+This divides <VAR>string</VAR> into pieces separated by <VAR>fieldsep</VAR>,
+and stores the pieces in <VAR>array</VAR>.  The first piece is stored in
+<CODE><VAR>array</VAR>[1]</CODE>, the second piece in <CODE><VAR>array</VAR>[2]</CODE>, and so
+forth.  The string value of the third argument, <VAR>fieldsep</VAR>, is
+a regexp describing where to split <VAR>string</VAR> (much as <CODE>FS</CODE> can
+be a regexp describing where to split input records).  If
+the <VAR>fieldsep</VAR> is omitted, the value of <CODE>FS</CODE> is used.
+<CODE>split</CODE> returns the number of elements created.
+
+The <CODE>split</CODE> function splits strings into pieces in a
+manner similar to the way input lines are split into fields.  For example:
+
+
+<PRE>
+split("cul-de-sac", a, "-")
+</PRE>
+
+splits the string <SAMP>`cul-de-sac'</SAMP> into three fields using <SAMP>`-'</SAMP> as the
+separator.  It sets the contents of the array <CODE>a</CODE> as follows:
+
+
+<PRE>
+a[1] = "cul"
+a[2] = "de"
+a[3] = "sac"
+</PRE>
+
+The value returned by this call to <CODE>split</CODE> is three.
+
+As with input field-splitting, when the value of <VAR>fieldsep</VAR> is
+<CODE>" "</CODE>, leading and trailing whitespace is ignored, and the elements
+are separated by runs of whitespace.
+
+<A NAME="IDX567"></A>
+Also as with input field-splitting, if <VAR>fieldsep</VAR> is the null string, each
+individual character in the string is split into its own array element.
+(This is a <CODE>gawk</CODE>-specific extension.)
+
+<A NAME="IDX568"></A>
+Recent implementations of <CODE>awk</CODE>, including <CODE>gawk</CODE>, allow
+the third argument to be a regexp constant (<CODE>/abc/</CODE>), as well as a
+string (d.c.).  The POSIX standard allows this as well.
+
+Before splitting the string, <CODE>split</CODE> deletes any previously existing
+elements in the array <VAR>array</VAR> (d.c.).
+
+<DT><CODE>sprintf(<VAR>format</VAR>, <VAR>expression1</VAR>,...)</CODE>
+<DD>
+<A NAME="IDX569"></A>
+This returns (without printing) the string that <CODE>printf</CODE> would
+have printed out with the same arguments
+(see section <A HREF="gawk_59.html#SEC60">Using <CODE>printf</CODE> Statements for Fancier Printing</A>).
+For example:
+
+
+<PRE>
+sprintf("pi = %.2f (approx.)", 22/7)
+</PRE>
+
+returns the string <CODE>"pi = 3.14 (approx.)"</CODE>.
+
+<DT><CODE>sub(<VAR>regexp</VAR>, <VAR>replacement</VAR> [, <VAR>target</VAR>])</CODE>
+<DD>
+<A NAME="IDX570"></A>
+The <CODE>sub</CODE> function alters the value of <VAR>target</VAR>.
+It searches this value, which is treated as a string, for the
+leftmost longest substring matched by the regular expression, <VAR>regexp</VAR>,
+extending this match as far as possible.  Then the entire string is
+changed by replacing the matched text with <VAR>replacement</VAR>.
+The modified string becomes the new value of <VAR>target</VAR>.
+
+This function is peculiar because <VAR>target</VAR> is not simply
+used to compute a value, and not just any expression will do: it
+must be a variable, field or array element, so that <CODE>sub</CODE> can
+store a modified value there.  If this argument is omitted, then the
+default is to use and alter <CODE>$0</CODE>.
+
+For example:
+
+
+<PRE>
+str = "water, water, everywhere"
+sub(/at/, "ith", str)
+</PRE>
+
+sets <CODE>str</CODE> to <CODE>"wither, water, everywhere"</CODE>, by replacing the
+leftmost, longest occurrence of <SAMP>`at'</SAMP> with <SAMP>`ith'</SAMP>.
+
+The <CODE>sub</CODE> function returns the number of substitutions made (either
+one or zero).
+
+If the special character <SAMP>`&#38;'</SAMP> appears in <VAR>replacement</VAR>, it
+stands for the precise substring that was matched by <VAR>regexp</VAR>.  (If
+the regexp can match more than one string, then this precise substring
+may vary.)  For example:
+
+
+<PRE>
+awk '{ sub(/candidate/, "&#38; and his wife"); print }'
+</PRE>
+
+changes the first occurrence of <SAMP>`candidate'</SAMP> to <SAMP>`candidate
+and his wife'</SAMP> on each input line.
+
+Here is another example:
+
+
+<PRE>
+awk 'BEGIN {
+        str = "daabaaa"
+        sub(/a*/, "c&#38;c", str)
+        print str
+}'
+-| dcaacbaaa
+</PRE>
+
+This shows how <SAMP>`&#38;'</SAMP> can represent a non-constant string, and also
+illustrates the "leftmost, longest" rule in regexp matching
+(see section <A HREF="gawk_30.html#SEC31">How Much Text Matches?</A>).
+
+The effect of this special character (<SAMP>`&#38;'</SAMP>) can be turned off by putting a
+backslash before it in the string.  As usual, to insert one backslash in
+the string, you must write two backslashes.  Therefore, write <SAMP>`\\&#38;'</SAMP>
+in a string constant to include a literal <SAMP>`&#38;'</SAMP> in the replacement.
+For example, here is how to replace the first <SAMP>`|'</SAMP> on each line with
+an <SAMP>`&#38;'</SAMP>:
+
+
+<PRE>
+awk '{ sub(/\|/, "\\&#38;"); print }'
+</PRE>
+
+<A NAME="IDX571"></A>
+<A NAME="IDX572"></A>
+<STRONG>Note:</STRONG> As mentioned above, the third argument to <CODE>sub</CODE> must
+be a variable, field or array reference.
+Some versions of <CODE>awk</CODE> allow the third argument to
+be an expression which is not an lvalue.  In such a case, <CODE>sub</CODE>
+would still search for the pattern and return zero or one, but the result of
+the substitution (if any) would be thrown away because there is no place
+to put it.  Such versions of <CODE>awk</CODE> accept expressions like
+this:
+
+
+<PRE>
+sub(/USA/, "United States", "the USA and Canada")
+</PRE>
+
+For historical compatibility, <CODE>gawk</CODE> will accept erroneous code,
+such as in the above example. However, using any other non-changeable
+object as the third parameter will cause a fatal error, and your program
+will not run.
+
+<DT><CODE>gsub(<VAR>regexp</VAR>, <VAR>replacement</VAR> [, <VAR>target</VAR>])</CODE>
+<DD>
+<A NAME="IDX573"></A>
+This is similar to the <CODE>sub</CODE> function, except <CODE>gsub</CODE> replaces
+<EM>all</EM> of the longest, leftmost, <EM>non-overlapping</EM> matching
+substrings it can find.  The <SAMP>`g'</SAMP> in <CODE>gsub</CODE> stands for
+"global," which means replace everywhere.  For example:
+
+
+<PRE>
+awk '{ gsub(/Britain/, "United Kingdom"); print }'
+</PRE>
+
+replaces all occurrences of the string <SAMP>`Britain'</SAMP> with <SAMP>`United
+Kingdom'</SAMP> for all input records.
+
+The <CODE>gsub</CODE> function returns the number of substitutions made.  If
+the variable to be searched and altered, <VAR>target</VAR>, is
+omitted, then the entire input record, <CODE>$0</CODE>, is used.
+
+As in <CODE>sub</CODE>, the characters <SAMP>`&#38;'</SAMP> and <SAMP>`\'</SAMP> are special,
+and the third argument must be an lvalue.
+</DL>
+
+<DL COMPACT>
+
+<DT><CODE>gensub(<VAR>regexp</VAR>, <VAR>replacement</VAR>, <VAR>how</VAR> [, <VAR>target</VAR>])</CODE>
+<DD>
+<A NAME="IDX574"></A>
+<CODE>gensub</CODE> is a general substitution function.  Like <CODE>sub</CODE> and
+<CODE>gsub</CODE>, it searches the target string <VAR>target</VAR> for matches of
+the regular expression <VAR>regexp</VAR>.  Unlike <CODE>sub</CODE> and
+<CODE>gsub</CODE>, the modified string is returned as the result of the
+function, and the original target string is <EM>not</EM> changed.  If
+<VAR>how</VAR> is a string beginning with <SAMP>`g'</SAMP> or <SAMP>`G'</SAMP>, then it
+replaces all matches of <VAR>regexp</VAR> with <VAR>replacement</VAR>.
+Otherwise, <VAR>how</VAR> is a number indicating which match of <VAR>regexp</VAR>
+to replace. If no <VAR>target</VAR> is supplied, <CODE>$0</CODE> is used instead.
+
+<CODE>gensub</CODE> provides an additional feature that is not available
+in <CODE>sub</CODE> or <CODE>gsub</CODE>: the ability to specify components of
+a regexp in the replacement text.  This is done by using parentheses
+in the regexp to mark the components, and then specifying <SAMP>`\<VAR>n</VAR>'</SAMP>
+in the replacement text, where <VAR>n</VAR> is a digit from one to nine.
+For example:
+
+
+<PRE>
+$ gawk '
+&#62; BEGIN {
+&#62;      a = "abc def"
+&#62;      b = gensub(/(.+) (.+)/, "\\2 \\1", "g", a)
+&#62;      print b
+&#62; }'
+-| def abc
+</PRE>
+
+As described above for <CODE>sub</CODE>, you must type two backslashes in order
+to get one into the string.
+
+In the replacement text, the sequence <SAMP>`\0'</SAMP> represents the entire
+matched text, as does the character <SAMP>`&#38;'</SAMP>.
+
+This example shows how you can use the third argument to control
+which match of the regexp should be changed.
+
+
+<PRE>
+$ echo a b c a b c |
+&#62; gawk '{ print gensub(/a/, "AA", 2) }'
+-| a b c AA b c
+</PRE>
+
+In this case, <CODE>$0</CODE> is used as the default target string.
+<CODE>gensub</CODE> returns the new string as its result, which is
+passed directly to <CODE>print</CODE> for printing.
+
+If the <VAR>how</VAR> argument is a string that does not begin with <SAMP>`g'</SAMP> or
+<SAMP>`G'</SAMP>, or if it is a number that is less than zero, only one
+substitution is performed.
+
+<A NAME="IDX575"></A>
+<CODE>gensub</CODE> is a <CODE>gawk</CODE> extension; it is not available
+in compatibility mode (see section <A HREF="gawk_134.html#SEC135">Command Line Options</A>).
+
+<DT><CODE>substr(<VAR>string</VAR>, <VAR>start</VAR> [, <VAR>length</VAR>])</CODE>
+<DD>
+<A NAME="IDX576"></A>
+This returns a <VAR>length</VAR>-character-long substring of <VAR>string</VAR>,
+starting at character number <VAR>start</VAR>.  The first character of a
+string is character number one.  For example,
+<CODE>substr("washington", 5, 3)</CODE> returns <CODE>"ing"</CODE>.
+
+If <VAR>length</VAR> is not present, this function returns the whole suffix of
+<VAR>string</VAR> that begins at character number <VAR>start</VAR>.  For example,
+<CODE>substr("washington", 5)</CODE> returns <CODE>"ington"</CODE>.  The whole
+suffix is also returned
+if <VAR>length</VAR> is greater than the number of characters remaining
+in the string, counting from character number <VAR>start</VAR>.
+
+<STRONG>Note:</STRONG> The string returned by <CODE>substr</CODE> <EM>cannot</EM> be
+assigned to.  Thus, it is a mistake to attempt to change a portion of
+a string, like this:
+
+
+<PRE>
+string = "abcdef"
+# try to get "abCDEf", won't work
+substr(string, 3, 3) = "CDE"
+</PRE>
+
+or to use <CODE>substr</CODE> as the third agument of <CODE>sub</CODE> or <CODE>gsub</CODE>:
+
+
+<PRE>
+gsub(/xyz/, "pdq", substr($0, 5, 20))  # WRONG
+</PRE>
+
+<A NAME="IDX577"></A>
+<A NAME="IDX578"></A>
+<DT><CODE>tolower(<VAR>string</VAR>)</CODE>
+<DD>
+<A NAME="IDX579"></A>
+This returns a copy of <VAR>string</VAR>, with each upper-case character
+in the string replaced with its corresponding lower-case character.
+Non-alphabetic characters are left unchanged.  For example,
+<CODE>tolower("MiXeD cAsE 123")</CODE> returns <CODE>"mixed case 123"</CODE>.
+
+<DT><CODE>toupper(<VAR>string</VAR>)</CODE>
+<DD>
+<A NAME="IDX580"></A>
+This returns a copy of <VAR>string</VAR>, with each lower-case character
+in the string replaced with its corresponding upper-case character.
+Non-alphabetic characters are left unchanged.  For example,
+<CODE>toupper("MiXeD cAsE 123")</CODE> returns <CODE>"MIXED CASE 123"</CODE>.
+</DL>
+
+
+<H3>More About <SAMP>`\'</SAMP> and <SAMP>`&#38;'</SAMP> with <CODE>sub</CODE>, <CODE>gsub</CODE> and <CODE>gensub</CODE></H3>
+
+<P>
+<A NAME="IDX581"></A>
+When using <CODE>sub</CODE>, <CODE>gsub</CODE> or <CODE>gensub</CODE>, and trying to get literal
+backslashes and ampersands into the replacement text, you need to remember
+that there are several levels of <STRONG>escape processing</STRONG> going on.
+
+</P>
+<P>
+First, there is the <STRONG>lexical</STRONG> level, which is when <CODE>awk</CODE> reads
+your program, and builds an internal copy of your program that can
+be executed.
+
+</P>
+<P>
+Then there is the run-time level, when <CODE>awk</CODE> actually scans the
+replacement string to determine what to generate.
+
+</P>
+<P>
+At both levels, <CODE>awk</CODE> looks for a defined set of characters that
+can come after a backslash.  At the lexical level, it looks for the
+escape sequences listed in section <A HREF="gawk_26.html#SEC27">Escape Sequences</A>.
+Thus, for every <SAMP>`\'</SAMP> that <CODE>awk</CODE> will process at the run-time
+level, you type two <SAMP>`\'</SAMP>s at the lexical level.
+When a character that is not valid for an escape sequence follows the
+<SAMP>`\'</SAMP>, Unix <CODE>awk</CODE> and <CODE>gawk</CODE> both simply remove the initial
+<SAMP>`\'</SAMP>, and put the following character into the string. Thus, for
+example, <CODE>"a\qb"</CODE> is treated as <CODE>"aqb"</CODE>.
+
+</P>
+<P>
+At the run-time level, the various functions handle sequences of
+<SAMP>`\'</SAMP> and <SAMP>`&#38;'</SAMP> differently.  The situation is (sadly) somewhat complex.
+
+</P>
+<P>
+Historically, the <CODE>sub</CODE> and <CODE>gsub</CODE> functions treated the two
+character sequence <SAMP>`\&#38;'</SAMP> specially; this sequence was replaced in
+the generated text with a single <SAMP>`&#38;'</SAMP>.  Any other <SAMP>`\'</SAMP> within
+the <VAR>replacement</VAR> string that did not precede an <SAMP>`&#38;'</SAMP> was passed
+through unchanged.  To illustrate with a table:
+
+</P>
+
+<P>
+This table shows both the lexical level processing, where
+an odd number of backslashes becomes an even number at the run time level,
+and the run-time processing done by <CODE>sub</CODE>.
+(For the sake of simplicity, the rest of the tables below only show the
+case of even numbers of <SAMP>`\'</SAMP>s entered at the lexical level.)
+
+</P>
+<P>
+The problem with the historical approach is that there is no way to get
+a literal <SAMP>`\'</SAMP> followed by the matched text.
+
+</P>
+<P>
+<A NAME="IDX582"></A>
+<A NAME="IDX583"></A>
+The 1992 POSIX standard attempted to fix this problem. The standard
+says that <CODE>sub</CODE> and <CODE>gsub</CODE> look for either a <SAMP>`\'</SAMP> or an <SAMP>`&#38;'</SAMP>
+after the <SAMP>`\'</SAMP>. If either one follows a <SAMP>`\'</SAMP>, that character is
+output literally.  The interpretation of <SAMP>`\'</SAMP> and <SAMP>`&#38;'</SAMP> then becomes
+like this:
+
+</P>
+
+<P>
+This would appear to solve the problem.
+Unfortunately, the phrasing of the standard is unusual. It
+says, in effect, that <SAMP>`\'</SAMP> turns off the special meaning of any
+following character, but that for anything other than <SAMP>`\'</SAMP> and <SAMP>`&#38;'</SAMP>,
+such special meaning is undefined.  This wording leads to two problems.
+
+</P>
+
+<OL>
+<LI>
+
+Backslashes must now be doubled in the <VAR>replacement</VAR> string, breaking
+historical <CODE>awk</CODE> programs.
+
+<LI>
+
+To make sure that an <CODE>awk</CODE> program is portable, <EM>every</EM> character
+in the <VAR>replacement</VAR> string must be preceded with a
+backslash.<A NAME="DOCF11" HREF="gawk_foot.html#FOOT11">(11)</A>
+</OL>
+
+<P>
+The POSIX standard is under revision.<A NAME="DOCF12" HREF="gawk_foot.html#FOOT12">(12)</A>
+Because of the above problems, proposed text for the revised standard
+reverts to rules that correspond more closely to the original existing
+practice. The proposed rules have special cases that make it possible
+to produce a <SAMP>`\'</SAMP> preceding the matched text.
+
+</P>
+
+<P>
+In a nutshell, at the run-time level, there are now three special sequences
+of characters, <SAMP>`\\\&#38;'</SAMP>, <SAMP>`\\&#38;'</SAMP> and <SAMP>`\&#38;'</SAMP>, whereas historically,
+there was only one.  However, as in the historical case, any <SAMP>`\'</SAMP> that
+is not part of one of these three sequences is not special, and appears
+in the output literally.
+
+</P>
+<P>
+<CODE>gawk</CODE> 3.0 follows these proposed POSIX rules for <CODE>sub</CODE> and
+<CODE>gsub</CODE>.
+Whether these proposed rules will actually become codified into the
+standard is unknown at this point. Subsequent <CODE>gawk</CODE> releases will
+track the standard and implement whatever the final version specifies;
+this book will be updated as well.
+
+</P>
+<P>
+The rules for <CODE>gensub</CODE> are considerably simpler. At the run-time
+level, whenever <CODE>gawk</CODE> sees a <SAMP>`\'</SAMP>, if the following character
+is a digit, then the text that matched the corresponding parenthesized
+subexpression is placed in the generated output.  Otherwise,
+no matter what the character after the <SAMP>`\'</SAMP> is, that character will
+appear in the generated text, and the <SAMP>`\'</SAMP> will not.
+
+</P>
+
+<P>
+Because of the complexity of the lexical and run-time level processing,
+and the special cases for <CODE>sub</CODE> and <CODE>gsub</CODE>,
+we recommend the use of <CODE>gawk</CODE> and <CODE>gensub</CODE> for when you have
+to do substitutions.
+
+</P>
+<P><HR><P>
+Go to the <A HREF="gawk_1.html">first</A>, <A HREF="gawk_124.html">previous</A>, <A HREF="gawk_126.html">next</A>, <A HREF="gawk_230.html">last</A> section, <A HREF="gawk_toc.html">table of contents</A>.
+<p><table width=100% border=0 cellspacing=0 cellpadding=3><tr>
+<td align=left valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; <a target="_top" href="mailto:dj@delorie.com">feedback</a> &nbsp; <a target="_top" href="/donations.html">donations</a> &nbsp; <a target="_top" href="/users/dj/">DJ</a> &nbsp; <a target="_top" href="/readme.html">help</a> &nbsp; </b></font></td>
+<td align=right valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; <a target="_top" href="/">delorie software</a> &nbsp; </b></font></td></tr>
+<tr><td align=left valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; <a target="_top" href="/copyright.html">Copyright &copy; 1998</a> by <a target="_top" href="/users/fsf/">The Free Software Foundation</a></b></font></td>
+<td align=right valign=top bgcolor="#ffcc99"><font size=-2 face="itc avant garde gothic,helvetica,arial"><b> &nbsp; Updated Mar 14 1998 &nbsp; </b></font></td></tr></table>
+
+<p align=center><a href="http://www.apache.org/" target="_top"><img src="/icons/apache_pb.gif" width=259 height=32 border=0 alt="Powered by Apache!"></a></p>
+

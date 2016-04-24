@@ -1,0 +1,21 @@
+画像操作
+========
+
+* 画像の特定の位置をトリミング:
+
+    $ convert -crop 画像のX方向の長さx画像のY方向の長さ+始点X+始点Y from.png to.png
+    $ convert -crop 100x100+10+20 from.png to.png
+
+* 画像の色を RGB の平文に変換: `convert -compress None from.png to.ppm`
+  * `-compress None` を指定しない場合はバイナリデータが出力される
+
+
+
+
+
+
+
+
+
+
+

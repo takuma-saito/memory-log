@@ -1,0 +1,12 @@
+network enumuration
+===================
+
+* find ISP ip range:
+http://wq.apnic.net/apnic-bin/whois.pl
+http://wq.apnic.net/whois-search/static/search.html
+EXAMPLES) sonet, KDDI-NET, KDDI
+
+* header information:http://show-ip.net/browserinfo/
+* ip address: http://www.cman.jp/network/support/go_access.cgi
+
+

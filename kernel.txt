@@ -51,10 +51,13 @@ Prompt で示されているのに、所定のメニューを探しても見つ�
     # && なので HIGHMEM4G [=n] となっていなければならない
     Depends on: X86_32 [=y] && !HIGHMEM4G [=y]
 
-そこで、さらに F8 で HIGHMEM4G を探す.
-そうすると今度は Depends on の項目は全て満たされており、メニューに表示されていた!
+そこで、さらに F8 で HIGHMEM4G を探し、この項目を off にする.
+そうすると X86_PAE の Depends on の項目は全て満たされるので、X86_PAE がメニューに表示されるようになる.
 
-そこで HIGHMEM4G の項目を off にし、 PAE の項目を on にすると無事 CONFIG_XEN のメニューが表示された.
+そして、この X86_PAE の項目を on にする.
+そうすると CONFIG_XEN の Depends on の項目が全て満たせるので CONFIG_XEN がメニューに表示されるようになる.
+
+このように目的の項目がメニューにない場合、Depends on の依存関係を辿ればきちんとメニューに表示されるようになる.
 
 
 カーネルコンパイルのコマンド解説
@@ -115,6 +118,7 @@ Prompt で示されているのに、所定のメニューを探しても見つ�
 読み込めるモジュール一覧表示
 
     # modprobe -l | less
+    # modprobe -c | grep mod_name
     # ls /lib/modules/$(uname -r)/**/*.ko
 
 依存関係を考慮しないモジュールの読込
@@ -150,5 +154,58 @@ modinfo の各オプション
 * `-d`: モジュールの説明を表示
 * `-p`: モジュールのパラメーターを表示
 * `-n`: モジュールのファイル名を表示
+
+ブート時にモジュールをロードさせる場合
+`/etc/modules-load.d/` に .conf 拡張子で適当なファイルを作成し
+その中にロードしたいモジュール名を書き込む。
+
+    # sudo emacs /etc/modules-load.d/tun.conf
+    tun
+
+### netconsole ###
+
+dmesg を UDP でリモートホストに送信できる機能
+フォーマットは netconsole=src-port@src-ip/ifname,dst-port@dst-ip/dst-mac で設定する。
+ブロードキャストする場合は dst-mac に ff:ff:ff:ff:ff:ff を設定する。
+
+    $ sudo modinfo netconsole
+    ...
+    $ sudo modprobe netconsole netconsole=6666@192.168.11.5/eth0,6666@192.168.11.12/e0:f8:47...
+
+dmesg で読込を確認できる
+
+    $ sudo dmesg
+    ....
+    [  396.062281] netpoll: netconsole: local port 6666
+    [  396.062286] netpoll: netconsole: local IPv4 address 192.168.11.5
+    [  396.062287] netpoll: netconsole: interface 'eth0'
+    [  396.062288] netpoll: netconsole: remote port 6666
+    [  396.062290] netpoll: netconsole: remote IPv4 address 192.168.11.12
+    [  396.062291] netpoll: netconsole: remote ethernet address e0:f8:47...
+    ....
+
+    $ sudo dmesg -n debug
+
+クライアント側で待受設定を行う。 -u はUDP の待受
+
+    $ nc -u -l 6666
+
+サーバー側で dmesg へ適当なメッセージを送信し、カーネルパニックを起こす。
+    
+    $ su - root
+    # echo hoge > /dev/kmsg
+    # echo hoge > /proc/sysrq_trigger
+
+### ハードウェアトラブル ###
+
+カーネルブート時にエラーがないか確認する
+
+    $ dmesg -l err
+
+カーネルパラメーター
+--------------------
+
+* カーネルパラメーターの確認: `cat /proc/cmdline`
+
 
 

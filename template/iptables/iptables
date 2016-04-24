@@ -5,6 +5,7 @@
 :FORWARD DROP [0:0]
 :OUTPUT  ACCEPT [0:0]
 :SERVICE - [0:0]
+:SYN_FLOOD - [0:0]
 
 # ループバックインターフェイスへの接続は許可
 -A INPUT -i lo -j ACCEPT
@@ -14,7 +15,7 @@
 -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT
 
 # サーバー内のネームサーバーへのパケット許可
--A INPUT -p udp --dport 53 -j ACCEPT
+# -A INPUT -p udp --dport 53 -j ACCEPT
 
 # サーバー外への名前問い合わせ許可
 -A INPUT -p udp --sport 53 -j ACCEPT
@@ -22,14 +23,14 @@
 # ソケットが開いている場合は許可
 -A INPUT -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-# 不正なパケット（NEW は必ずsynフラグが立っている）
+# 不正なパケット（新規パケットには必ず syn フラグが立っている）
 -A INPUT -p tcp -m state --state NEW ! --syn -j DROP
 
 # SERVICEで指定された特定のポートのみ開く
 -A INPUT -p tcp -m state --state NEW -j SERVICE
 
 # 指定したポートを開く
--A SERVICE -p tcp -m multiport --dport 21,22,25,80,443 -j ACCEPT
+-A SERVICE -p tcp -m multiport --dport 22,25,80 -j ACCEPT
 
 # 外部からファイルをダウンロードできるようにする
 # 80 -> http
@@ -39,7 +40,53 @@
 
 # netperf でのテスト時にコメントアウトする
 # -A SERVICE -p tcp --dport 12865 -j ACCEPT
-# -A SERVICE -p tcp --sport 0:65535 -j ACCEPT   
+# -A SERVICE -p tcp --sport 0:65535 -j ACCEPT
+
+###########################################################
+# 攻撃対策: SYN Flood Attack
+###########################################################
+# "SYN_FLOOD" という名前でチェーンを作る
+-A SYN_FLOOD -p tcp --syn -m hashlimit --hashlimit 200/s --hashlimit-burst 3 --hashlimit-htable-expire 300000 --hashlimit-mode srcip --hashlimit-name t_SYN_FLOOD -j RETURN
+
+# 解説
+# -m hashlimit                       ホストごとに制限するため limit ではなく hashlimit を利用する
+# --hashlimit 200/s                  秒間に200接続を上限にする
+# --hashlimit-burst 3                上記の上限を超えた接続が3回連続であれば制限がかかる
+# --hashlimit-htable-expire 300000   管理テーブル中のレコードの有効期間（単位：ms
+# --hashlimit-mode srcip             送信元アドレスでリクエスト数を管理する
+# --hashlimit-name t_SYN_FLOOD       /proc/net/ipt_hashlimit に保存されるハッシュテーブル名
+# -j RETURN                          制限以内であれば、親チェーンに戻る
+
+# 制限を超えたSYNパケットを破棄
+-A SYN_FLOOD -j LOG --log-prefix "syn_flood_attack: "
+-A SYN_FLOOD -j DROP
+
+# SYNパケットは "SYN_FLOOD" チェーンへジャンプ
+-A INPUT -p tcp --syn -j SYN_FLOOD
+
+# fragments packet
+-A INPUT -f -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fragments Packets"
+-A INPUT -f -j DROP
+
+# block bad stuff
+-A INPUT -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+-A INPUT -p tcp --tcp-flags ALL ALL -j DROP
+
+# NULL Packets Scan
+-A INPUT -p tcp --tcp-flags ALL NONE -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "NULL Packets"
+-A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+
+-A INPUT -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+
+# XMAS Packets Scan
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "XMAS Packets"
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP 
+
+# FIN Packet Scans
+-A INPUT -p tcp --tcp-flags FIN,ACK FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fin Packets Scan"
+-A INPUT -p tcp --tcp-flags FIN,ACK FIN -j DROP
+
+-A INPUT -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
 
 COMMIT
 # Completed on Mon Jun 25 19:05:49 2012

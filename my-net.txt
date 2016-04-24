@@ -1,0 +1,26 @@
+ネットワーク構成
+================
+
+* udp:53
+localhost:53 -> (rdr) -> localhost:5550 -> (pdnsd) -> localhost:5553 -> (tor) -> internet
+
+* web:80, 443
+localhost:8123 -> (polipo) -> localhost:9050 -> (tor) -> internet
+
+*** ログの場所など ***
+* tor:
+   - log: /usr/local/var/tor/tor.log
+   - startup: ~/Library/LaunchAgents/homebrew.mxcl.tor.plist
+   - listen: TOR EXIT -> localhost:5553
+             TOR DNS  -> localhost:5550
+* pfctl:
+   - log: syslog -w
+   - startup: /System/Library/LaunchDaemons/hacker.pfctl.plist
+   - redirect port: {53, 5553} -> 5550
+* pdnsd:
+   - log: /var/log/pdnsd.log
+   - startup: /System/Library/LaunchDaemons/hacker.pdnsd.plist
+   - listen: localhost:5550
+   - connect-to: localhost:5553
+
+

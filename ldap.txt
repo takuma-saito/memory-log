@@ -1,0 +1,27 @@
+LADP
+====
+
+基本設定
+--------
+
+# 基本パッケージをインストール
+$ sudo yum install -y 'openldap*'
+
+# slpad を起動
+$ sudo /etc/init.d/slapd start
+
+# 管理パスワードを変更する
+# 管理パスワードのハッシュ値を生成
+$ slappasswd -s <password>
+{SSHA}ZXo+jRcM7ZYK/EHeOQU3TnT1rQe+E1vV
+
+$ emacs change-pass.ldif
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+replace: olcRootPW
+olcRootPW: {SSHA}cqKYCagfkKH5B5ek5lacXm64UcdOF38Y
+
+$ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f change-pass.ldif
+
+
+

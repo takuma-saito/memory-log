@@ -4,6 +4,9 @@ btrfs
 btrfs ファイルシステム構築
 ----------------------------
 
+btrfs 現時点（2012年 10月）ではまだ発展途上で
+通常のファイル・システムに存在するコマンド （fsck.btrfs など）が実装されていないことに注意すること.
+
 ファイルシステムを作成する.
 
     $ mkfs.btrfs -L root /dev/VolGroup/root
@@ -12,3 +15,9 @@ btrfs ファイルシステム構築
 
     $ mount /dev/VolGroup/root /mnt
 
+
+btrfs の各種コマンド
+----------------------------
+
+* btrfs 一覧表示: `btrfs filesystem show`
+* subvolume 作成: `btrfs create /path/to/target/directory`

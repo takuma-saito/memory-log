@@ -1,0 +1,32 @@
+ssmtp の設定
+============
+
+メールを gmail に転送する設定
+
+    $ sudo emacs /etc/ssmtp/ssmtp.conf
+    root=youremail@gmail.com
+    mailhub=smtp.gmail.com:587
+    AuthUser=youremail@gmail.com
+    AuthPass=yourpassword
+    UseSTARTTLS=YES
+
+セキュリティ設定
+
+    $ sudo chown root:mail /etc/ssmtp/ssmtp.conf
+    $ sudo chmod 640 /etc/ssmtp/ssmtp.conf
+
+mail グループに追加する
+
+    $ sudo gpasswd -a admin mail
+
+同様に必要な場合はローカルユーザーにエイリアスを設定しておく
+
+    $ sudo emacs /etc/mail.rc
+    alias admin youremail@gmail.com
+    
+    $ echo "Hello" | mail -v -s "subject" admin
+
+メールの送信テスト
+
+    $ echo "Hello. This is test email" | mail -v -s "this is test script" username@hostname
+

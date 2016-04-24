@@ -1,0 +1,31 @@
+handbrake 入門
+============================
+
+handbrake の使い方
+----------------------------
+
+まず DVD や ISO などの情報を確認する.
+
+    $ HandBrakeCLI -t 0 -i /path/to/DVD.iso
+
+* `-t <number>`: title, 0を設定した場合は全てスキャンを行う
+* `-i <path>`: input, 読み込むファイルを指定する
+
+特に audio （音声） と subtitle （字幕）部分に注目すること.
+
+次にエンコードの指定を行い、mkv ファイルを作成する
+     
+    $ HandBrakeCLI -Z Normal -i /path/to/DVD.iso -o name.mkv -f mkv -t 1 -a 1,2 -s 1,2 -b 1500 --subtitle-default 2
+
+* `-Z <priset>`: プリセットを指定する
+* `-i <path>`: 読み込むファイル名
+* `-o <path>`: 出力するファイル名
+* `-f <type>`: フォーマットの指定, 通常は mkv で OK
+* `-t <title>`: タイトルを指定する（デフォルトは 1）
+* `-a <audio>`: 音声タイプを指定する（, 区切で複数指定可能）
+* `-s <subtitle>`: 字幕のタイプを指定する（, 区切で複数指定可能）
+* `--subtitle-default <subtitle>`: デフォルトの字幕を指定する
+* `-q <quality>`: ビデオの品質を指定する
+* `-b`: bit rate を指定する（デフォルトは 1000）
+* `-2`: 2pass モードでエンコードを行う
+* `-T`: 2pass モードでエンコードする場合、最初の 1 回目のエンコードを高速で行う

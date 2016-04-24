@@ -1,0 +1,85 @@
+maxima の使い方
+===============
+
+言語特有の関数
+--------------
+
+* 環境をリセット: `reset()`
+* 変数一覧: `values(), infolists()`
+* tex 形式に変換: `tex(f(x))`
+* 関数一覧: `functions;`
+* 関数を表示させる: `dispfun(fun)`
+* 表示: `print(%pi)`
+* 代入: `a: 30.23`
+* 変数の性質を宣言: `assume(a > 0)`
+
+
+関数や解析
+----------
+
+* 積分: `integrate(f(x), x, a, b)`
+* 微分: `diff(f(x), x)`
+* テイラー展開: `taylor(f(x), x, 0, 10)`
+* 変数と属性の対応: `declare(a1,属性1,a2,属性2,...)`
+* 関数定義: `f(x, y) := (x^2 + y^2) / (x * y)`
+* 小数点表示: `float()`
+* 簡約化: `ratsimp((a^2+b^2+c^2)(u^2+v^2+w^2) - (a*u+b*v+c*w)^2))`
+* 簡約化 + 小数点: `float(ratsimp())`
+* 順番を指定: `ordergreat(x, y)`
+* 平方完成: `polysq(poly, x) := block([a, b, c, p], a:coeff(poly, x, 2), b:coeff(poly, x, 1), c:coeff(poly, x, 0), a*(x+ratsimp(b/(2*a)))^2+ratsimp(-b^2/(4*a)+c));`
+* 多項式展開: `expand(f(x))`
+* 簡約化: `ratsimp(x^2 + (5x + 3y) - 10y^2 + 3x + 3 - 10))`
+* 方程式を解く: `solve(2*x^2+3*x+1=0,x);`
+
+
+プロット関係
+------------
+
+* 2次元プロット: `plot2d(3^x, [x, -2, 2])`
+* 2次元プロット（パラメーター指定）: `plot2d([parametric, r*sin(t), r*cos(t), [t, -8*%pi, 8*%pi]])$`
+* 2次元プロット（陰関数表示）: `load(implicit_plot); implicit_plot(x^2 + y^2 = 1, [x, -1, 1], [y, -1, 1])$`
+* 3次元プロット: `plot3d(3^x + y^2, [x, -2, 2], [y, -2, 2], [grid, 300])`
+* 3次元プロット（解像度指定）: `plot3d(3^x + y^2, [x, -2, 2], [y, -2, 2], [grid, 300, 300])`
+* 3次元プロット（パラメーター指定: `plot3d([sin(12*%pi*x), cos(12*%pi*x), x], [x, 0, 1], [y, 0, 10], [grid, 500, 1])$`
+* 3次元プロット（陰関数表示）: `load(draw); draw3d(implicit(x^2 + y^2 + z^2 = 1, x, -1, 1, y, -1, 1, z, -1, 1))`
+   * `draw3d(enhanced3d = true, implicit(...))` でキレイに表示できる
+* 重ねてプロット: `plot2d([f(x), g(x), h(x)], [x, min, max]));` または `par(new=T)` を指定
+* 点をプロット: `plot2d([discrete, [[1.0, 2.0]], [style, points])`
+
+
+ベクトル演算
+------------
+
+`load("plotdf");` で plotdf コマンドを使えるにようにする
+`load("vect");` でベクトル関係のコマンドを使えるようにする
+
+* プロット: `plotdf([x, y]);`
+* 勾配: `grad(fun)`
+* 発散: `div([f(x), g(y), h(z)])`
+* 回転: `rot([f(x), g(y), h(z)])`
+* ベクトル生成: `[a, b, c]`
+* 内積: `A . B`
+* 外積: `A ~ B`
+* 展開: `express(A ~ B)`
+
+
+行列操作について
+----------------
+
+* 行列の掛け算: `A.B` (A * B でないので注意) 
+* 行列生成: `matrix([1, 2], [3, 4])`
+* 階数: `rank(m)`
+* 行列式: `determinant(m)`
+* 逆行列: `invert(m)`
+* 転置: `transpose(m)`
+* 固有値: `eigenvalues(m)`
+* 固有値+固有ベクトル: `eigenvectors(m)`
+
+
+よく使う変数など
+----------------
+
+* パイ: `%pi`
+* 無限: `inf`
+* マイナス無限: `minf`
+

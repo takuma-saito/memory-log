@@ -9,28 +9,153 @@ gemにてfluetdをインストールする。
     $ gem install fluent-plugin-mongo
     $ gem install bson_ext
     $ sudo fluentd --setup /etc/fluent
-    $ emacs etc/fluent/fluent.conf
+    $ emacs /etc/fluent/fluent.conf
 
-fluent.confに設定を書き込む
+次に fluent.conf の設定を行う。
+今回は httpd のログを取る。
 
+    <source>
+      type tail
+      format apache
+      path /var/log/httpd/access_log
+      tag apache.access
+    </source>
+           
+    <match apache.access>
+      type file
+      path /var/log/fluent/access_log
+    </match>
+
+実行してみる, /var/log/fluent/access_log に設定が書き込まれれば成功
+
+    $ sudo fluentd -vv -c /etc/fluent/fluent.conf
+
+source -> match へとログのデータが流れる。
+tag でどの方向へログを流すかを柔軟に設定できる。
+**また、タグは一度しか match しないので注意すること。**
+そのため、一度 match で該当したタグにはそれ以降にマッチするタグがあっても無視される。
+
+さらに、基本的に設定ファイルはシーケンシャルに実行されるようなので
+*source のディレクティブは最初に, その後 match ディレクティブを書く。*
+source ディレクティブと match ディレクティブを交互に混在させると期待したような挙動にならない場合がある。
+
+例えば、一番単純な仕組みは以下のような設定。
+
+    $ emacs /etc/fluent/fluent.conf
     <source>
       type forward
+      tag test
     </source>
-      
+        
+    <match test>
+      type file
+      path /var/log/fluent/test
+    </match>
+
+入力に対して test タグを付ける。
+test タグにマッチしたデータは /var/log/fluet/test に追記される。
+
+    $ echo '{"msg": "Hello World"}' | fluent-cat test 
+    2013-01-26T14:45:25+09:00       test    {"msg":"Hello World"}
+
+datacounter + Growthforecast  でグラフ化
+----------------------------
+
+最初に Growthforecast をインストールする。
+cpanm 経由でインストールを行うので、cpanm のインストールを行う。
+
+    $ curl -LOk http://xrl.us/cpanm 
+    $ chmod +x cpanm
+    $ sudo mv cpanm /usr/local/bin/
+
+その後は以下のようにして、Growthforecast をインストールする。
+
+    $ sudo cpanm -n http://nomadscafe.jp/pub/GrowthForecast/GrowthForecast-0.34.tar.gz 
+
+依存関係のあるパッケージが多いので、インストールが完了するまでしばらく待つこと。
+インストールが完了したら、テスト起動を行う
+
+    $ mkdir gforecast
+    $ growthforecast.pl --data-dir gforecast 
+    
+起動後、デフォルトのポートは 5125 に割り当てられているので、http://localhost:5125 で正常にアクセスできるか確認する。
+
+次に datacounter, growthforecast 用の fluentd プラグインをインストールする
+
+    $ sudo gem install fluent-plugin-growthforecast 
+    $ sudo gem install fluent-plugin-datacounter
+
+fluentd に apache の source 設定を追加する。
+
     <source>
-      type http
-      port 12000
+        type tail
+        format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<status>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\ \"]*)" (?<response_time>[^ ]*))?$/
+        time_format %d/%b/%Y:%H:%M:%S %z
+        path /var/log/apache2/access.log
+        pos_file /var/log/fluent/access.log.pos
+        tag apache.access
     </source>
-          
-    <match debug.**>
+    
+apache のログのフォーマットの末尾に %D を以下のように指定して、レスポンスタイムも記載した。
+
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+
+format 文は若干複雑になる。
+次に match 文を以下のように追加する。
+
+    <match apache.access>
       type copy
-      <store>    
-       type stdout
+      <store>
+        type stdout
       </store>
       <store>
-      type mongo
-      host localhost
-      database fluent
-      collection debug
+        type datacounter
+        tag apache.httpstatus
+        aggregate all
+        # count_interval 10 
+        count_key status
+        pattern1 2xx ^2\d\d$
+        pattern2 3xx ^3\d\d$
+        pattern3 4xx ^4\d\d$
+        pattern4 5xx ^5\d\d$
       </store>
     </match>
+    
+    <match apache.httpstatus>
+      type copy
+      <store>
+        type stdout
+      </store>
+      <store>
+        type growthforecast
+        gfapi_url http://localhost:5125/api/
+        service apache
+        section status
+        name_keys 2xx_count,3xx_count,4xx_count,5xx_count
+      </store>
+    </match>
+
+上記設定を追加後、fluentd を再起動するとログが取れる。
+
+正規表現のデバック方法
+----------------------------
+
+apache 以外で使う場合にキモになってくるのがログから JSON 形式に変換する際の正規表現。（format 指定部分）
+irb の強化版 pry をインストールしデバックを行う。
+
+    $ gem i pry
+    
+以下の様にスクリプトを流し込みデバックを行う
+
+    require 'fluent/config'
+    require 'fluent/parser'
+    require 'fluent/engine'
+   
+    regexp = /^(?<date>\w{3} \d\d (\d{2}:){2}\d{2}) (?<host>\w+) (?<role>\w+)\[(?<pid>\d+)\]: (?<event>\w+): (?<info>\d+) (?<tty>.+)$/
+   
+    parser = Fluent::TextParser::RegexpParser.new(regexp)
+   
+    log = 'Jul 16 00:45:47 BJA login[58879]: USER_PROCESS: 58879 ttys002'
+   
+    parser.call(log)
+

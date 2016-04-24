@@ -73,7 +73,23 @@ tftp の場合は直接IPアドレスを入れて接続しないとダメ
 
     $ cat /proc/mounts | grep -v rootfs > /etc/mtab
 
-arch linux の場合 /etc/rc.multi の 
+### pacman が機能しない ###
+
+pacman からパッケージをインストールしようとすると下記のようなエラーが出る.
+
+    $ pacman -S <pkg_name>
+    ...
+    warning: failed to retrieve some files from core
+    error: failed to commit transaction (download library error)
+    Errors occurred, no packages were upgraded.
+
+どうもキャッシュが悪さをしているらしいので、
+一旦キャッシュを削除してパッケージインデックスを更新すると直る
+
+    $ pacman -Sc
+    $ pacman -Syy
+
+上記を行った後は正常にインストールできるようになった.
 
 
 プログラミング関係のエラー ハマりどころ

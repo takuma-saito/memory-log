@@ -1,0 +1,207 @@
+Mac 固有のコマンドなど
+======================
+
+ショートカット
+--------------
+Finderを操作中によく使うショートカット。
+* command + F: Spotlightを開く
+* command + I: 情報を見る
+* command + D: 選択中のファイルを複製
+* command + O: 選択中のファイル・フォルダを開く
+* ファイル・フォルダを選択中にreturn: ファイル名の変更
+
+
+メモ
+----
+
+# plist として登録する
+$ ln -s /usr/local/opt/tor/homebrew.mxcl.tor.plist ~/Library/LaunchAgents/homebrew.mxcl.tor.plist
+$ launchctl -w load ~/Library/LaunchAgents/homebrew.mxcl.tor.plist
+
+# 停止させる
+$ launchctl unload ~/Library/LaunchAgents/homebrew.mxcl.tor.plist
+
+# スタートアップスクリプトを登録する
+$ sudo launchctl submit -l name_of_startup_item -- command [args]
+
+# 確認
+$ sudo launchctl list | grep name
+
+# スタートアップスクリプトをシステム全体に登録
+$ sudo emacs /System/Library/LaunchDaemon/hacker.pfctl.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+t<plist version="1.0">
+  <dict>
+    <key>KeepAlive</key>
+    <true/>
+    <key>Label</key>
+    <string>hacker.pfctl</string>
+    <key>Program</key>
+    <string>/sbin/pfctl</string>
+    <key>StandardOutPath</key>
+    <string>/var/log/pdnsd.log</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>pfctl</string>
+      <string>-f</string>
+      <string>/etc/pf.conf</string>
+      <string>-e</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>WorkingDirectory</key>
+    <string>/var/run</string>
+  </dict>
+</plist>
+# 有効にする
+$ sudo launchctl load /System/Library/LaunchDaemon/hacker.pfctl.plist
+# ログの確認を行う
+$ syslog -w
+
+# その他の方法
+$ sudo defaults write /System/Library/LaunchDaemons/com.apple.pfctl ProgramArguments '(pfctl, -f, /etc/pf.conf, -e)'
+$ sudo chmod 644 /System/Library/LaunchDaemons/com.apple.pfctl.plist
+$ sudo plutil -convert xml1 /System/Library/LaunchDaemons/com.apple.pfctl.plist
+# 起動させる
+$ sudo launchctl load /System/Library/LaunchDaemon/hacker.pfctl.plist
+
+
+# 固定 IP を使う,
+# IP: 192.168.11.9, dns,router: 192.168.11.1, interface: Wi-fi, subnet=255.255.255.0
+$ sudo networksetup -setmanual Wi-fi 192.168.11.9 255.255.255.0 192.168.11.1
+$ sudo networksetup -setdnsservers Wi-Fi 192.168.11.1
+# 確認
+$ sudo networksetup -getinfo Wi-Fi
+
+# ipv6 を無効に
+$ networksetup -listnetworkserviceorder
+$ networksetup -setv6off Ethernet
+$ networksetup -setv6off Wi-fi
+
+# ブートフラグを付ける:
+$ sudo emacs /Library/Preferences/SystemConfiguration/com.apple.Boot.plist
+
+# 音楽ファイルに関する情報を表示する:
+$ soxi recording.wav
+
+# 音を録音する
+$ sox -d recording.wav
+
+* stack limit を増加させる:
+  launchctl を使う
+  1. 現在の設定の確認: `sudo launchctl limit`
+  左側が現在設定されている上限値で，右側がシステムとして設定可能な上限値
+   
+      cpu         unlimited      unlimited
+      filesize    unlimited      unlimited
+      data        unlimited      unlimited
+      stack       8388608        67104768
+      core        0              unlimited
+      rss         unlimited      unlimited
+      memlock     unlimited      unlimited
+      maxproc     709            1064
+      maxfiles    256            unlimited
+      
+  2. 値を変更する: `sudo launchctl limit maxfiles 512`
+
+* スクリーンショット
+ 1. 画面全体: `Ctrl-Shift-3`
+ 2. 選択部分: `Ctrl-Shift-4`
+ 3. 選択ウインドウ: `Ctrl-Shift-4-Space`
+
+* MAC アドレスの設定: `ifconfig en0 ether E0:CB:4E:C3:E4:17`
+    * MY MAC en0: c8:2a:14:2d:26:60
+
+* ディスクパーティションを調べる: `diskutil list`
+
+* Router として機能させるため、IP Forwarding を on にする: `sysctl -w net.inet.ip.forwarding=1
+
+* IP アドレスを設定する: `sudo ipconfig set en1 INFORM 192.168.0.150`
+
+* DHCP サーバーから新しいアドレスを取得する: `sudo ifconfig en1 down ; sudo ifconfig en1 up`
+
+* グループにユーザーを追加: `dscl localhost -append /Local/Default/Groups/GroupName users userA userB userC`
+
+* グループモードに入る: `dscl localhost`
+
+* DNS の切り替え:
+ローカル用にネームサーバーを指定する
+  
+    $ mkdir /etc/resolver/
+    $ echo nameserver 192.168.1.1 > /etc/resolver/localnet.intra
+
+DNS のキャッシュ削除
+
+    $ dscacheutil -flushcache
+
+* キャッシュに保存されている DNS の確認: `scutil --dns`
+
+各コマンドの説明
+----------------
+
+* `defaults`: plist と呼ばれる設定ファイルの値を更新・修正する時に利用するコマンド
+  * `default write ~/Library/com.apple.doc NAT -dict-add key value`
+  * `default write ~/Library/com.apple.doc pinning -string start`
+  * `default delete ~/Library/com.apple.doc pinning`
+  * `default read ~/Library/com.apple.doc`
+  パスは基本的に絶対パスで指定しなければならない。また、ドメイン名のみを直接指定することも可能。
+  設定ファイルを直接修正するのではなく、defaults コマンドを通して修正しよう。
+
+
+Mac でブリッジを構築する
+------------------------
+
+IP forwading を on にする
+
+    $ sudo sysctl -w net.inet.ip.forwarding=1
+
+bridge を作成し、NIC を割り当てる
+
+    $ sudo ifconfig bridge0 create
+    $ sudo ifconfig bridge0 up
+    $ sudo ifconfig bridge0 192.168.7.1
+
+natd へ来たパケットを en1 に転送する。
+
+    $ sudo ipfw add divert natd ip from any to any via en1
+
+natd をスタートさせる。（ -v でフォアグランド実行）
+
+    $ sudo  natd -interface en1 -use_sockets -same_ports -unregistered_only -dynamic -clamp_mss -enable_natportmap -natportmap_interface en0
+
+もしブリッジ間の IP アドレスで通信を行う場合は以下も追加する。
+
+    $ sudo route add default -interface bridge0 -ifscope bridge0 -cloning
+    
+削除は以下。
+
+    $ sudo route delete default -interface bridge0 -ifscope bridge0 -cloning
+
+終了する場合は以下のように順番に bridge インターフェースを削除する
+
+    $ sudo ifconfig bridge0 down
+    $ sudo ifconfig bridge0 destroy
+
+その他
+------
+en1: e0:f8:47:37:70:34
+
+ルーター化
+----------
+
+### インターネット共有方法 ###
+
+* 右上リングマーク > システム環境設定 > 共有 で共有パネルを開く
+* 共有パネルから以下の設定を行い、インターネット共有のチェックボックスを付ける
+  * 接続経路: Ethernet
+  * 相手のコンピューターが使用する経路: Wifi (Wifi オプションでパスワードを必ず設定すること)
+
+上記の設定内容は、`/Library/Preferences/SystemConfiguration/com.apple.nat.plist` の設定ファイルに書き込まれている。
+次にクライアントの PC に割り振る IP の適切なアドレスを設定する。
+
+    $ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict-add SharingNetworkNumberStart 192.168.24.0
+    $ defaults read /Library/Preferences/SystemConfiguration/com.apple.nat
+
+
+

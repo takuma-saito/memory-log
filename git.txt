@@ -1,0 +1,6 @@
+git の使い方
+============================
+
+
+ git config --add receive.denyCurrentBranch ignore
+

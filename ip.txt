@@ -1,0 +1,47 @@
+IP アドレスについて
+===================
+
+国内の IP アドレスの取得
+------------------------
+
+* 日本のIP: `http://www.cgis.biz/tools/access/`
+* アジアのIP: `http://ftp.apnic.net/stats/apnic/delegated-apnic-latest`
+
+からファイルをダウンロードする
+
+IP アドレス一覧の作成のシェルスクリプト
+
+    # IP アドレス取得
+    $ wget 'http://ftp.apnic.net/stats/apnic/delegated-apnic-latest'
+    
+    # 日本のプロバイダに割り当てられている IP のみ取得
+    $ cat delegated-apnic-latest | grep JP | grep ipv4 > jp.txt
+    
+    # IP と SubNetMask を CIDR 形式に変換
+    $ cat jp.txt |  tr '|' ' ' | cut -d' ' -f4,5 | while read line; 
+    do 
+      arr=($(echo $line)); 
+      echo $arr[1]/$[int(log($arr[2])/log(2))]; 
+    done > ja-ip.txt
+
+    $ tail ja-ip.txt
+
+現在調べてる IP が ja-ip.txt に含まれているかどうか調べる。
+まず IP -> binary 形式に変換するスクリプトを作る
+
+    $ function ip2bin() { 
+        echo $1 | tr '.' ' ' | xargs -n 1 | while read num; do printf "%-8d" $(echo $[[#2] $num] | sed -e 's;2#;;g'); done | tr ' ' '0'
+    }
+    
+    $  function ip2num() {
+       local -a arr
+       arr==($(echo $1 | tr '.' ' '))
+       echo $[$arr[1] * (1 << 24) + $arr[2] * (1 << 16) + $arr[3] * (1 << 8) + $arr[4]]
+    }
+    
+    # ip が含まれていれば 0
+    $ line=126.0.0.0/8; IP=2117468718; arr=($(echo $line | tr '/' ' '))
+    $ echo $[$(ip2num $arr[1]) ^ $[$IP & (2**32 -  (2 ** $arr[2] - 1))]]
+
+
+

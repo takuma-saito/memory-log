@@ -485,10 +485,6 @@ imaps(993), pops(995)にopensslのコマンドを使ってアクセスし、証�
     // ユーザー名         ディレクトリ名
     info@mydomain.com     mydomain.com/info/Maildir/
     info@mydomain2.com    mydomain2.com/info/Maildir/
-    
-    $ sudo emacs /etc/postfix/virtual_domains
-    mydomain.com
-    mydomain2.com
 
 ユーザーデータベースの作成する
 postmap コマンドを実行すると、
@@ -509,7 +505,7 @@ postmap コマンドを実行すると、
 
 バーチャルボックスユーザーを作成する。
 
-    $ sudo useradd -u 5000 -s /bin/false -M vmail
+    $ sudo useradd -u 5000 -s /bin/false -d / -M vmail
     $ sudo gpasswd -a 管理者名 vmail
     $ sudo chown vmail:vmail -R /var/spool/vmail
     

@@ -1,0 +1,84 @@
+アセンブリ関係
+=============
+
+# アセンブリとしてコンパイル
+$ gcc -S main.c
+
+** x86 アセンブラ **
+# メモ
+* メモリのスタックの状態は ［a, b） で b に対して %rsp が常に指すようになっている
+* メモリは常に 1 byte = 8 bit ずつであることを意識する
+
+# 資料
+[http://x86-64.org/documentation/abi.pdf](System V Application Binary Interface)
+[https://www.cs.cmu.edu/~fp/courses/15213-s07/misc/asm64-handout.pdf](X86 assembly)
+
+# 基本事項
+EAX/AX/AL/AH : アキュムレータレジスタ。算術演算操作の結果が格納される。
+ECX/CX/CL/CH : カウンタレジスタ。シフトローテート命令とループ命令に使用される。
+EDX/DX/DL/DH : データレジスタ。算術演算操作とI/O操作に使用される。
+EBX/BX/BL/BH : ベースレジスタ。セグメントモードでのDS（後述）に格納されたデータを指し示すために使用される。
+ESP/SP : スタックポインターレジスタ。スタックのトップを指し示すポインタ。
+EBP/BP : スタックベースポインタレジスタ。スタックのベースを指し示すのに使用される。
+ESI/SI : ソースレジスタ。ストリーム操作でのソースへのポインタとして使用される。
+EDI/DI : デスティネーションレジスタ。ストリーム操作でのデスティネーションへのポインタとして使用される。
+
+# 数値の表した方, 全て10進数なので注意すること
+$1
+$2
+$10
+...
+
+# 演算は左から右に進む
+# %eax レジスタに 1 を代入
+movl    $1, %eax
+
+# addl はポインタを辿って値を入れる
+movl    -4(%rbp), %edx
+addl    -8(%rbp), %edx
+addl    -12(%rbp), %edx
+
+# Mac OSX の場合は引数は左から順に以下の順でレジスタとメモリ上に置かれる
+%edi, %esi, %edx, %ecx, %r8d, %r9d, (%rsp), 0x8(%rsp), 0x16(%rsp), ...
+
+# 4 byte の返り値は %eax
+# return 3
+movl $3 %eax
+# %edx レジスタのポインタを辿って %eax に (movs + l + q)
+movsql %edx %rax
+
+# 8 byte の返り値は %rap
+%rax
+
+# push は %xxx の値をスタックに積み %esp を一つ減算する
+push %eax
+# 以下と等価
+# アドレス -> アドレス の転送
+mov %eax %esp
+decr %esp
+
+# C言語を使ってポインタのサイズを調べる
+# 64 bit -> 8, 32 bit -> 4
+void *a;
+printf("%ld\n", a);
+
+# Mac OSX でバイナリフォーマットの情報を取得する
+$ otool -l main
+# Linux
+$ readelf -S main
+
+* テキストセグメントを表示: `otool -tv`
+* ロードするコマンド情報(メモリマップなど): `otool -l`
+* スタブの情報を表示: `otool  -v -s __TEXT __stubs main`
+
+** gdb **
+
+* メモリを指定してディスアセンブル
+disass start end
+disass 0x009625ff 0x0096260f 
+* 一命令ずつ実行: si
+
+
+
+
+

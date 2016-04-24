@@ -1,0 +1,13 @@
+## linux resuce
+
+- bios の boot option から usb ブート出来るように設定する
+- usb に mini linux をインストールする
+  - Micro Core Linux: http://tinycorelinux.net/
+  - mac の場合
+    - *ダメ* ext2, ext3 のファイル・システムをマウント+作成できるように MacFuse, Mac-Ext2 をインストールする
+    - *ダメ* dd で ISO イメージを焼く `diskutil unmountDisk ..`
+    - Core Linux を OS から起動させる
+    - Mac の場合、起動ディスクから選択できて boot できれば正常に usb インストールされている
+       - Mac Yosemite 以外は EFI のブートローダーが必要
+- usb 起動させる
+- ファイルシステムをマウントしてファイルの救出や不適切な設定の変更などの作業を行う

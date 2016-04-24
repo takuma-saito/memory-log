@@ -1,0 +1,295 @@
+GDB デバッカ
+============================
+
+基本的な使い方（正引き）
+----------------------------
+* [b] break: ブレークポイントの設定
+* [r] run <args>: 実行
+* [x] examine: メモリアドレス, レジストリの内容を表示する
+    * o: 8進表示
+    * x: 16進表示
+    * u: 符号無し10進表示
+    * t: 2 進表示
+    * b: 単一バイト（1 バイト）
+    * h: ハーフワード（2 バイト）
+    * w: ワード（4 バイト）
+    * g: ジャイアント（8 バイト）
+    * s: 文字列
+* [i] info: info register でレジスターの中身を表示
+* [p] print: `print 変数` で変数の中身を表示させる
+* [c] continue: break で設定したブレークポイントを一つ進める
+* [f] frame: 現在までの関数スタックフレームを表示
+* [bt] backtrace: 関数のバックトレースを表示する
+* [n] next: 命令を一行分だけ次に進める
+* [si] step instruction code: 1 step だけ命令を進める
+
+* 強制的に命令と解釈させて表示させる: `(gdb) x/10i`
+
+基本的な使い方（逆引き）
+----------------------------
+* ブレークポイントの一覧: info break
+* スタック呼び出し一覧: info stack
+* 変数の型を調べる: whatis
+* 変数を出力する
+  * p 変数名@個数: 変数が示す領域を@に続く個数分だけ表示
+  * p 関数名::変数名 : その関数内のローカル変数の値を表示
+  
+    # 通常の変数の値を調べる
+    (gdb) p argc
+    
+    # 関数が指すポインタから複数変数を出力する, @ で行う
+    (gdb) p *argv@3
+    
+    # 関数内の変数表示
+    (gdb) p main::i
+
+アセンブリ言語の命令
+--------------------
+
+* `movaps`: SSE の命令, 4つの値をロードする
+
+
+
+アセンブリ言語
+----------------------------
+
+* rip: rip は現在の命令ではなく、*次の命令* を保持している
+* ebp: ベースポインタ, スタックフレームの下限を指す
+* esp: スタックポインタ, スタックフレームの上限を指す
+* jle: jump less than (cmp の値が低かった場合、指定アドレスにジャンプする）
+* lea: Load Effective Address, 実行アドレスをロードする
+* mov: move 命令, 
+    レジスタ <- メモリー
+    メモリー <- レジスタ
+    レジスタ <- 数値
+    の移動が出来る.
+    **メモリ間の移動はmov命令で行えない**
+* movsx: 小さいほうのレジスタを大きいほうに 0 拡張して (unsignedで) 転送する [Move with Sign-Extension]
+   例）
+   movsx reg32, reg8 / movsx reg32, reg16 / movsx reg16, reg8
+* xor: 排他的論理和, xor eax eax とすると eax の内容をクリアできる
+    1 xor 1 = 0
+    1 xor 0 = 1
+    0 xor 1 = 1
+    0 xor 0 = 0
+* DWORD: 4 バイト
+
+*スタックサイズは IA32 の OSX の場合 16B ごとに整えなければならない*.
+よってスタックサイズを 16B ごとに揃えるためにに不要なパディングがスタックの中に入っている。
+
+呼び出し時のスタック構造。
+
+1. caller の引数（パラメーター）
+  *caller の引数は4バイトごとにアライメントされなければならない*
+  例えば char 型の引数 a を渡す場合, 理論的には 1 バイトだけスタック上に乗せればよい.
+  しかし 4 バイトごとにアライメントしなければならいので、残りの 3 バイト分をパディングで満たす必要がある
+2. リターンアドレス（caller の次の命令アドレスが保存される）
+3. 退避されたフレームポインタ（ebp が退避される）
+   フレームポインタがあることで、デバッカがローカル変数や引数に定数オフセットでアクセスできる。
+   フレームポインタを gcc -fomit-frame-pointer で削除することもできるが、その場合著しくデバックが困難になる
+4. 退避されたレジスタ
+5. ローカルパラメータ
+
+また戻り値は eax レジスタに格納される。
+よって、戻り値は 4 バイトのポインタでなければならない。
+
+アセンブリ言語で理解する Hello World
+----------------------------
+
+例として, 以下のような hello world を出力するプログラムをアセンブリレベルで理解する。
+
+まず, 以下のような hello world を出力するコードを hello.c として保存する.
+
+    #include <unistd.h>
+    
+    char *msg = "Hello World!\n";
+    
+    int main(int argc, char *argv[]) {
+      write(1, msg, 14);
+      return 0;
+    }
+
+コンパイルを行う.
+その時, 32 ビット上のバイトコードを吐き出すように -arch i386 を入れる。
+また、gdb で解析を行うので -g も入れる。
+
+    $ gcc -g -arch i386 hello.c -o hello 
+    $ ./hello
+    Hello World!
+
+さて、これをまず
+
+    $ gdb -q ./world
+    Reading symbols for shared libraries .. done
+    
+    # ブレークポイントを設定する
+    (gdb) b main
+    Breakpoint 1 at 0x1f48: file world.c, line 6.
+    
+    # 起動
+    (gdb) r
+    Starting program: /Users/taku/workspace/c/hack/world 
+    warning: posix_spawn failed, trying execvp, error: 86
+    Reading symbols for shared libraries +........................ done
+    
+    Breakpoint 1, main (argc=1, argv=0xbfffeacc) at world.c:6
+    warning: Source file is more recent than executable.
+    6         write(1, msg, 14);
+    
+    # 逆アセンブルを行う
+    (gdb) disass
+    Dump of assembler code for function main:
+    0x00001f30 <main+0>:    push   ebp
+    0x00001f31 <main+1>:    mov    ebp,esp
+    0x00001f33 <main+3>:    sub    esp,0x28
+    0x00001f36 <main+6>:    call   0x1f3b <main+11>
+    0x00001f3b <main+11>:   pop    eax
+    0x00001f3c <main+12>:   mov    ecx,DWORD PTR [ebp+0xc]
+    0x00001f3f <main+15>:   mov    edx,DWORD PTR [ebp+0x8]
+    0x00001f42 <main+18>:   mov    DWORD PTR [ebp-0x4],edx
+    0x00001f45 <main+21>:   mov    DWORD PTR [ebp-0x8],ecx
+    0x00001f48 <main+24>:   mov    eax,DWORD PTR [eax+0xe9]
+    0x00001f4e <main+30>:   mov    DWORD PTR [esp],0x1
+    0x00001f55 <main+37>:   mov    DWORD PTR [esp+0x4],eax
+    0x00001f59 <main+41>:   mov    DWORD PTR [esp+0x8],0xd
+    0x00001f61 <main+49>:   call   0x1f82 <dyld_stub_write$UNIX2003>
+    0x00001f66 <main+54>:   mov    DWORD PTR [ebp-0x10],0x0
+    0x00001f6d <main+61>:   mov    eax,DWORD PTR [ebp-0x10]
+    0x00001f70 <main+64>:   mov    DWORD PTR [ebp-0xc],eax
+    0x00001f73 <main+67>:   mov    eax,DWORD PTR [ebp-0xc]
+    0x00001f76 <main+70>:   add    esp,0x28
+    0x00001f79 <main+73>:   pop    ebp
+    0x00001f7a <main+74>:   ret    
+    End of assembler dump.
+    
+    # 現在の場所
+    (gdb) i r $eip
+    eip            0x1f48   0x1f48 <main+24>
+
+逆アセンブルの 0 〜 24 行目までの解説.
+
+元のソースコード main の引数は int main(int argc, char *argv[]) である。
+ここで注意したいのは、例えば int fun(int a, int b, int c, int d) という関数を呼び出す場合
+スタック上には逆順に d, c, b, a のように引数を乗せなければならない。
+
+よって、main(int argc, char *argv[]) も argv, argc の順にスタック上に配置されている.
+
+    0x00001f3c <main+12>:   mov    ecx,DWORD PTR [ebp+0xc] 
+    0x00001f3f <main+15>:   mov    edx,DWORD PTR [ebp+0x8] 
+
+そのことに注意してアセンブリコードを見ると 12 〜 15 行目の ebp + 0xc が argv, ebp + 0x8 が argc であると推測できる.
+今回の場合それぞれの変数は
+
+argv[0] = program_path
+argc = 1
+
+となっていればよい.
+実際にその予測が合っているかどうかを確認してみる。
+
+    (gdb) x/x $ebp + 0x8
+    0xbfffeab0:     0x00000001
+
+[ebp + 0x8] は argc で間違いなさそうである.
+[ebp + 0xc] についても gdb で調査する.
+
+    (gdb) x/x $ebp + 0xc   
+    0xbfffeaa4:     0xbfffeac4
+    
+    (gdb) x/x 0xbfffeac4
+    0xbfffeac4:     0xbfffecbc
+    
+    (gdb) x/s 0xbfffecbc
+    0xbfffecbc:      "program_path"
+
+[ebp + 0xc] のアドレスも *argv[] のアドレスで間違いなさそうである。
+
+発見など
+----------------------------
+
+* （Mac 上の）malloc で取得されるアドレスは 16B でアライメントされている（つまり 16 の倍数でメモリーは取得される）
+  16 バイトごとにアライメントされている理由はコンパクションを効率的に行うためだと思われる。
+  例）
+   
+     // 返却されるポインターは実は 2 バイトではなく 16 バイト, 実装依存
+     int_ptr = (int *)malloc(2)
+
+* main の引数 int argc, char *argv[] は記述しない場合、アセンブリ言語から該当部分のコードは取り除かれる。
+
+* 戻り値用に $ebp から上2つ分のポインタは利用されない。
+  （ローカル変数は $ebp - 0xc から取得される）
+
+* main 起動時のスタック上メモリマップ（Mac 上のみ）
+  1. プログラム名, プログラム起動時のオプション
+  2. 環境変数
+  3. プログラム依存の変数:
+    * プログラム名
+    * stack_guard
+    * memory_entropy
+    stack_guard と memory_entropy はそれぞれ malloc 使用時に必要な変数らしい
+  1. 〜 3. がそれぞれ順番にスタック上に積まれており、
+  さらにその上（メモリ上では下）にはそれらの配列へのポインタテーブルが存在している.
+     
+     (gdb) print *argv@150
+     ... プログラム名, 起動オプション, 環境変数などが出力される
+     
+     (gdb) x/150xw argv
+     ... 上記の配列へのメモリマップが出力される
+     
+     # 起動オプション hoge の場合
+     (gdb) print *(argv)
+     ... プログラム名
+     
+     (gdb) print *argv
+     $42 = 0xbfffecbc "/Users/taku/workspace/c/hack/world"
+     
+     (gdb) print *(argv + 4)                                                                                                               $43 = 0xbfffed1e "hoge"
+     
+     (gdb) print *(argv + 8)
+     $44 = 0xbfffed99 "rvm_quiet_flag="
+
+gcc のメモ
+----------------------------
+
+* ライブラリ:
+   printf -> stdio
+   atoi -> stdlib
+   strcpy -> string
+   exit -> stdlib
+   malloc -> stdlib
+   write, read -> unistd
+   
+* Long 型の printf: 
+  * int: %d
+  * long int: %ld
+  * long long int: %lld
+
+* gcc でアセンブリ言語を出力: gcc -S code.c
+
+* gcc でプリプロセッサ処理後のプログラムを出力: `gcc -E code.c`
+
+* メモリやポインタの +1 は **1バイト加算** *（1 ビット加算ではない）* ので注意する.
+  （なぜならメモリはビット位置ではなく、バイト位置を指定しているので）
+
+nasm の文法解説
+----------------------------
+
+* BITS 32 or 64: コードの最初に記述, 出力するコード形式を指定する
+* section: data, text それぞれのセグメントを記述する
+* システムコール:
+  Mac のシステムコールは syscall を用いて OS のシステムコールを呼び出す
+  `/usr/include/sys/syscall.h` にて呼び出せるシステムコールの一覧が載っている
+  system call に渡す引数の順番:
+  * 1: rdi 
+  * 2: rsi
+  * 3: rdx
+  * 4: rcx
+  * 5: r8
+  * 6: r9
+
+その他
+----------------------------
+
+* [Mac リバースエンジニアリング](http://reverse.put.as/)
+* [Mac OS IA32 公式ドキュメント](https://developer.apple.com/library/mac/#documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html#//apple_ref/doc/uid/TP40002492-SW4)
+* [Mac OS X 64 bit Assembly System Calls](http://thexploit.com/secdev/mac-os-x-64-bit-assembly-system-calls/)
+* [Hello World in FreeBSD Assembly](http://farid.hajji.name/blog/2009/12/26/hello-world-in-freebsd-assembler/)

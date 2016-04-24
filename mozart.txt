@@ -1,0 +1,95 @@
+mozart の基本
+============================
+
+mozart を学ぶ
+----------------------------
+
+以下が参考サイト
+
+* [Tutorial of Oz](http://e-p-i.github.com/tutorial_of_oz/)
+
+### インストール方法 ###
+
+本家から mozart の MAC 版をダウンロード、展開.
+mozart は aquaemacs のパッケージに依存しているので、同時に取得する.
+2012 年 11 月時点では最新版の aquaemacs では動かないので注意！
+aquaemacs は version 1.9 のものを利用する. [ここ](http://aquamacs.org/download-classic.shtml) からダウンロード出来る.
+
+ダウンロード後はパスの設定だけ行う.
+
+    $ cd /Applications/
+    $ ln -s Aquamacs.app "Aquamacs Emacs.app"
+    $ cd /Applications/Aquamacs.app/Contents/MacOS/
+    $ ln -s Aquamacs "Aquamacs Emacs"
+
+パスを加えると, コマンドラインからも利用できるようになる.
+
+    $ export PATH=$PATH:/Applications/Mozart.app/Contents/Resources/bin
+
+また aquaemacs 起動時にウインドウが画面からはみ出るので、以下のメニューバーから以下の設定もチェックしておく.
+
+* window -> Tile Frames Horizontally
+* window -> Tile Frames Vertically
+
+コマンドライン用の emacs を起動した場合は OZEMACS にパスを入れる
+
+    $ export OZEMACS="/opt/local/bin/emacs"
+
+これで oz と入力すると通常の emacs から mozart のシステムを起動することが出来る.
+ただし, Mac などや普通のターミナル環境を利用する場合 "C-." という重要なコマンドを解釈することが出来ない.
+これは端末（エミュレーター）は、アスキー文字列としてしかアプリケーションにメッセージを送信できないからである.
+そこで、以下のようなハックを実行する.
+
+emacs の場合は C-character というコマンドが C-x @ c character というコマンドで実行出来る.
+ここで重要なのは, .,;: などターミナルでは同時押しできないコマンドも C-character として解釈してくれることである.
+そこで端末の設定として C-. を押すと C-x @ c . を送信するように設定すればよい.
+Mac の iTerm2 を使っているので、その場合の設定は以下のように行う.
+
+Preferences -> Keys -> [+ button]
+
+から以下のようにショートカットキーを設定する.
+
+* ShortCut: ^. (Control + . を同時押し)
+* Send Hex Code: 18 40 63 2e
+
+これで emacs の \C-x @ c . が C-. に割り当てられる.
+18 40 63 2e は \C-x @ c . の 16 進数表示である.
+これで C-. を通常通り利用できるようになった.
+
+### キーバインド ###
+
+* `C-. C-l`: 現在の行をフィード(Ozに命令を取り込ませる)
+* `C-. C-r`: 選択した部分をフィード
+* `C-. C-b`: 全バッファをフィード
+* `M-C-x`:   現在の段落(paragraph)をフィード
+* `C-. C-p`: 同上
+* `C-. c`:   *Oz Compiler* バッファの表示on/off切り替え
+* `C-. e`:   *Oz Emulator* バッファの表示on/off切り替え
+
+mozart の覚書
+----------------------------
+
+fun は参照透明な関数を定義する。（要は必ず値を返さないといけない）
+proc は手続きを定義する。（要は値を返さなくてもよい, Show などが入る関数の場合は必ず proc を用いて定義する）
+Value.type で変数の種類を調べられる
+VirtualString.toByteString で tuple 形式の文字列を通常の文字列として出力できる
+$ 記号を関数呼び出しに利用することで、戻り値を指定することが出来る（文を式とみなすことができる）
+文字列を囲む時は2重カッコ "" ではなく '' 一重カッコを使う. 2重カッコを使った場合は {Show} で正しく表示されない.
+case 文中で andthen 構文によりガードが行える
+class を使う時は不用意な改行中のスペースの数を揃えないとエラーが出る..
+
+### qtk の使い方 ###
+以下の宣言を入れることで QTK が利用できるようになる.
+
+    declare
+    [QTk]={Module.link ["x-oz://system/wp/QTk.ozf"]}
+
+
+参考サイト
+----------------------------
+
+* [The Oz Base Environment](http://www.mozart-oz.org/home/doc/base/index.html)
+* [Tutorial of Oz](http://e-p-i.github.com/tutorial_of_oz/index.html)
+
+
+

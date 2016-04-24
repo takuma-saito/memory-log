@@ -1,0 +1,17 @@
+<VirtualHost *:80>
+    ServerName monitor.kumano-ryo.com
+    SuexecUserGroup kumano kumano
+    ServerAdmin admin@kumano-ryo.com
+    DocumentRoot /home/kumano/www
+    ErrorLog /var/log/apache2/monitor-error.log
+    CustomLog /var/log/apache2/monitor-access.log combined    
+    ProxyPass / http://localhost:5125/
+    ProxyRequests off
+    <Location />
+        ProxyPassReverse http://localhost:5125/
+	    AuthType Basic
+	    AuthName "kumano-ryosei only"
+	    AuthUserFile /home/kumano/.htpasswd
+	    Require valid-user
+    </Location>
+</VirtualHost>

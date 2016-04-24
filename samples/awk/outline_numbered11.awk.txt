@@ -1,0 +1,77 @@
+# filename: outline_numbered11.awk
+#   author: Eric Pement - pemente@northpark.edu
+#     date: 22 March 2001
+#  version: 1.1
+#
+#  purpose: GNU awk script to modify files created and saved in GNU Emacs
+#           "outline-mode" to a numbered, indented output format. E.g.,
+#
+#  INPUT FILE        OUTPUT FILE
+#  ==============    ===========================
+#  * Line 1        | 1. Line 1
+#  ** Line 2       |   1.1. Line 2
+#  *** Line 3      |     1.1.1. Line 3
+#  *** Line 4      |     1.1.2. Line 4
+#  **** Line 5     |       1.1.2.1. Line 5
+#  ***** Line 6    |         1.1.2.1.1. Line 6
+#  ***** Line 7    |         1.1.2.1.2. Line 7
+#  ** Line 8       |   1.2. Line 8
+#  * Line 9        | 2. Line 9
+#  ** Line 10      |   2.1. Line 10
+#
+# NEW! variable "num" determines the amount of increasing indentation.
+# Default is 2 (indent by 2, 4, 6, 8... spaces), but this can be
+# controlled by using the -v switch from the command line. E.g.,
+#
+#       awk -v num=0 -f outline_numbered11.awk yourfile.txt
+#
+# Note: this script can handle any number of asterisks on a line.
+# Lines of plain text (no asterisks) in source file are NOT indented.
+BEGIN {
+  if (num == "") num = 2            # if num is not defined, set it to 2
+}
+
+/^\*/ {
+
+  this_len = match($0,/\*([^*]|$)/);  # get number of stars in 1st field
+  array[this_len]++;                  # increment index of current leaf
+
+  if ( this_len - last_len > 1 ) {    # check for invalid outline levels
+    if (FILENAME == "-" ) myfile = "(piped from standard input)"
+    else                  myfile = FILENAME
+
+    error_message = "\a\a" \
+"************************************************\n" \
+"  WARNING! The input file has an invalid number \n" \
+"  of asterisks on line " NR ", below.         \n\n" \
+"  The previous outline level had " last_len " asterisks,  \n" \
+"  but the current/next level has " this_len " asterisks!\n\n" \
+"  You have inadvertently skipped one level of   \n" \
+"  indentation. Processing halted so you can fix \n" \
+"  the input file, \x22"   myfile   "\x22.       \n" \
+"************************************************\n" \
+">>>\n" \
+"Error on Line #" NR " :" ;
+
+    print error_message, $0 > "/dev/stderr" ;
+    exit 1;
+  }
+
+  if ( this_len < last_len ) {    # if we have moved up a branch...
+     for (i = this_len + 1; i <= last_len; i++)
+        array[i] = 0;             # .. reset the leaves below us
+  }
+
+  for (j=1; j <= this_len; j++){  # build up the string. eg, 2. + 1.
+     prefix = prefix array[j] "."
+  }
+
+  indent_level = (this_len - 1) * num ;
+  indentation  = sprintf("%+" indent_level "s", "") ;
+
+  sub(/^\*+/, indentation prefix) ;
+  last_len = this_len ;
+  prefix = "" ;
+}
+{ print }
+# --- end of script ---

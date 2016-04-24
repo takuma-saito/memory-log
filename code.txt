@@ -1,0 +1,36 @@
+コードリーディング
+============================
+
+Libc mac
+----------------------------
+[Libc-825.24](http://www.opensource.apple.com/release/mac-os-x-108/)
+
+malloc のソースコードリーディング。
+
+### 目的 ###
+malloc の仕組みを理解する。
+スタックの最初に配置されている stack_guard, malloc_entropy の役割を理解する。
+
+### 発見 ###
+
+* 構造体に関数ポインタを持たせて, 擬似インターフェイスを作れる
+  各インターフェイスのプログラム（いわゆる実装部分）は別ファイルで定義。
+  
+  例）person.h に person 構造体を配置, その中には eat, speak などの関数がインターフェイスとして存在している。
+  インターフェイスを使うプログラムは person.c で記述する。
+  個別の実装部分を別ファイルの
+  jp_person.c
+  en_person.c
+  ch_person.c
+  などに記述する。
+  
+  *インターフェイス部分の関数ポインタの戻り値は (void *)* でなければならない。（実装非依存にするため）
+  この技術を使うことで、C言語中でもポリモーフィズムが表現できる。
+
+### メモ ###
+
+* malloc_zone_t の malloc, free ... 関数ポインタの具象化ポイントを探る
+* memory: tiny -> small -> large -> huge
+* regions, tiny_regions に分かれる
+  regisons: 4KB （2 ^ 12 Bit）
+  tiny_regions: 1MB（2 ^ 20 Bit）

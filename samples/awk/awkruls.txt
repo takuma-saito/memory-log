@@ -1,0 +1,18 @@
+UNIX Utilities - awk
+http://www.uga.edu/~ucns/sss/unix/awk.html
+
+LJ #25, May 1996: Introduction to Gawk
+http://www.ssc.com/lj/issue25/1156.html
+
+comp.lang.awk FAQ
+http://www.faqs.org/faqs/computer-lang/awk/faq/
+
+Network Access with GAWK - Table of Contents
+http://home.t-online.de/home/Juergen.Kahrs/inet_toc.html
+
+The Awk Scripting Language (some Awk libraries)
+http://www.cam.sri.com/people/becket/awk/awk.html
+
+
+Chuck Demas
+Needham, Mass.

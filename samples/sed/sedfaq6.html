@@ -1,0 +1,771 @@
+<HTML>
+<HEAD>
+<TITLE>Frequently-Asked Questions about sed, the stream editor</TITLE>
+<META http-equiv="content-type" content="text/html;charset=iso-8859-1">
+<META name="KEYWORDS" content="sed,stream editor,Unix,Linux,DOS,Windows,GNU,FAQ">
+<META name="DESCRIPTION" content="Frequently Asked Questions about sed">
+<STYLE type="text/css"><!--
+  BODY   { margin: 15px 25px; background-color:white; }
+  H2     { margin-top:0px;  margin-bottom:0px;
+           padding-top:0px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+
+  H2.t1  { margin-top:6px;  margin-bottom:0px;
+           padding-top:6px; padding-bottom:0px;
+           font-weight:normal; font-size;11pt;
+         }
+  H3.t2  { margin:1px; padding:0px; text-indent:2em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t3  { margin:1px; padding:0px; text-indent:3em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H3.t4  { margin:1px; padding:0px; text-indent:4em;
+           font-family: "Times New Roman", serif; font-size:11pt;
+         }
+  H4     { background-color:#D7EDFD; }
+  H5     { padding-bottom:0px; margin-bottom:0px; font-size:110%; }
+
+ .cent   { text-align:center; }
+ .dkblue { color:#333399; background-color:white; }
+ .sed    { margin-left:4em; margin-right:4em;
+           margin-top:4px;  margin-bottom:4px;
+           padding-top:3px; padding-bottom:3px;
+           border:1px;      border-style:solid;   border-color:#006600;
+           color:#3B3B3B;   background-color:#E9E9E9;
+           font-family: "Courier New", Courier, monospace;
+           white-space:pre;
+         }
+ .red    { color:#CC0000; background-color:#FFCCCC; }
+ .ver    { font-family: Verdana, Arial, Helvetica, sans-serif; font-size:10pt; }
+ a.t:link     { text-decoration:none; }
+ a.t:visited  { text-decoration:none; }
+ a.t:hover    { text-decoration:underline; }
+ a.t:active   { text-decoration:none; }
+--></STYLE>
+</HEAD>
+<BODY>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is  Section 6 of the sed FAQ.<br>
+Go back to <a href="sedfaq5.html">Section 5</a>,
+ or forward to <a href="sedfaq7.html">Section 7</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+
+<H2>6. OTHER ISSUES</H2>
+
+<A NAME="s6.1"></A><H3>6.1. I have a certain problem that stumps me. Where can I get help?</H3>
+
+<p ID='thr3'>Post your question on the "sed-users" mailing list (<a href="sedfaq2.html#s2.3.2">section 2.3.2</a>),
+   where many sed users will be able to see your question. You will have
+   to subscribe to have posting privileges.
+</p>
+<p ID='thr3'>Your other alternative is one of these newsgroups:
+</p>
+<UL>
+      <LI> alt.comp.editors.batch</LI>
+      <LI> comp.editors</LI>
+      <LI> comp.unix.questions</LI>
+      <LI> comp.unix.shell</LI>
+</UL>
+
+<A NAME="s6.2"></A><H3>6.2. How does sed compare with awk, perl, and other utilities?</H3>
+
+<p ID='thr3'>Awk is a much richer language with many features of a programming
+   language, including variable names, math functions, arrays, system
+   calls, etc. Its command structure is similar to sed:
+</p>
+<pre>
+      address { command(s) }
+</pre>
+
+<p ID='thr3'>which means that for each line or range of lines that matches the
+   address, execute the command(s). In both sed and awk, an address
+   can be a line number or a RE somewhere on the line, or both.
+</p>
+<p ID='thr3'>In program size, awk is 3-10 times larger than sed. Awk has most of
+   the functions of sed, but not all. Notably, sed supports
+   backreferences (\1, \2, ...) to previous expressions, and awk does
+   not have any comparable syntax. (One exception: GNU awk v3.0
+   introduced gensub(), which supports backreferences only on
+   substitutions.)
+</p>
+<p ID='thr3'>Perl is a general-purpose programming language, with many features
+   beyond text processing and interprocess communication, taking it
+   well past awk or other scripting languages. Perl supports every
+   feature sed does and has its own set of extended regular
+   expressions, which give it extensive power in pattern matching and
+   processing. (Note: the standard perl distribution comes with 's2p',
+   a sed-to-perl conversion script. See <a href="sedfaq3.html#s3.6">section 3.6</a> for more info.)
+   Like sed and awk, perl scripts do not need to be compiled into
+   binary code. Like sed, perl can also run many useful "one-liners"
+   from the command line, though with greater flexibility; see
+   question 4.41 ("How do I make substitutions in every file in a
+   directory, or in a complete directory tree?").
+</p>
+<p ID='thr3'>On the other hand, the current version of perl is from 8 to 35
+   times larger than sed in its executables alone (perl's library
+   modules and allied files not included!). Further, for most simple
+   tasks such as substitution, sed executes more quickly than either
+   perl or awk. All these utilities serve to process input text,
+   transforming it to meet our needs . . . or our arbitrary whims.
+</p>
+<A NAME="s6.3"></A><H3>6.3. When should I use sed?</H3>
+
+<p ID='thr3'>When you need a small, fast program to modify words, lines, or
+   blocks of lines in a textfile.
+</p>
+<A NAME="s6.4"></A><H3>6.4. When should I NOT use sed?</H3>
+
+<p ID='thr3'>You should not use sed when you have "dedicated" tools which can do
+   the job faster or with an easier syntax. Do not use sed when you
+   only want to:
+</p>
+<uL>
+<LI> print individual lines, based on patterns within the line itself.</LI>
+     Instead, use "grep".
+
+<LI> print blocks of lines, with 1 or more lines of context above or</LI>
+     below a specific regular expression. Instead, use the GNU version
+     of grep as follows:
+
+<pre>
+        grep -A{number} -B{number} "regex"
+</pre>
+
+<LI> remove individual lines, based on patterns within the line</LI>
+     itself. Instead, use "grep -v".
+
+<LI> print line numbers.  Instead, use "nl" or "cat -n".</LI>
+
+<LI> reformat lines or paragraphs. Instead, use "fold", "fmt" or "par".</LI>
+</uL>
+
+<p ID='thr3'>The tr utility is also more suited than sed to some simple tasks. For
+   example, to:
+</p>
+<uL>
+<LI> delete individual characters. Instead of "s/[a-d]//g", use</LI>
+
+<pre>
+        tr -d "[a-d]"
+</pre>
+
+<LI> squeeze sequential characters. Instead of "s/ee*/e/g", use</LI>
+
+<pre>
+        tr -s "{character-set}"
+</pre>
+
+<LI> change individual characters. Instead of "y/abcdef/ABCDEF/", use</LI>
+
+<pre>
+        tr "[a-f]" "[A-F]"
+</pre>
+</uL>
+
+<p ID='thr3'>Note, however, that tr does not support giving input files on the
+   command line, so the syntax is:
+</p>
+<PRE class='sed'>
+     tr {options-and-patterns} &lt; input-file
+</PRE>
+
+<p ID='thr3'>or, to process multiple files:
+</p>
+<PRE class='sed'>
+     cat input-file1 input-file2 | tr {options-and-patterns}
+</PRE>
+
+<p ID='thr3'>If you have multiple files, using tr instead of sed is often more of
+   an exercise than a useful thing. Although sed can perfectly emulate
+   certain functions of cat, grep, nl, rev, sort, tac, tail, tr, uniq,
+   and other utilities, producing identical output, the native utilities
+   are usually optimized to do the job more quickly than sed.
+</p>
+<A NAME="s6.5"></A><H3>6.5. When should I ignore sed and use awk or Perl instead?</H3>
+
+<p ID='thr3'>If you can write the same script in awk or Perl and do it in less
+   time, then use Perl or awk. There's no reason to spend an hour
+   writing and debugging a sed script if you can do it in Perl in 10
+   minutes (assuming that you know Perl already) and if the processing
+   time or memory use is not a factor. Don't hunt pheasants with a .22
+   if you have a shotgun at your side . . . unless you simply enjoy
+   the challenge!
+</p>
+<p ID='thr3'>Specifically, use awk or perl if you need to:
+</p>
+<UL>
+      <LI> count fields or words on a line. (awk)</LI>
+      <LI> count lines in a block or objects in a file.</LI>
+      <LI> check lengths of strings or do math operations.</LI>
+      <LI> handle very long lines or need very large buffers. (or gsed)</LI>
+      <LI> handle binary data (control characters). (perl: binmode)</LI>
+      <LI> loop through an array or list.</LI>
+      <LI> test for file existence, filesize, or fileage.</LI>
+      <LI> treat each paragraph as a line. (well, not always)</LI>
+</UL>
+
+<A NAME="s6.6"></A><H3>6.6. Known limitations among sed versions</H3>
+
+<p ID='thr3'>Limits on distributed versions, although source code for most
+   versions of free sed allows for modification and recompilation. As
+   used below, "no limit" means there is no "fixed" limit. Limits are
+   actually determined by one's hardware, memory, operating system,
+   and which C library is used to compile sed.
+</p>
+<A NAME="s6.6.1"></A><H3>6.6.1. Maximum line length</H3>
+
+<pre>
+      GNU sed:        no limit
+      ssed:           no limit
+      sedmod v1.0:    4096 bytes
+      HHsed v1.5:     4000 bytes
+      sed v1.6:       [pending]
+</pre>
+
+<A NAME="s6.6.2"></A><H3>6.6.2. Maximum size for all buffers (pattern space + hold space)</H3>
+
+<pre>
+      GNU sed:        no limit
+      ssed:           no limit
+      sedmod v1.0:    4096 bytes
+      HHsed v1.5:     4000 bytes
+      sed v1.6:       [pending]
+</pre>
+
+<A NAME="s6.6.3"></A><H3>6.6.3. Maximum number of files that can be read with read command</H3>
+
+<pre>
+      GNU sed v3+:    no limit
+      ssed:           no limit
+      GNU sed v2.05:  total no. of r and w commands may not exceed 32
+      sedmod v1.0:    total no. of r and w commands may not exceed 20
+      sed v1.6:       [pending]
+</pre>
+
+<A NAME="s6.6.4"></A><H3>6.6.4. Maximum number of files that can be written with 'w' command</H3>
+
+<pre>
+      GNU sed v3+:    no limit (but typical Unix is 253)
+      ssed:           no limit (but typical Unix is 253)
+      GNU sed v2.05:  total no. of r and w commands may not exceed 32
+      sedmod v1.0:    10
+      HHsed v1.5:     10
+      sed v1.6:       [pending]
+</pre>
+
+<A NAME="s6.6.5"></A><H3>6.6.5. Limits on length of label names</H3>
+
+<pre>
+      GNU sed:        no limit
+      ssed:           no limit
+      HHsed v1.5:     no limit
+      sed v1.6:       [pending]
+      BSD sed:        8 characters
+</pre>
+
+<p ID='thr3'>Note that GNU sed and ssed both consider a semicolon to terminate a
+   label name.
+</p>
+<A NAME="s6.6.6"></A><H3>6.6.6. Limits on length of write-file names</H3>
+
+<pre>
+      GNU sed:        no limit
+      ssed:           no limit
+      HHsed v1.5:     no limit
+      sed v1.6:       [pending]
+      BSD sed:        40 characters
+</pre>
+
+<A NAME="s6.6.7"></A><H3>6.6.7. Limits on branch/jump commands</H3>
+
+<pre>
+      GNU sed:        no limit
+      ssed:           no limit
+      HHsed v1.5:     50
+      sed v1.6:       [pending]
+</pre>
+
+<p ID='thr3'>As a practical consequence, this means that HHsed will not read
+   more than 50 lines into the pattern space via an N command, even if
+   the pattern space is only a few hundred bytes in size. HHsed exits
+   with an error message, "infinite branch loop at line {nn}".
+</p>
+<A NAME="s6.7"></A><H3>6.7. Known incompatibilities between sed versions</H3>
+
+<A NAME="s6.7.1"></A><H3>6.7.1. Issuing commands from the command line</H3>
+
+<p ID='thr3'>Most versions of sed permit multiple commands to issued on the
+   command line, separated by a semicolon (;). Thus,
+</p>
+<PRE>
+       sed 'G;G' file
+</PRE>
+
+<p ID='thr3'>should triple-space a file. However, for non-GNU sed, some commands
+   <b>require</b> separate expressions on the command line. These include:
+</p>
+<UL>
+      <LI> all labels (':a', ':more', etc.)</LI>
+      <LI> all branching instructions ('b', 't')</LI>
+      <LI> commands to read and write files ('r' and 'w')</LI>
+      <LI> any closing brace, '}'</LI>
+</UL>
+
+<p ID='thr3'>If these commands are used, they must be the LAST commands of an
+   expression. Subsequent commands must use another expression
+   (another -e switch plus arguments).  E.g.,
+</p>
+<PRE class='sed'>
+     sed  -e :a -e 's/^.\{1,77\}$/ &amp;/;ta' -e 's/\( *\)\1/\1/' files
+</PRE>
+
+<p ID='thr3'>GNU sed, ssed, sed15 and sed16 all permit these commands to be
+   followed by a semicolon, so the previous script can be written:
+</p>
+<PRE class='sed'>
+     sed  ':a;s/^.\{1,77\}$/ &amp;/;ta;s/\( *\)\1/\1/' files
+</PRE>
+
+<p ID='thr3'>Versions differ in implementing the 'a' (append), 'c' (change), and
+   'i' (insert) commands:
+</p>
+<pre>
+      sed "/foo/i New text here"              # HHsed/sedmod/gsed-30280
+      gsed -e "/foo/i\\" -e "New text here"   # GNU sed
+      sed1 -e "/foo/i" -e "New text here"     # one version of sed
+      sed2 "/foo/i\ New text here"            # another version
+</pre>
+
+<A NAME="s6.7.2"></A><H3>6.7.2. Using comments (prefixed by the '#' sign)</H3>
+
+<p ID='thr3'>Most versions of sed permit comments to appear in sed scripts only
+   on the first line of the script. Comments on line 2 or thereafter
+   are not recognized and will generate an error like "unrecognized
+   command" or "command [bad-line-here] has trailing garbage".
+</p>
+<p ID='thr3'>GNU sed, HHsed, sedmod, and HP-UX sed permit comments to appear on
+   any line of the script, except after labels and branching commands
+   (b,t), <b>provided</b> that a semicolon (;) occurs after the command
+   itself. This syntax makes sed similar to awk and perl, which use a
+   similar commenting structure in their scripts.  Thus,
+</p>
+<pre class='sed' ID='s'>
+      # GNU style sed script
+      $!N;                        # except for last line, get next line
+      s/^\([0-9]\{5\}\).*\n\1.*//;    # if first 5 digits of each line
+                                      # match, delete BOTH lines.
+      t skip
+      P;                              # print 1st line only if no match
+      :skip
+      D;                    # delete 1st line of pattern space and loop
+      #---end of script---
+</pre>
+
+<p ID='thr3'>is a valid script for GNU-based versions of sed, but is
+   unrecognized for most other versions of sed.
+</p>
+<p ID='thr3'>Finally, if the first two characters in a disk file script are
+   "#n", the output is suppressed, exactly as if -n were entered on
+   the command line. This is true for the following versions of sed:
+</p>
+<UL>
+      <LI> ssed v3.57 and above</LI>
+      <LI> gsed</LI>
+      <LI> HHsed v1.5</LI>
+      <LI> sed v1.6</LI>
+</UL>
+
+<p ID='thr3'>This syntax is not recognized by these versions of sed:
+</p>
+<UL>
+      <LI> ssed v3.45 to v3.50 (other versions untested)</LI>
+      <LI> sedmod v1.0</LI>
+</UL>
+
+<A NAME="s6.7.3"></A><H3>6.7.3. Special syntax in REs</H3>
+
+A. HHsed v1.5 (by Howard Helman)
+
+<p ID='thr3'>The following expressions can be used for /RE/ addresses or in the
+   LHS side of a substitution:
+</p>
+<pre>
+      +    - 1 or more occurrences of previous RE: same as \{1,\}
+      \&lt;   - boundary between nonword and word character
+      \&gt;   - boundary between word and nonword character
+</pre>
+
+<p ID='thr3'>The following expressions can be used for /RE/ addresses or on
+   either side of a substitution:
+</p>
+<pre>
+      \a   - bell         (ASCII 07, 0x07)
+      \b   - backspace    (ASCII 08, 0x08)
+      \e   - escape       (ASCII 27, 0x1B)
+      \f   - formfeed     (ASCII 12, 0x0C)
+      \n   - newline      (printed as 2 bytes, 0D 0A or ^M^J, in DOS)
+      \r   - return       (ASCII 13, 0x0D)
+      \t   - tab          (ASCII 09, 0x09)
+      \v   - vertical tab (ASCII 11, 0x0B)
+      \xHH - the ASCII character corresponding to 2 hex digits HH.
+</pre>
+
+B. sed v1.6 (by Walter Briscoe)
+
+<p ID='thr3'>sed v1.6 accepts every expression supported by sed v1.5 (above),
+   plus the following elements, which can also used in the RHS of a
+   substitution (in addition to those listed above):
+</p>
+<pre>
+      \\~  - insert replacement pattern defined in last s/// command
+             (must be used alone in the RHS)
+      \l   - change next element to lower case
+      \L   - change remaining elements to lower case
+      \u   - change next element to upper case
+      \U   - change remaining elements to upper case
+      \e   - end case conversion of next element
+      \E   - end case conversion of remaining elements
+      $0   - insert pattern space BEFORE the substitution
+      $1-$9 - match Nth word on the pattern space
+</pre>
+
+
+C. sedmod v1.0 (by Hern Chen)
+
+<p ID='thr3'>The following expressions can be used for /RE/ addresses in the LHS
+   of a substitution:
+</p>
+<pre>
+      +    - 1 or more occurrences of previous RE: same as \{1,\}
+      \a   - any alphanumeric: same as [a-zA-Z0-9]
+      \A   - 1 or more alphas: same as \a+
+      \d   - any digit: same as [0-9]
+      \D   - 1 or more digits: same as \d+
+      \h   - any hex digit: same as [0-9a-fA-F]
+      \H   - 1 or more hexdigits: same as \h+
+      \l   - any letter: same as [A-Za-z]
+      \L   - 1 or more letters: same as \l+
+      \n   - newline      (read as 2 bytes, 0D 0A or ^M^J, in DOS)
+      \s   - any whitespace character: space, tab, or vertical tab
+      \S   - 1 or more whitespace chars: same as \s+
+      \t   - tab          (ASCII 09, 0x09)
+      \&lt;   - boundary between nonword and word character
+      \&gt;   - boundary between word and nonword character
+</pre>
+
+<p ID='thr3'>The following expressions can be used in the RHS of a substitution.
+   "Elements" refer to \1 .. \9, &amp;, $0, or $1 .. $9:
+</p>
+<pre>
+      &amp;    - insert regexp defined on LHS
+      \e   - end case conversion of next element
+      \E   - end case conversion of remaining elements
+      \l   - change next element to lower case
+      \L   - change remaining elements to lower case
+      \n   - newline      (printed as 2 bytes, 0D 0A or ^M^J, in DOS)
+      \t   - tab          (ASCII 09, 0x09)
+      \u   - change next element to upper case
+      \U   - change remaining elements to upper case
+      $0   - insert the original pattern space
+      $1-$9 - match Nth word on the pattern space
+</pre>
+
+D. UnixDos sed
+
+<p ID='thr3'>The following expressions can be used in text, LHS, and RHS:
+</p>
+<pre>
+      \n   - newline      (printed as 2 bytes, 0D 0A or ^M^J, in DOS)
+</pre>
+
+E. GNU sed v1.03 (by Frank Whaley)
+
+<p ID='thr3'>When used with the -x (extended) switch on the command line, or
+   when '#x' occurs as the first line of a script, Whaley's gsed103
+   supports the following expressions in both the LHS and RHS of a
+   substitution:
+</p>
+<pre>
+      \|      matches the expression on either side
+      ?       0 or 1 occurrences of previous RE: same as \{0,1\}
+      +       1 or more occurrence of previous RE: same as \{1,\}
+      \a      "alert" beep     (BEL, Ctrl-G, 0x07)
+      \b      backspace        (BS, Ctrl-H, 0x08)
+      \f      formfeed         (FF, Ctrl-L, 0x0C)
+      \n      newline          (LF, Ctrl-J, 0x0A)
+      \r      carriage-return  (CR, Ctrl-M, 0x0D)
+      \t      horizontal tab   (HT, Ctrl-I, 0x09)
+      \v      vertical tab     (VT, Ctrl-K, 0x0B)
+      \bBBB   binary char, where BBB are 1-8 binary digits, [0-1]
+      \dDDD   decimal char, where DDD are 1-3 decimal digits, [0-9]
+      \oOOO   octal char, where OOO are 1-3 octal digits, [0-7]
+      \xHH    hex char, where HH are 1-2 hex digits, [0-9A-F]
+</pre>
+
+<p ID='thr3'>In normal mode, with or without the -x switch, the following escape
+   sequences are also supported in regex addressing or in the LHS of a
+   substitution:
+</p>
+<pre>
+      \`      matches beginning of pattern space: same as /^/
+      \'      matches end of pattern space: same as /$/
+      \B      boundary between 2 word or 2 nonword characters
+      \w      any nonword character [*BUG!* should be a word char]
+      \W      any nonword character: same as /[^A-Za-z0-9]/
+      \&lt;      boundary between nonword and word char
+      \&gt;      boundary between word and nonword char
+</pre>
+
+F. GNU sed v2.05 and higher versions
+
+<p ID='thr3'>The following expressions can be used for /RE/ addresses or in the
+   LHS side of a substitution:
+</p>
+<pre>
+      \`  - matches the beginning of the pattern space (same as "^")
+      \'  - matches the end of the pattern space (same as "$")
+      \?  - 0 or 1 occurrence of previous character: same as \{0,1\}
+      \+  - 1 or more occurrences of previous character: same as \{1,\}
+      \|  - matches the string on either side, e.g., foo\|bar
+      \b  - boundary between word and nonword chars (reversible)
+      \B  - boundary between 2 word or between 2 nonword chars
+      \n  - embedded newline (usable after N, G, or similar commands)
+      \w  - any word character: [A-Za-z0-9_]
+      \W  - any nonword char: [^A-Za-z0-9_]
+      \&lt;  - boundary between nonword and word character
+      \&gt;  - boundary between word and nonword character
+</pre>
+
+<p ID='thr3'>On \b, \B, \&lt;, and \&gt;, see <a href="sedfaq6.html#s6.7.4">section 6.7.4</a> ("Word boundaries"),
+   below.
+</p>
+<p ID='thr3'>Undocumented -r switch:
+</p>
+<p ID='thr3'>Beginning with version 3.02, GNU sed has an undocumented -r switch
+   (undocumented till version 4.0), activating Extended Regular
+   Expressions in the following manner:
+</p>
+<pre>
+      ?      -  0 or 1 occurrence of previous character
+      +      -  1 or more occurrences of previous character
+      |      -  matches the string on either side, e.g., foo|bar
+      (...)  -  enable grouping without backslash
+      {...}  -  enable interval expression without backslash
+</pre>
+
+<p ID='thr3'>When the -r switch (mnemonic: "regular expression") is used, prefix
+   these symbols with a backslash to disable the special meaning.
+</p>
+<p ID='thr3'>Escape sequences:
+</p>
+<p ID='thr3'>Beginning with version 3.02.80, the following escape sequences can
+   now be used on both sides of a "s///" substitution:
+</p>
+<pre>
+      \a      "alert" beep     (BEL, Ctrl-G, 0x07)
+      \f      formfeed         (FF, Ctrl-L, 0x0C)
+      \n      newline          (LF, Ctrl-J, 0x0A)
+      \r      carriage-return  (CR, Ctrl-M, 0x0D)
+      \t      horizontal tab   (HT, Ctrl-I, 0x09)
+      \v      vertical tab     (VT, Ctrl-K, 0x0B)
+      \oNNN   a character with the octal value NNN
+      \dNNN   a character with the decimal value NNN
+      \xHH    a character with the hexadecimal value HH
+</pre>
+
+<p ID='thr3'>Note that GNU sed also supports "character classes", a POSIX
+   extension to regexes, described in <a href="sedfaq3.html#s3.7">section 3.7</a>, above.
+</p>
+G. sed 4.0 and higher versions
+
+<p ID='thr3'>The following expressions can be used in the RHS of a substitution.
+</p>
+<pre>
+      \e   - end case conversion
+      \l   - change next character to lower case
+      \L   - change remaining text to lower case
+      \n   - newline      (printed as 2 bytes, 0D 0A or ^M^J, in DOS)
+      \t   - tab          (ASCII 09, 0x09)
+      \u   - change next character to upper case
+      \U   - change remaining text to upper case
+</pre>
+
+<p ID='thr3'>In addition, GNU sed 4.0 can modify the way ^ and $ are interpreted,
+   so that ^ can also match an empty string after a newline character,
+   and $ can also match an empty string before a newline character (to
+   do this, add an "M" after the regular expression terminator, like
+   /^&gt;/M -- see <a href="sedfaq3.html#s3.1.1">section 3.1.1</a>). Even if you use this feature, \` and \'
+   still match the beginning and the end of the pattern space,
+   respectively.
+</p>
+H. ssed
+
+<p ID='thr3'>Everything that was said for GNU sed applies to ssed as well. In
+   addition, in Perl-mode (-R switch), these become active or inactive:
+</p>
+<pre>
+      .     - no longer matches new-line characters
+      \A    - matches beginning of pattern space
+      \Z    - matches end of pattern space or last newline in the PS
+      \z    - matches end of pattern space
+      \d    - matches any digit: same as [0-9]
+      \D    - matches any non-digit: same as [^0-9]
+      \`    - no longer matches beginning of pattern space
+      \'    - no longer matches end of pattern space
+      \&lt;    - no longer matches boundary between nonword &amp; word char
+      \&gt;    - no longer matches boundary between word &amp; nonword char
+      \oNNN - no longer matches char with octal value NNN
+      \dNNN - no longer matches char with decimal value NNN
+      \NNN  - matches char with octal value NNN
+</pre>
+
+<p ID='thr3'>Perl mode supports lookahead (?=match) and lookbehind (?&lt;=match)
+   pattern matching.  The matched text is NOT captured in "&amp;" for s///
+   replacements!
+</p>
+<pre>
+      foo(?=bar)   - match "foo" only if "bar" follows it
+      foo(?!bar)   - match "foo" only if "bar" does NOT follow it
+      (?&lt;=foo)bar  - match "bar" only if "foo" precedes it
+      (?&lt;!foo)bar  - match "bar" only if "foo" does NOT precede it
+
+      (?&lt;!in|on|at)foo
+                  - match "foo" only if NOT preceded by "in", "on" or "at"
+      (?&lt;=\d{3})(?&lt;!999)foo
+                  - match "foo" only if preceded by 3 digits other than "999"
+</pre>
+
+  In Perl mode, there are two new switches in /addressing/ or s///
+  commands. Switches may be lowercase in s/// commands, but must be
+  uppercase in /addressing/:
+
+<pre>
+      /S  - lets "." match a newline also
+      /X  - extra whitespace is ignored. See below, for sample usage.
+</pre>
+
+<p ID='thr3'>Here are some examples of Perl-style regular expressions. Use the -R
+   switch.
+</p>
+<pre>
+     (?i)abc    - case-insensitive match of abc, ABC, aBc, ABc, etc.
+     ab(?i)c    - same as above; the (?i) applies throughout the pattern
+     (ab(?i)c)  - matches abc or abC; the outer parens make the difference!
+     (?m)       - multi-line pattern space: same as "s/FIND/REPL/M"
+     (?s)       - set "." to match newline also: same as "s/FIND/REPL/S"
+     (?x)       - ignore whitespace and #comments; see section (9) below.
+
+     (?:abc)foo    - match "abcfoo", but do not capture 'abc' in \1
+     (?:ab|cd)ef   - match "abef" or "cdef"; only 'cd' is captured in \1
+     (?#remark)xy  - match "xy"; remarks after "#" are ignored.
+</pre>
+
+<p ID='thr3'>And here are some sample uses of /X switch to add comments to complex
+   expressions. To embed literal spaces, precede with \ or put inside
+   [brackets].
+</p>
+<pre>
+     # ssed script to change "(123) 456-7890" into "[ac123] 456-7890"
+     #
+     s/ # BACKSLASH IS NEEDED AT END OF EACH LINE!   \
+     \(                   # literal left paren, (    \
+     (\d{3})              # 3 digits                 \
+     \)                   # literal right paren, )   \
+     [ \t]*               # zero or more spaces or tabs  \
+     (\d{3}-\d{4})        # 3 digits, hyphen, 4 digits   \
+     /[ac\1] \2/gx;       # replace g(lobally), with e(x)tended spacing
+</pre>
+
+<A NAME="s6.7.4"></A><H3>6.7.4. Word boundaries</H3>
+
+<p ID='thr3'>GNU sed, ssed, sed16, sed15 and sedmod use certain symbols to define
+   the boundary between a "word character" and a nonword character. A
+   word character fits the regex "[A-Za-z0-9_]". Note: a word character
+   includes the underscore "_" but not the hyphen, probably because the
+   underscore is permissible as a label in sed and in other scripting
+   languages. (In gsed103, a word character did NOT include the
+   underscore; it included alphanumerics only.)
+</p>
+<p ID='thr3'>These symbols include '\&lt;' and '\&gt;' (gsed, ssed, sed15, sed16,
+   sedmod) and '\b' and '\B' (gsed only). Note that the boundary
+   symbols do not represent a character, but a position on the line.
+   Word boundaries are used with literal characters or character sets
+   to let you match (and delete or alter) whole words without
+   affecting the spaces or punctuation marks outside of those words.
+   They can only be used in a "/pattern/" address or in the LHS of a
+   's/LHS/RHS/' command. The following table shows how these symbols
+   may be used in HHsed and GNU sed. Sedmod matches the syntax of
+   HHsed.
+</p>
+<pre>
+      Match position      Possible word boundaries   HHsed   GNU sed
+      ---------------------------------------------------------------
+      start of word    [nonword char]^[word char]      \&lt;    \&lt; or \b
+      end of word         [word char]^[nonword char]   \&gt;    \&gt; or \b
+      middle of word      [word char]^[word char]     none      \B
+      outside of word  [nonword char]^[nonword char]  none      \B
+      ---------------------------------------------------------------
+</pre>
+
+<p ID='thr3'>In ssed, the symbols '\&lt;' and '\&gt;' lose their special meaning when
+   the -R switch is used to invoke Perl-style expressions. However,
+   the identical meaning of '\&lt;' and '\&gt;' can be obtained through
+   these nonmatching, zero-width assertions:
+</p>
+<PRE>
+       (?&lt;!\w)(?=\w)  and   (?&lt;=\w)(?!\w)
+</PRE>
+
+<A NAME="s6.7.5"></A><H3>6.7.5. Commands which operate differently</H3>
+
+A. GNU sed version 3.02 and 3.02.80
+
+<p ID='thr3'>The N command no longer discards the contents of the pattern space
+   upon reaching the end of file. This is not a bug, it's a feature.
+   However, it breaks certain scripts which relied on the older
+   behavior of N.
+</p>
+<p ID='thr3'>'N' adds the Next line to the pattern space, enabling multiple
+   lines to be stored and acted upon. Upon reaching the last line of
+   the file, if the N command was issued again, the contents of the
+   pattern space would be silently deleted and the script would abort
+   (this has been the traditional behavior). For this reason, sed
+   users generally wrote:
+</p>
+<PRE>
+       $!N;   # to add the Next line to every line but the last one.
+</PRE>
+
+<p ID='thr3'>However, certain sed scripts relied on this behavior, such as the
+   script to delete trailing blank lines at the end of a file (see
+   script #12 in <a href="sedfaq3.html#s3.2">section 3.2</a>, "Common one-line sed scripts", above).
+   Also, classic textbooks such as Dale Dougherty and Arnold Robbins'
+   <i>sed &amp; awk</i> documented the older behavior.
+</p>
+<p ID='thr3'>The GNU sed maintainer felt that despite the portability problems
+   this would cause, changing the N command to print (rather than
+   delete) the pattern space was more consistent with one's intuitions
+   about how a command to "append the Next line" <i>ought</i> to behave.
+   Another fact favoring the change was that "{N;command;}" will
+   delete the last line if the file has an odd number of lines, but
+   print the last line if the file has an even number of lines.
+</p>
+<p ID='thr3'>To convert scripts which used the former behavior of N (deleting
+   the pattern space upon reaching the EOF) to scripts compatible with
+   all versions of sed, change a lone "N;" to "$d;N;".
+</p>
+<table border=1 cellspacing=0 cellpadding=7 align='center' width='75%'>
+<tr><td bgcolor='#D7EdFD' color='#353535'>
+<p align='center' class='ver'>This is the end of Section 6 of the sed FAQ.<br>
+Go back to <a href="sedfaq5.html">Section 5</a>,
+ or forward to <a href="sedfaq7.html">Section 7</a>.<br>
+Go up to the <a href="sedfaq.html">index</A>.</p>
+</td></tr></table>
+<br>
+</BODY></HTML>
+</BODY></HTML>

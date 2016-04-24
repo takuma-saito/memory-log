@@ -54,16 +54,19 @@ monitを強制的に終了させる
 ----------------------------
 * moonitor自身
 * httpd
-* vsftpd
+* vsftpd: protocol ftp を指定する場合 anonymous でログインできないと未接続と判断される
 * named
 * mysql
 * sshd
 * CPU異常
 * ディスク異常
 * httpd + ssl
-* dropboxの監視
+* dropboxd
 * postfix
 * dovecot
+
+たまに正しく起動できない時がある。
+その場合は、pidfile, start program, stop program 部分を一度消して修正すると動くことがある。原因は謎。
 
 その他
 ----------------------------

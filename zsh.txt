@@ -6,9 +6,13 @@ zsh 設定方法
 
 wget "ftp://ftp.zsh.org/pub/zsh-5.0.0.tar.gz"
 
-auto-fu
-----------------------------
 
-auto-fu は Ctrl-C で一時停止できる
+メモ
+----
+
+基数の変換
+16進数 -> 2進数
+
+    $ echo $[ [#2] 16#1c ]
 
 

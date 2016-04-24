@@ -1,0 +1,112 @@
+# AWS 関係
+
+## AWS のセットアップ
+
+事前に認証情報から AWS AMI からユーザーを作成しユーザーに  AmazonEC2FullAccess のポリシーを付ける。
+その後は "アクセスキーの作成" からアクセスキーと秘密鍵を取得する。
+
+cli を利用できるようにローカルの環境をセットアップ
+
+```
+$ brew install aws
+...
+$ echo 'source /usr/local/share/zsh/site-functions/_aws' >> ~/.zshrc
+$ aws configure
+AWS Access Key ID [****************C45A]: xxxxxxxxxxxx
+AWS Secret Access Key [****************+Atl]: xxxxxxxxxxxxxxxxxxxxxxxxx
+Default region name [ap-northeast-1]:
+Default output format [table]: table
+```
+
+## 初期インスタンスを起動するまでの道のり
+
+### セキュリティ設定, IP アドレスの計算
+
+鍵の作成
+
+```
+$ aws ec2 create-key-pair --key-name MyKeyPair
+$ aws ec2 describe-key-pairs
+```
+
+次にファイアーウォール用のセキュリティグループを作る
+
+```
+$ aws ec2 create-security-group \
+  --group-name default\
+  --description "This is default firewall policy group."
+  ```
+
+セキュリティーグループは 22 番と特定のIP以外アクセスできないようにする。
+
+inbound  (local  ---> sever) -> ingress
+outbound (server ---> local) -> egress
+
+会社で利用している IP アドレスの範囲を [APNIC](https://wq.apnic.net/whois-search/static/search.html) で調べる。
+CIDR に変換 `ipcalc -r xxx.xxx.xxx.xxx - xxx.xxx.xxx.xxx`
+
+```
+$ aws ec2 describe-security-group
+$ aws ec2 authorize-security-group-ingress \
+  --group-id sg-xxxxxx \
+  --cidr xxx.xxx.xxx.xxx/24 \
+  --port 22 \
+  --protocol all
+```
+
+```
+$ aws ec2 run-instances \
+  --image-id ami-xxxxxxxx \
+  --count 1 \
+  --instance-type x3.large \
+  --key-name MyKeyPair \
+  --security-groups default
+$ aws ec2 describe-instances
+$ aws ec2 get-console-output --instance-id i-xxxxxx --output text  
+```
+
+### 固定 IP アドレスを割り振る
+
+新しく固定IPを生成
+
+```
+$ aws ec2 allocate-address
+$ aws ec2 describe-addresses
+```
+
+固定 IP を目的のサーバーに割り当てる
+
+```
+$ aws ec2 associate-address \
+  --instance-id i-xxxxxx \
+  --allocation-id eipalloc-xxxxxx
+```
+
+正常に割り当てられたか確認する
+
+```
+$ aws ec2 describe-instances
+$ aws ec2 describe-addresses
+```
+
+## 特定のユーザーのみAPIのアクセスを許可
+
+IAM -> ユーザー > インラインポリシー > カスタムポリシー
+
+```
+{
+ "Statement": [
+   {
+     "Action": [
+       "ec2:AssociateAddress",
+       "ec2:DisassociateAddress"
+     ],
+     "Effect": "Allow",
+     "Resource": "*"
+   }
+ ]
+}
+```
+
+
+

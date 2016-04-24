@@ -6,3 +6,69 @@ brew インストール方法
 
     $ /usr/bin/ruby -e "$(/usr/bin/curl -fsSL https://raw.github.com/mxcl/homebrew/master/Library/Contributions/install_homebrew.rb)"
     $ brew install git
+
+各コマンドについて
+
+* 一覧表示: `brew list`
+* パッケージの中身を表示: `brew list <package>`
+* パッケージの中身を全て表示: `brew -v list <package>`
+* cask を使えるようにする: `brew tap phinze/homebrew-cask && brew install brew-cask`
+
+* `brew list <pkg>`: 一覧表示
+* `brew remove <pkg>`: パッケージを削除
+* `brew install <pkg>`: パッケージをインストール
+* `brew info <pkg>`: パッケージ情報を表示
+* `brew options <pkg>`: パッケージのオプションを表示
+* `brew edit <pkg>`: パッケージの設定ファイルを編集
+* `brew reinstall <pkg>`: パッケージを再インストールする
+* `brew cleanup`: 古いパッケージを削除する
+
+Brewfile に書くこと
+
+    # パッケージリストをアップデート
+    update
+    
+    # アップデートを適用
+    upgrade
+    
+    # cask をタップ・インストール
+    tap phinze/cask
+    install brew-cask
+    
+    install zsh
+    ...
+    
+    cask install firefox
+    ...
+    
+    # 最後に掃除
+    cleanup
+    cask cleanup
+
+また、デフォルトでは `~/Application` にリンクされてしまうので、以下の環境変数を設定する
+
+    export HOMEBREW_CASK_OPTS="--appdir=/Applications”
+
+* brew cask の問題点
+   * firefox の日本語版がインストールされない
+   * google ime が上手くインストールされない
+   * iterm2 がおかしい
+
+* firefox 日本語版の cask ファイル:
+  brew cask create で以下を作成する
+
+    class FirefoxJa < Cask
+      url 'https://download.mozilla.org/?product=firefox-latest&os=osx&lang=ja-JP-mac'
+      homepage 'http://www.mozilla.jp/firefox/'
+      version 'latest'
+      no_checksum
+      link 'Firefox.app'
+    end
+
+* Ricty のインストール:
+     
+     $ brew tap sanemat/font
+     $ brew install ricty
+     $ cp -f /usr/local/Cellar/ricty/3.2.2/share/fonts/Ricty*.ttf ~/Library/Fonts/
+     $ fc-cache -vf
+

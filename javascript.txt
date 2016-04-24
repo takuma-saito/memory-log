@@ -26,7 +26,16 @@ javascript 入門
 
 * 日付を見やすく出力させる: `new Date("yyyy/mm/dd hh:mm:ss")`
 
+nodejs
+----------------------------
 
+nodejs をパッケージ管理ソフト経由でインストールする
+
+    $ sudo port install node
+
+npm (nodejs のパッケージ管理ソフト）をインストールする
+
+    $ curl https://npmjs.org/install.sh | sudo sh
 
 ツールなど
 ----------------------------
@@ -34,3 +43,6 @@ javascript 入門
 * [JSON 整形ツール: json beautiful](http://jsbeautifier.org/)
 * [JSON VALIDATOR](http://jsonformatter.curiousconcept.com/)
 
+参考サイト
+----------------------------
+* [Node.jsで作るリアルタイム投票アプリ](https://github.com/hakobera/rtvote/blob/master/README.md)

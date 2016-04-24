@@ -6,3 +6,75 @@ gem 一覧
 * ruby-debug: 使いやすいデバック
 * pry: irbのパワーアップ版
 
+### gem の使い方 ###
+
+* 環境を調べる: `gem environment`
+* インストールする: `gem install <package>`
+* パッケージ一覧: `gem list`
+* パッケージの中身: `gem contents <package>`
+
+Ruby メモ
+----------------------------
+
+* 値の型を調べる: `値.class`
+
+* 文字列 -> 配列: `string.split(//)`
+
+* REPL としては irb ではなく pry を使う: `gem install pry pry-doc`
+
+* グローバル変数: $ を付ける `$hoge, $var` など
+
+* Range から配列を生成する: `[*1..10]`, * を付ける
+
+* プロファイル: `ruby -r profile foo.rb`, -r profile を付けて起動させる
+
+* 配列から hash を生成する: 
+
+    ary = ["suzuki", 87, "itou", 76, "yamada", 69]
+    h = Hash[*ary]
+
+* each_with_index は **index が後**: `(*1..5).each_with_index {|number, index| index}`
+
+* 数値型の判定: `is_a?(Integer)`
+
+rbenv を使う
+----------------------------
+
+まずは rbenv をレポジトリからダウンロード。
+
+    $ git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
+
+$HOME/.rbenv/bin をパスに追加する。
+また、rbenvのshimsを有効にするために .zshrc に eval "$(rbenv init -)" を追記する。
+
+    $ emacs ~/.zshrc
+    ...
+    export PATH=$PATH:$HOME/.rbenv/bin
+    eval "$(rbenv init -)"
+
+rbenv では ruby のビルドを自動で行わないので、ビルドプラグインをインストールしなければならない
+
+    $ git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+
+ruby1.9.3 をインストールする
+
+    $ rbenv install 1.9.3-p362  
+
+インストールした後はデフォルトで利用する ruby のバージョンを選択する。
+また、rehash は rbenv の操作完了後必ず行わなければならない。
+
+    $ rbenv global 1.9.3-p362
+    $ rbenv rehash
+    
+何度も rehash するのが面倒くさい場合は rbenv-rehash をインストールする
+
+    $ gem i rbenv-rehash
+
+* インストールできる処理系一覧: `rbenv install -l`
+* インストールした処理系一覧: `rbenv versions`
+
+
+
+
+
+

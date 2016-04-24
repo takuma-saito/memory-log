@@ -1,0 +1,108 @@
+Tex の設定や文法など
+====================
+
+初期設定
+--------
+
+brew cask で Tex の標準環境を用意
+
+    $ brew cask install basictex
+
+パスを通し、全体のアップデートを行った後、日本語入力に必要なパッケージをインストールする
+
+    $ export PATH=$PATH:/usr/texbin
+    $ sudo tlmgr update --self --all
+    $ sudo tlmgr install ptex ptex2pdf jfontmaps jsclasses japanese-otf
+
+ヒラギノフォントの埋め込み、漢字の設定を行う
+
+    $ kanji-config-updmap hiragino
+    $ sudo updmap-sys --setoption kanjiEmbed hiragino
+
+テスト用のファイルを用意する
+
+    $ > hello.tex
+    \documentclass{jarticle}
+    \begin{document}
+    日本語 \LaTeX
+    を使って文章を書く。
+    \end{document}
+
+コンパイルして、正常に日本語が表示されれば成功
+
+    $ platex hello.tex
+    $ divpdfm hello.dvi
+    $ open hello.pdf
+
+*** フォントについて ***
+pdf にどのフォントを埋め込まれているかを確認する `pdffonts` を使うために以下のパッケージをインストールする
+
+    $ brew install xpdf
+
+`xpdf-japanese.tar.gz` を website からダウンロードして `~/.xpdf-ja` に展開する
+
+    $ wget ftp://ftp.foolabs.com/pub/xpdf/xpdf-japanese.tar.gz
+    $ mkdir ~/.xpdf-ja
+    $ tar zxvf xpdf-japanese.tar.gz -C ~/
+    $ mv ~/xpdf-japanese ~/.xpdf-ja
+
+設定ファイル `~/.xpdfrc` を作成し上記の日本語マップへのパスを記入する
+
+    cidToUnicode    Adobe-Japan1    /your/home/.xpdf-ja/Adobe-Japan1.cidToUnicode
+    unicodeMap      ISO-2022-JP     /your/home/.xpdf-ja/ISO-2022-JP.unicodeMap
+    unicodeMap      EUC-JP          /your/home/.xpdf-ja/EUC-JP.unicodeMap
+    unicodeMap      Shift-JIS       /your/home/.xpdf-ja/Shift-JIS.unicodeMap
+    cMapDir         Adobe-Japan1    /your/home/.xpdf-ja/CMap
+    toUnicodeDir                    /your/home/.xpdf-ja/CMap
+
+これで pdffonts の設定が終わって pdffonts が利用できるようになった
+
+    $ pdffonts hello.pdf
+    ...
+
+platex で利用できるフォントを確認するには `kanji-config-updmap` を用いる
+
+    $ kanji-config-updmap status
+    CURRENT family : hiragino
+    Standby family : hiragino-pron
+    Standby family : ipa
+    Standby family : ipaex
+
+    $ kanji-config-upmap ipa
+    ...
+
+
+*** 自動更新の設定 ***
+
+`https://gist.github.com/lithium3141/1217887` を参考にする。
+以下のモジュールをインストールする
+
+    $ gem install guard guard-shell guard-livereload
+
+以下のように guard ファイルを用意する
+
+    guard 'livereload' do
+      watch(%r{(.*).pdf})
+    end
+
+    guard 'shell' do
+      watch(%r{(.+)\.tex}) do |m|
+        next if m[0][0, 2].eql? ".#"
+        filename = m[0]
+        name, ext = filename.split(".")
+        `platex -interaction=batchmode #{filename}`
+        `dvipdfm #{name}.dvi`
+      end
+    end
+
+ローカルサーバーとして ruby を動かす
+
+    $ guard
+    $ ruby -run -e httpd . -p 8000
+
+livereload の設定を行う.
+`livereload-extensions` のプラグインを firefox にインストールする.
+その後 `about:addons` にて該当のプラグインの設定ボタンを押して起動するホストとポートを記入する
+
+
+

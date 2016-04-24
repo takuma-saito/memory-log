@@ -1,0 +1,51 @@
+#!/bin/bash
+
+prog=$(basename $0)
+pppd="/usr/sbin/pppd"
+resolv="/etc/resolv.conf"
+NETWORK="10.224/11"
+INTERFACE="ppp0"
+NAME_SERVER_ADDR1="10.224.253.1"
+NAME_SERVER_ADDR2="10.224.254.1"
+NAME_SERVERS="# kyoto university\nnameserver $NAME_SERVER_ADDR1\nnameserver $NAME_SERVER_ADDR2"
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+start() {
+    $pppd call kuins updetach
+    ip route add  $NETWORK dev $INTERFACE
+    sed -i "1s/^/${NAME_SERVERS}\n/" $resolv
+}
+
+stop() {
+    sed -i "/${NAME_SERVER_ADDR1}/D" $resolv
+    sed -i "/${NAME_SERVER_ADDR2}/D" $resolv
+    sed -i "/kyoto/D" $resolv
+    ip route delete $NETWORK dev $INTERFACE
+    killproc $prog
+}
+
+restart() {
+    echo ""
+}
+
+status() {
+    echo ""
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        ;;
+    restart)
+        ;;
+    *)
+        echo "Usage ${prog} {start|stop|status|restart}"
+        exit 1
+esac

@@ -1,7 +1,6 @@
 rvm 導入方法
 ============================
 
-
 最新版のRVM をインストール
 ----------------------------
 port でもインストールできるが、
@@ -17,7 +16,7 @@ curlでスクリプトをダウンロードしてbashで直接実行する。
 
 まずパッケージをインストールする（これはシステムによって異なる）
 
-    $ for pkg in autoconf zlib readline openssl libyaml; echo rvm pkg install $pkg
+    $ for pkg in autoconf zlib readline openssl libyaml; rvm pkg install $pkg
 
 必要なRubyのバージョンをインストール。
 
@@ -104,8 +103,8 @@ zsh用の読込スクリプトで設定を読むこむ
   * list - 現在作成したgemsetの一覧が見れる
   * use - 利用するgemsetを決める
   * delete - gemsetを削除する
-
-
+  * default を設定する場合: `rvm use ruby-version@gemset --default`
+    gemset の部分に rvm create した名前を入れる
 
 rvm の主なコマンド簡易リファレンス
 ----------------------------
@@ -135,4 +134,5 @@ gemset をアップグレードする
 
 * rvm requirements:
 インストールに必要な環境を表示
+
 

@@ -1,0 +1,31 @@
+denyhosts
+============================
+
+denyhosts の設定
+----------------------------
+
+インストール方法は省略。
+設定ファイルできちんと設定しておくべき項目は以下の通り。
+
+* PURGE_DENY: 拒否された人が次に接続できるだけの時間                                           [空白]
+* DENY_THRESHOLD_INVALID: 存在しないユーザーへのログインを失敗したときに拒否されるまでの回数   [10]
+* DENY_THRESHOLD_VALID: 存在しているユーザーへのログインを失敗したときに拒否されるまでの回数   [6]
+* DENY_THRESHOLD_ROOT: ルートユーザーへのログインを失敗したときに拒否されるまでの回数          [1]
+* DAEMON_PURGE: /etc/hosts.deny ファイルに結果をコミットするまでの時間                         [30m]
+* BLOCK_SERVICE: ログインを無効にするサービス                                                  [ALL]
+
+### denyhosts で間違えてログインできなくなった場合 ###
+
+hosts.deny を消すだけでは不十分.
+再度消しても、denyhosts を再起動する際に新しく hosts.deny に使っていたIPアドレスが追加されてしまう。
+
+完全に消すには、以下のディレクトリ中に含まれる IP アドレスも一緒に削除する必要がある。
+（WORK_DIR は /etc/denyhosts.conf で設定されているディレクトリ）
+
+* /etc/hosts.deny
+* WORK_DIR/hosts
+* WORK_DIR/hosts-restricted
+* WORK_DIR/hosts-root
+* WORK_DIR/hosts-valid
+* WORK_DIR/user-hosts
+

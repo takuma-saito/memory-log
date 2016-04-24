@@ -1,0 +1,466 @@
+Arch Linux
+============================
+
+一般的な事項
+------------
+
+* usb でインストールする場合は、最初のパーティションのみデータ領域として利用できる
+   * primary 1 の領域は fat32 でフォーマットする
+* boot 領域は任意のパーティションに指定して構わない
+
+
+
+Arch Linux のインストール方法
+----------------------------
+
+1. Arch Linux のネットワークブートイメージを取得 or インストールCDを焼きインストーラーを起動させる
+
+2. キーボードのバインドを変更 (jp106)
+
+    $ loadkeys jp106
+
+3. ネットワーク設定を行う（ping で疎通確認）
+dhcp or 固定 IP アドレスを設定してネットワークに繋がるように設定する
+
+    # dhcp は dhcpcd or dhcpclient を用いて設定できる
+    $ dhcpcd eth0
+    
+    # dhclient の場合
+    $ dhclient 
+
+IP アドレスが付与されているかどうかの確認を行う
+    
+    $ ifconfig -a
+    $ ping google.co.jp
+
+4. パーティションの設定, ファイルシステムの作成
+
+既にパーティションは切ってある前提でファイルシステムだけ作成する
+
+    # mkfs.ext4 /dev/VolGroup/arch_root
+    # mkfs.ext2 /dev/sda6
+
+5. arch Linux に必要なスクリプトをダウンロード
+
+別のPCで, arch-install-scripts をgit経由でインストール, Arch Linux Installerに送る
+
+    $ git clone git://github.com/falconindy/arch-install-scripts
+    $ make
+    $ scp -r arch-install-script arch-installer:~/
+
+Arch Linux インストーラーでの作業
+
+    $ export PATH=$PATH:$HOME/arch-install-scripts
+
+6. root, boot パーティションを /install, /install/boot にそれぞれマウントさせる
+
+    $ mount /dev/VolGroup/arch_root /install
+    $ mkdir /install/boot
+    $ mount /dev/VolGroup/arch_boot /install/boot
+
+7. ミラーを選択し、pacstrap でシステムのインストール（base, base-devel, grub-bios)
+
+ミラーを手動で選択する
+
+    $ nano /etc/pacman.d/mirrorlist
+    Server = http://ftp.jaist.ac.jp/pub/Linux/ArchLinux/$repo/os/$arch  ## コメントアウト
+
+ミラーを自動で選択する
+
+    $ mv /etc/pacman.d/mirrorlist{,.backup}
+    $ rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup | tee /etc/pacman.d/mirrorlist
+
+-n 6 を付けることで接続速度が早い上位6つのミラーが選択される.
+次に pacman の鍵の設定を行いベースシステムのインストールを行う
+    
+    $ pacstrap /install base base-devel
+
+8. fstab, bootloader を設定
+
+1) 通常の grub をインストールする場合
+
+    $ pacstrap /install grub-bios
+
+2) EFI 用の grub をインストールする場合
+
+    $ pacstrap /install grub-efi-x86_64
+
+その後 fstab を生成する.
+
+    $ genfstab -p /install >> /install/etc/fstab
+
+9. 新規システムにchroot
+
+インストール用の環境に入る前に, pacman のミラーをコピーしておく
+
+    $ cp /etc/pacman.d/mirrorlist /install/etc/pacman.d/
+
+インストール用の環境に入る.
+
+    $ arch-chroot /install
+
+10. HostName, Locale, Timezone をそれぞれ設定
+    
+現在設定されているロケールを確認する
+
+    $ locale -a
+    C
+    en_US
+
+locale を設定
+
+    $ nano /etc/locale.gen
+    # 以下をコメントアウト
+    
+    ja_JP.UTF-8 UTF-8
+    ja_JP.EUC-JP EUC-JP
+    
+    $ locale-gen
+
+設定がきちんと反映されているかどうかを確認する
+
+    $ locale -a
+    C
+    en_US
+    en_US.iso88591
+    en_US.utf8
+    ja_JP.utf8
+    POSIX
+
+ホスト名を設定する
+
+    $ hostnamectl set-hostname sonic
+    $ echo "archLinux" >> /etc/hostname
+
+locale.conf でロケールや文字コードの設定
+
+    $ emacs /etc/locale.conf
+    LANG="ja_JP.UTF-8"
+    LC_COLLATE="C"
+    
+    # Set the short date to YYYY-MM-DD (test with "date +%c")
+    LC_TIME="C"
+
+vconsole.conf でコンソールの設定
+
+    $ nano /etc/vconsole.conf
+    KEYMAP="jp106"
+    CONSOLEFONT="161"
+
+タイムゾーンを設定する
+
+    $ ln -s /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+
+11. initram を作成, grubのインストール
+
+/dev/sda6 にブートレコードが入っているので下記のようにgrub-installを適用する.
+lvm を利用している場合は /etc/mkinitcpio.conf の HOOK に lvm2 が記入してあるか確認しなければならない.
+
+    $ sudo nano /etc/mkinitcpio.conf
+    
+    HOOKS="base udev autodetect pata scsi sata encrypt filesystems"
+    ↓
+    HOOKS="base udev autodetect pata scsi sata lvm2 encrypt filesystems"    
+
+    MODULES=""
+    ↓
+    MODULES="ata_piix ehci-hcd ext2 ext3 ext4 vfat"
+    
+    $ mkinitcpio -p linux 
+
+grub を MBR にインストールする場合.
+
+    $ grub-install /dev/sda
+
+注) grub を PBR にインストールする場合は以下のようにする
+
+    $ grub-install --force --recheck --debug /dev/sda6
+
+設定ファイルを自動生成し grub インストールは完了.
+
+    $ grub-mkconfig -o /boot/grub/grub.cfg
+
+12. ルートパスワードの設定
+
+    $ passwd root
+
+13. swapの有効化
+
+    $ mkswap /dev/mapper/VolGroup-arch_swap
+    $ swapon /dev/mapper/VolGroup-arch_swap
+    $ swapon -s
+    $ echo "/dev/mapper/VolGroup-arch_swap swap swap defaults 0 0" >> /etc/fstab
+    
+14. インストール終了
+
+    $ reboot
+    
+15. インストール後行う作業
+
+* pacman のセットアップ
+* ネットワークのセットアップ
+* 新規ユーザーの追加
+
+### 注意事項 ###
+
+mkinitcpio が行なえない場合はアップデートを行う
+
+    # pacman -Syu mkinitcpio systemd linux
+
+
+arch Linux の初期設定
+----------------------------
+
+1. pacman のセットアップ, 基本設定
+詳しくは "pacman.txt" を参照のこと
+
+    $ pacman-key --init
+    $ pacman --populate archlinux
+    $ pacman -Syu
+
+2. ネットワークのセットアップ
+
+ネットワークのホストネームをセットする
+  
+    $ hostnamectl set-hostname <hostname>
+    
+設定したホストネームを確認
+
+    $ hostnamectl
+    Static hostname: <hostname>
+    ...
+
+eth0 のインターフェイスから dhcp 経由でIP を設定する場合
+
+    $ systemctl enable dhcpcd@eth0
+
+### proxy 利用する場合 ###
+
+`/etc/profile.d/proxy.sh` を作成して、以下のように設定を行う
+    
+    export proxy=http://192.168.101.254:8080/
+    export http_proxy=$proxy
+    export https_proxy=$proxy
+    export ftp_proxy=$proxy
+    export HTTP_PROXY=$proxy
+    export HTTPS_PROXY=$proxy
+    export FTP_PROXY=$proxy
+
+sshd をインストールし、デーモンに追加する
+
+    $ pacman -S openssh
+    $ emacs /etc/rc.conf
+    DAEMONS=(syslog-ng network crond sshd)
+
+設定完了したらネットワークを再起動させる
+
+    $ rc.d restart network
+
+3. 新規ユーザーの追加
+
+    $ adduser admin
+
+4. キーマップの変更
+
+キーマップの Caps Lock を Control キーに変更する
+
+    $ cp /usr/share/kbd/keymaps/i386/qwerty/jp106.map.gz .
+    $ gunzip jp106.map.gz
+    $ emacs jp106.map
+    # keycode 58 = Caps_Lock
+    keycode 58 = Control
+    
+    $ gzip jp106.map
+    $ cp jp106.map.gz /usr/share/kbd/keymaps/i386/qwerty/jp106.map.gz
+
+5. pacman 拡張機能をインストール
+
+abs をインストールする
+
+    $ pacman -S abs
+
+コミュニティが運営する非公式リポジトリを登録する.
+（これを行わないと, pacman-color・yaourt のインストールが行えない）
+
+    # /etc/pacman.conf に以下の行を追加    
+    [archlinuxfr]
+    Server = http://repo.archlinux.fr/$arch
+
+インデックスを更新しつつ、pacman-color と yaourt のインストールを行う
+
+    $ pacman -Sy pacman-color yaourt
+
+PACMAN=pacman-color のように環境変数を設定しておくと yaourt が 
+pacman-color を使うようになり、出力が色付けされる.
+
+6. コンソールの日本語設定
+
+    $ yaourt -S fbterm fbset uim anthy scim-anthy
+    $ gpasswd -a admin video
+
+    # 以下のコマンドで日本語入力・表示ができるようになる
+    # fbterm 
+    # uim-fep -u anthy
+
+HOMEディレクトリに .uim ファイルを作成し、以下のように設定する
+
+    (define default-im-name 'anthy)
+    (define-key generic-on-key? '("<Control>j"))
+    (define-key generic-off-key? '("<Control>j"))
+
+Control + j で日本語, 英語の変換が行えるした. 
+また "-u" で anthy を設定しなくてもデフォルトで anthy が input-method になるように設定した.
+次に yaourt で適当なフォントをインストールする.
+
+    $ yaourt -S ttf-ms-fonts ttf-vlgothic ttf-sazanami ttf-komatuna ttf-mplus
+    $ yaourt -S ttf-bitstream-vera ttf-dejavu
+
+インストールしたフォントを出力するには以下のコマンド.
+
+    $ LANG=C fbterm -v
+
+HOMEディレクトリに .fbterm ファイルがあるので、このファイルにフォント設定を書き込む
+
+    $ emacs .fbterm
+    font-names=Sazanami Gothic (or Ricty)
+    font-size=14
+    cursor-shape=1
+    cursor-interval=0
+
+ログインした時に自動で fbterm を実行するようにする
+
+    # .zshrc に追記する 
+    # 2>/dev/null は "stdin isn't a interactive tty!" のエラー表示を避けるため
+    TERM=fbterm fbterm uim-fep 2>/dev/null
+
+cant't change kernel keymap teble ...
+とエラーが出た場合は以下を実行する.
+
+    # chmod u+s /usr/bin/fbterm
+
+さらにインテルプロセッサーの場合は MTRR （メモリ範囲レジスタ）をサポートしているので
+フレームバッファへの書込を高速化できる.
+
+まずは vga で利用できる属性を調べる.
+
+    # yaourt -S hwinfo
+    # hwinfo --framebuffer
+
+VESA ドライバーは通常フレームバッファへのメモリ属性が付与が出来ないように設定されているので, 
+/proc/mtrr を通してフレームバッファの設定を行えない.
+そのため grub にフレームバッファを有効にするような記述を加えなえればならない
+
+    # yaourt -S v86d
+    
+    # emacs /etc/mkinitcpio.conf
+    HOOKS="base udev v86d ..."
+    
+    # cp /usr/lib/modprobe.d/uvesafb.conf /etc/modprobe.d/
+    options uvesafb mode_option=1024x768-32 scroll=ywrap
+    
+    # emacs /etc/mkinitcpio.conf
+    FILES="/etc/modprobe.d/uvesafb.conf"
+
+デフォルトの KMS (Kernel Mode Setting) を無効にし, uvesafb をデフォルトで利用するように設定する
+
+    # emacs /etc/default/grub
+    ...
+    GRUB_CMDLINE_LINUX_DEFAULT="quiet video=uvesafb i915.modeset=0"
+    ...
+    
+    # mkinitcpio -p linux
+    # grub-mkconfig -o /boot/grub/grub.cfg
+
+**この方法では uvesafb が読み込まれる前に vesafb が読み込まれる** ので正しく動作しない.
+
+mtrr の後に続ける数値の意味は以下の通り.
+
+0. - Disabled (equivalent to nomtrr) (default)
+1. - Uncacheable
+2. - Write-back
+3. - Write-combining
+4. - Write-through
+
+再起動し, fbterm -v で "scrolling: redraw" になっていないことを確認する
+
+    # reboot
+    # fbterm -v
+    # cat /proc/mtrr
+    
+表示可能な vbe mode を調べる
+
+    # cat /sys/bus/platform/drivers/uvesafb/uvesafb.0/vbe_modes
+
+さらにパッチを入れた tmux をインストールし 256 色表示できるようにする
+
+patch: http://www.mail-archive.com/tmux-users@lists.sourceforge.net/msg01146.html
+
+    # emacs .zshrc
+    ...
+    TERM=fbterm fbterm uim-fep 2>/dev/null
+    TERM=fbterm tmux 2>/dev/null
+
+もし `can’t change kernel keymap table, all shortcuts will NOT work, see SECURITY NOTES section of man page for solution.` というメッセージを受け取った場合, fbterm のパーミションを変更すればよい
+
+    $ chmod u+s /usr/bin/fbterm
+
+* 現在のフレームバッファサイズを調べる: `fbset`
+
+ネットワーク設定
+----------------
+
+### Static IP を設定する ###
+
+以下のスクリプトを作成する
+
+    $ sudo emacs /etc/systemd/system/network@.service
+    [Unit]
+    Description=Network connectivity (%i)
+    Wants=network.target
+    Before=network.target
+    BindsTo=sys-subsystem-net-devices-%i.device
+    After=sys-subsystem-net-devices-%i.device
+    
+    [Service]
+    Type=oneshot
+    RemainAfterExit=yes
+    EnvironmentFile=/etc/conf.d/network@%i
+    
+    ExecStart=/usr/bin/ip link set dev %i up
+    ExecStart=/usr/bin/ip addr add ${address}/${netmask} broadcast ${broadcast} dev %i
+    ExecStart=/usr/bin/ip route add default via ${gateway}
+    
+    ExecStop=/usr/bin/ip addr flush dev %i
+    ExecStop=/usr/bin/ip link set dev %i down
+    
+    [Install]
+    WantedBy=multi-user.target
+
+Static IP アドレスを設定する。
+
+    $ sudo emacs /etc/conf.d/network@<interface>
+    address=192.168.0.15
+    netmask=24
+    broadcast=192.168.0.255
+    gateway=192.168.0.1
+
+スタティック IP の設定をスタートさせる。
+
+    $ sudo systemctl enable network@eth0.service
+    $ sudo systemctl start network@eth0.service
+
+その他
+----------------------------
+
+* arch linux にデフォルトで入っているテキストブラウザ: elinks
+
+* 簡易サーバーのパッケージ
+  * netctl: ネットワーク設定
+  * sSMTP: 簡易 SMTP, メール送信が行える
+
+参考資料
+----------------------------
+
+* [Arch Linux をゼロからそこそこ使える程度に設定するまでの一部始終 - Yarukidenized:ヤルキデナイズド](http://d.hatena.ne.jp/uasi/20111121/1321804402)
+

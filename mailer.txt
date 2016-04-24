@@ -1,0 +1,560 @@
+メールサーバーの設定
+====================
+
+SMTP の設定
+-----------
+
+*** 1. 認証なし ***
+# myhostname には逆引きアドレスを入れる
+$ host $MY_ID
+example.jp
+
+# メインファイルを修正
+$ emacs /etc/postfix/main.cf
+home_mailbox = Maildir/
+myhostname = example.jp
+mydomain = example.jp
+mydestination = $mydomain
+mynetworks = 127.0.0.0/8
+
+# 設定確認
+$ postfix check
+$ postconf | less
+
+# 再起動
+$ /etc/init.d/postfix restart
+
+# 接続確認
+$ socat TCP:localhost:25 -
+> 220 example.jp ESMTP Postfix
+MAIL FROM: user@example.jp
+> 250 2.1.0 Ok
+RCPT TO: my.email@gmail.com
+> 250 2.1.5 Ok
+DATA
+> 354 End data with <CR><LF>.<CR><LF>
+FROM: user@example.jp
+SUBJECT: aaa
+aaa
+.
+> 250 2.0.0 Ok: queued as D6F50100877
+quit
+> 221 2.0.0 Bye
+
+# ログ確認
+$ cat /var/log/maillog
+
+*** 2. smtpd-sasl で認証 ***
+
+メールをいくつでも作れるように cyrus で認証
+
+# ユーザー作成
+$ echo 'adminpass' | saslpasswd2 -u example.jp admin
+
+# ユーザー確認
+$ sasldblistusers2
+admin@example.jp: userPassword
+
+# pwcheck を sasldb に変更
+$ emacs /etc/sasl2/smtpd.conf
+pwcheck_method: auxprop
+auxprop_plugin: sasldb
+mech_list: login
+
+# /etc/sasldb を postfix から読み込めるようにする
+$ chgrp postfix /etc/sasldb
+
+# sasl の設定を追加
+$ emacs /etc/postfix/main.cf
+# 認証は cyrus を使用する
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = cyrus
+smtpd_sasl_local_domain = $mydomain
+smtpd_sasl_security_options = noanonymous
+
+# sasl の設定を追加（以下をコメントアウト）
+$ emacs /etc/postfix/master.cf
+ -o smtpd_sasl_auth_enable=yes
+ -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+
+# 再起動
+$ /etc/init.d/postfix restart
+
+# 設定が反映されているかどうかを確認
+# 匿名で送ろうとする場合は認証エラー
+$ socat TCP:localhost:25 -
+> 220 example.jp ESMTP Postfix
+MAIL FROM: hoge@example.jp
+> 250 2.1.0 Ok
+RCPT TO: my.email@gmail.com
+> 554 5.7.1 <localhost[127.0.0.1]>: Client host rejected: Access denied
+quit
+> 221 2.0.0 Bye
+
+# 正常に認証が通る
+$ echo -ne "admin@example.jp\x00admin@example.jp\x00adminpass" | base64
+YWRtaW5AZXhhbXBsZS5qcABhZG1pbkBleGFtcGxlLmpwAGFkbWlucGFzcw==
+
+$ socat TCP:localhost:25 -
+> 220 example.jp ESMTP Postfix
+AUTH PLAIN YWRtaW5AZXhhbXBsZS5qcABhZG1pbkBleGFtcGxlLmpwAGFkbWlucGFzcw==
+> 235 2.7.0 Authentication successful
+quit
+> 221 2.0.0 Bye
+
+# 5. セキュリティの項に移動
+
+# エラーがあった場合はログ確認
+$ cat /var/log/maillog
+
+# 設定の確認
+$ postconf -n
+
+# 文法エラーチェック
+$ postfix check
+
+
+*** 3. TLS で通信を暗号化  ***
+
+# 自己署名公開鍵証明書と秘密鍵を作成
+$ openssl req -new -nodes -x509 -subj "/C=JP/ST=Main/L=Main/O=IT/CN=app" -days 3650 -keyout server.key -out server.crt
+$ mkdir /etc/postfix/ssl
+$ mv server.crt /etc/postfix/ssl
+$ mv server.key /etc/postfix/ssl
+
+# smtp で TLS を利用できるように設定
+$ emacs /etc/postfix/main.cf
+smtpd_use_tls = yes
+smtpd_tls_cert_file = /etc/postfix/ssl/server.crt
+smtpd_tls_key_file = /etc/postfix/ssl/server.key
+smtpd_tls_session_cache_database = btree:${queue_directory}/smtpd_scache
+smtpd_use_tls=yes
+smtpd_tls_auth_only = yes
+smtpd_tls_loglevel = 1
+
+$ emacs /etc/postfix/master.cf
+# コメントアウトを除去
+smtps     inet  n       -       n       -       -       smtpd
+ -o smtpd_sasl_auth_enable=yes
+ -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+# -o smtpd_tls_wrappermode=yes
+
+# 接続確認
+$ socat OPENSSL:localhost:465,verify=0 -
+220 example.jp ESMTP Postfix
+quit
+221 2.0.0 Bye
+
+
+*** 4. 複数ドメインの設定 ***
+# /etc/main/master.cf の smtp, smtps, smtp submission をそれぞれコメントアウトする
+$ emacs /etc/main/master.cf
+smtp      inet  n       -       n       -       -       smtpd
+submission inet n       -       n       -       -       smtpd
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+#  -o milter_macro_daemon_name=ORIGINATING
+smtps     inet  n       -       n       -       -       smtpd
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+
+# 設定変更 example.jp, example2.jp で複数ドメイン運用を行う
+$ emacs /etc/postfix/main.cf
+mydestination =
+virtual_mailbox_domains = example.jp, example2.jp
+virtual_mailbox_maps = hash:/etc/postfix/vmailbox
+virtual_mailbox_base = /var/spool/vmail
+virtual_minimum_id = 100
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+
+# メール格納ディレクトリ
+$ mkdir /var/spool/vmail
+$ useradd -u 5000 -s /bin/false -d / -M vmail
+$ chown vmail:vmail -R /var/spool/vmail
+$ gpasswd -a admin vmail
+
+$ emacs /etc/postfix/vmailbox
+# ユーザー名 <空白> ディレクトリ
+info@example.jp example.jp/info/
+info@example2.jp example2.jp/info/
+
+# DB 作成 
+$ postmap /etc/postfix/vmailbox
+
+# 確認
+$ postmap -q info@example.jp /etc/postfix/virtual
+$ postmap -q info@example2.jp /etc/postfix/virtual
+
+# 文法チェック
+$ postfix check
+$ /etc/init.d/postfix restart
+
+# 送信確認
+$ echo 'infopass' | saslpasswd2 -u example.jp info
+$ echo 'infopass' | saslpasswd2 -u example2.jp info
+$ sasldblistuser2
+$ echo "info@example.jp\x00info@example.jp\x00infopass" | base64
+aW5mb0BleGFtcGxlLmpwAGluZm9AZXhhbXBsZS5qcABpbmZvcGFzcwo=
+$ echo "info@example2.jp\x00info@example2.jp\x00infopass" | base64
+aW5mb0BleGFtcGxlMi5qcABpbmZvQGV4YW1wbGUyLmpwAGluZm9wYXNzCg==
+$ socat OPENSSL:localhost:465,verify=0 -
+EHLO example.jp
+> 250-ENHANCEDSTATUSCODES
+> 250-PIPELINING
+> 250-8BITMIME
+> 250-SIZE 209715200
+> 250-DSN
+> 250-AUTH CRAM-MD5 DIGEST-MD5 LOGIN PLAIN
+> 250-STARTTLS
+> 250-DELIVERBY
+> 250 HELP
+AUTH PLAIN aW5mb0BleGFtcGxlLmpwAGluZm9AZXhhbXBsZS5qcABpbmZvcGFzcwo=
+> 235 2.0.0 OK Authenticated
+
+# 返信後適切に Maildir に格納されているか確認する
+$ sudo -u vmail zsh -c "cat **/*(.)"
+
+
+*** 5. セキュリティ設定 ***
+
+$ sudo emacs /etc/postfix/main.cf
+
+# VRFY コマンドの拒否
+disable_vrfy_command = yes
+
+# バージョン非公開
+smtpd_banner = $myhostname ESMTP
+
+# <MAIL FROM:> の制限
+smtpd_sender_login_maps = hash:/etc/postfix/sender
+smtpd_sender_restrictions =
+  reject_authenticated_sender_login_mismatch,
+  reject_unknown_address,
+  permit
+
+# <HELO>, <EHLO> の制限
+smtpd_delay_reject = yes
+smtpd_helo_required = yes
+smtpd_helo_restrictions =
+  reject_non_fqdn_helo_hostname,
+  reject_unknown_reverse_client_hostname,
+  reject_unknown_helo_hostname,
+  reject_invalid_helo_hostname
+
+# <RCPT TO:> の制限
+smtpd_recipient_restrictions =
+  permit_sasl_authenticated,
+  reject_non_fqdn_sender,
+  reject_non_fqdn_recipient,
+  reject_unknown_sender_domain,
+  reject_unknown_recipient_domain,
+  reject_unauth_pipelining,
+  reject_unauth_destination,
+  permit
+
+# DATA の制限
+smtpd_data_restrictions = reject_unauth_pipelining
+
+$ emacs /etc/postfix/sender
+info@example.jp info@example.jp
+info@example2.jp info@example2.jp
+
+$ postmap /etc/postfix/sender
+
+
+MYSQL によるアカウント管理
+-------------------------
+
+*** インストール ***
+$ sudo yum install -y cyrus-sasl-sql
+$ sudo yum install -y pam_mysql
+
+*** 初期設定 ***
+# インストール
+$ sudo yum install -y mysql mysql-server
+
+# root password の変更
+$ /etc/init.d/mysqld start
+$ mysqladmin -u root password <password>
+
+# テストデータベース削除+匿名ログイン禁止+remote からのrootログイン禁止
+$ mysql_secure_installation
+
+# ログインテスト
+$ mysql -u root -p<passowrd>
+
+*** ログイン用のユーザー+データベース作成 ***
+# データベース作成
+$ mysqladmin -u root -p<password> create mail
+
+# ユーザー作成 user:mail@localhost, pass:mailpass
+$ mysql -u root -p<password>
+mysql> GRANT SELECT ON mail.* TO mail@localhost IDENTIFIED BY 'mailpass';
+
+# 確認
+mysql> SHOW GRANTS FOR mail@localhost\G
+
+# ログインチェック
+mysql> CREATE TABLE names (name TEXT);
+mysql> SHOW TABLES;
+mysql> exit
+$ mysql -u mail -pmailpass
+mysql> SHOW TABLES;
+
+# domains+users テーブル作成
+$ mysql -u root -p<password>
+
+mysql> CREATE TABLE domains (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL, PRIMARY KEY(id), UNIQUE KEY(name));
+
+mysql> CREATE TABLE users (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  domain_id INT NOT NULL,
+  PRIMARY KEY(id),
+  UNIQUE KEY (name, domain_id),
+  FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE);
+
+mysql> CREATE VIEW emails AS SELECT
+  CONCAT(users.name, '@', domains.name) AS name, password FROM
+  users JOIN domains ON domains.id = users.domain_id;
+
+mysql> SHOW TABLES;
+
+# テストデータの挿入
+
+mysql> INSERT INTO domains(name) VALUES ('hoge.com'), ('fuga.com');
+mysql> INSERT INTO users(name, password, domain_id) VALUES
+  ('info', ENCRYPT('infopass', '$6$saslt'), 1), 
+  ('info', ENCRYPT('infopass', '$6$saslt'), 2),
+  ('admin', ENCRYPT('adminpass', '$6$saslt'), 1);
+
+mysql> SELECT * FROM emails;
+
+# user:info@domain.com, pass:infopass で登録できるようにする
+
+mysql> INSERT IGNORE INTO domains(name) SELECT
+  SUBSTRING_INDEX('hoge@teketeke.com', '@', -1);
+
+mysql> INSERT INTO users(name, password, domain_id) SELECT
+  SUBSTRING_INDEX('info@domain.com', '@', 1),
+  ENCRYPT('infopass'),
+  (SELECT id FROM domains WHERE
+    name = (SUBSTRING_INDEX('info@domain.com', '@', -1)));
+
+# 挿入用の procedure を定義
+
+mysql> DELIMITER |
+mysql> CREATE PROCEDURE insert_email(IN email VARCHAR(255), IN password VARCHAR(255))
+  BEGIN
+    INSERT IGNORE INTO domains(name) SELECT SUBSTRING_INDEX(email, '@', -1);
+    INSERT INTO users(name, password, domain_id) SELECT
+      SUBSTRING_INDEX(email, '@', 1),
+      ENCRYPT(password, CONCAT('$6$', SHA(RAND()))),
+      (SELECT id FROM domains WHERE
+        name = (SUBSTRING_INDEX(email, '@', -1)));
+  END |
+
+mysql> DELIMITER ;
+
+# procudure の確認
+mysql> SHOW PROCEDURE STATUS;
+
+# 正常に動作しているかの確認
+mysql> CALL insert_email('fuga@teketeke.com', 'tekepass')
+mysql> CALL insert_email('a@b.c', 'apass')
+mysql> SELECT * FROM emails;
+
+*** pam 認証 ***
+
+# smtp で PAM 認証の設定
+$ sudo emacs /etc/pam.d/smtp
+auth    required   pam_mysql.so user=mail passwd=mailpass host=127.0.0.1 db=mail table=emails usercolumn=name passwdcolumn=password crypt=1
+account    required   pam_mysql.so user=mail passwd=mailpass host=127.0.0.1 db=mail table=emails usercolumn=name passwdcolumn=password crypt=1
+
+# 確認
+$ echo 'a' | pamtester smtp a@b.c authenticate
+Password:pamtester: successfully authenticated
+
+# saslauthd が pam 認証に対応しているかを確認
+$ saslauthd -v 2>&1 | grep pam
+
+# saslauthd を pam 経由にする
+$ sudo emacs /etc/sasl2/smtpd.conf
+pwcheck_method: saslauthd
+mech_list: plain login cram-md5 digest-md5
+
+# saslauthd を Mechanism=pam で起動させる
+$ sudo emacs /etc/sysconfig/saslauthd
+MECH='pam'
+FLAGS='-r'
+$ sudo /etc/init.d/saslauthd restart
+
+# 確認
+$ ps aux | grep saslauthd
+$ testsaslauthd -s smtp -u a -r b.c -p apass
+0: OK "Success."
+
+*** postfix の設定 ***
+
+# postfix が mysql に対応しているか確認
+$ postconf -m | grep mysql
+
+# メールアドレスとドメインを MYSQL 経由で問い合わせるように設定
+$ sudo emacs /etc/postfix/main.cf
+smtpd_sasl_type = cyrus
+smtpd_sasl_path = smtpd
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_auth_enable = yes
+virtual_mailbox_base = /var/spool/vmail
+cyrus_sasl_config_path = /etc/sasl2/smtpd.conf
+
+# 再起動してユーザーの確認
+$ sudo /etc/init.d/postfix restart
+
+# SMTP 認証を pam 経由にする
+$ sudo emacs /etc/sasl2/smtp.conf
+pwcheck_method: saslauthd
+mech_list: plain login
+
+# sender を制限している場合, MYSQL からメールを取り出して sender に設定する
+$ mysql -B -N -u root -p<password> mail -e 'SELECT name FROM emails' > ~/sender
+$ sudo bash -c "paste -d' ' ~/sender ~/sender > /etc/postfix/sender"
+$ sudo postmap /etc/postfix/sender
+$ /etc/init.d/postfix restart
+
+# virtual host の Maildir の設定
+$ sudo emacs /etc/postfix/main.cf
+virtual_mailbox_maps = hash:/etc/postfix/vmailbox
+virtual_mailbox_base = /var/spool/vmail
+mydestination =
+virtual_minimum_id = 100
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+
+# Maildir に配送されるユーザー名とドメイン名（返信メールを受け取る時に必要）
+$ emacs /etc/postfix/mysql-virtual-mailbox-domains.cf
+user = mail
+password = mailpass
+hosts = 127.0.0.1
+dbname = mail
+query = SELECT 1 FROM domains WHERE name = '%s'
+$ emacs /etc/postfix/mysql-virtual-mailbox-maps.cf
+user = mail
+password = mailpass
+hosts = 127.0.0.1
+dbname = mail
+query = SELECT CONCAT(name, '/') FROM emails WHERE name='%s'
+
+# Maildir にメールがきちんと届くか確認する
+$ echo 'hoge' | mail -s 'test-mail' info@example.jp
+
+
+Dovecot の設定
+--------------
+
+*** 基本設定(バーチャルホストを利用する場合) ***
+
+$ sudo emacs /etc/dovecot/dovecot.conf
+mail_location = maildir:/var/spool/vmail/%u
+listen = *
+# !include conf.d/*.conf
+!include conf.d/10-ssl.conf
+# デバッグする場合
+info_log_path = /tmp/dovecot-log
+auth_verbose = yes
+auth_debug = yes
+# password を PAM 経由で行う
+passdb {
+  driver = pam
+  args = dovecot
+}
+userdb {
+  driver = static
+  args = uid=vmail gid=vmail home=/var/spool/vmail/%u
+}
+
+# 設定の確認
+$ doveconf -n
+
+# dovecot 用に pam 認証を用意
+$ sudo ln -s /etc/pam.d/smtp /etc/pam.d/dovecot
+
+# 認証テスト
+$ echo 'infopass' | pamtester dovecot info@example.jp authenticate
+
+# 起動して確認
+$ sudo /etc/init.d/dovecot start
+$ socat TCP:localhost:110
+> +OK Dovecot ready.
+USER info@example.jp
+> +OK
+PASS infopass
+> +OK Logged in.
+STAT
+> +OK 1 580
+LIST
+> +OK 1 messages:
+> 1 580
+> .
+RETR 1
+> +OK 580 octets
+...
+
+*** SSL による暗号化 ***
+
+# imaps-ssl だけ有効にする
+$ sudo emacs /etc/dovecot/dovecot.conf
+protocols = imap
+service imap-login {
+  inet_listener imap {
+    port = 0
+  }
+  inet_listener imaps {
+    port = 993
+    ssl = yes
+  }
+}
+
+
+Linux Mail クライアント
+----------------------
+# Maildir 形式のメールを閲覧
+$ mutt -f Maildir/
+$ emacs .muttrc
+
+# SENDING MAIL
+set copy=yes
+set ssl_force_tls = yes
+set smtp_url = "smtp://smtp.gmail.com:587/"
+set smtp_pass = "oenohxai"
+set from = "goonezea@gmail.com"
+set realname = "SIN"
+
+# RECEIVING MAIL
+set imap_user = "imap.gmail.com"
+set imap_pass = "oenohxai"
+set folder = "imaps://imap.gmail.com:993"
+set spoolfile="imaps://imap.gmail.com/INBOX"
+
+# 送信テスト
+$ echo "This is the message body and contains the message" | mailx -v \
+  -r "goonezea@akatyan.tk"
+  -s "This is the subject" \
+  -S smtp="mail.example.com:587" \
+  -S smtp-use-starttls \
+  -S smtp-auth=login \
+  -S smtp-auth-user="someone@example.com" \
+  -S smtp-auth-password="abc123" \
+  -S ssl-verify=ignore \
+  -S nss-config-dir=/etc/pki/nssdb \
+  yourfriend@gmail.com
+
+

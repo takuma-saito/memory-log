@@ -1,11 +1,125 @@
 mongodb の導入
 ============================
 
-mongoDBとは?
+チュートリアル
 ----------------------------
 
+インストールは各パッケージ管理ソフトなどから行う。
+mongodb サーバーを起動させる
 
-導入方法
+    $ sudo mongod --config /etc/mongodb.conf
+
+mongodb シェルにログインする。
+
+    $ mongo
+    MongoDB shell version: 1.4.4
+    url: test
+    connecting to: test
+    type "help" for help
+    >     
+
+現在使用しているデータベース名を調べる。
+
+    > db
+    test
+
+初期設定の場合 test データベースを使用していることが分かる。
+データベース一覧を表示させる。
+
+    > show dbs
+    admin
+    apache
+    local
+    
+    > use admin
+    switched to db admin
+    
+    > db
+    admin
+
+データベースを変更するには use を使う。
+先ほどの操作で test から admin へデータベースを変更した。
+
+以後では myapp データベースを使って一通りの機能を見ていく。
+SQL とは異なり、新しくデータベースを作るのに特別な構文は必要ない。
+
+    > use myapp
+    switched to db myapp
+    
+    > db
+    myapp
+
+新しく person というデータを persons というコレクションに挿入する。
+コレクションは SQL ではテーブルに対応する概念である。
+    
+    > person = {name: "Yamada Taro", age: 25}
+    { "name" : "Yamada Taro", "age" : 25 }
+    
+    > db.persons.insert(person)
+    
+    > show collections
+    persons
+    system.indexes
+
+コレクションの中身を調べると persons が新しく追加されているのが確認できる。
+show collections は現在選択している（myapp）のコレクションを全て表示する。
+
+find を使ってコレクション中のデータを確認する。
+
+    > db.persons.find()
+    { "_id" : ObjectId("510344e7f002b696f75016b6"), "name" : "Yamada Taro", "age" : 25 }
+
+データをもう一度インサートすると、コレクション中のデータが増えている。
+
+    > person = {name: "Yamada Hanako", age:38}
+    {name: "Yamada Hanako", age:38}
+    
+    > db.person.insert(person)
+    
+    > db.persons.find()
+    { "_id" : ObjectId("510344e7f002b696f75016b6"), "name" : "Yamada Taro", "age" : 25 }
+    { "_id" : ObjectId("5103487dc8fa147d9a646afe"), "name" : "Yamada Hanako", "age" : 38 }
+
+クエリの検索結果をオブジェクトとして扱うこともできる。
+クエリの検索結果を json オブジェクトとして表示する。
+
+    > var p = db.persons.find()
+    > while (p.hasNext()) printjson(p.next())
+    {
+        "_id" : ObjectId("510344e7f002b696f75016b6"),
+        "name" : "Yamada Taro",
+        "age" : 25
+    }
+    {
+        "_id" : ObjectId("5103487dc8fa147d9a646afe"),
+        "name" : "Yamada Hanako",
+        "age" : 38
+    }
+
+
+SQL との比較
 ----------------------------
 
+左が SQL で右が MongoDB
 
+* database      <->   database
+* table         <->   collection
+* row           <->   document or BSON document（JSON のようなもの）
+* field         <->   column
+* index         <->   index
+* table join    <->   ドキュメント経由でリンクされる
+* primary key   <->   primary key （MongoDB では _id で表される）
+* SQL の構文 (group by など):
+  * WHERE     <->  $match
+  * GROUP BY  <->  $group
+  * HAVING    <->  $match
+  * SELECT    <->  $project
+  * ORDER BY  <->  $sort
+  * LIMIT     <->  $limit
+  * SUM       <->  $sum
+  * COUNT     <->  $SUM
+
+* aggregate で複数の条件で検索する場合は [] で括る。また、順番に注意しなければならない。
+  下記の例は降順にソート後, 上から 5 件のみを取得している。
+
+     > db.access.aggregate([{$sort : {time: -1}}, {$limit: 5}]) 

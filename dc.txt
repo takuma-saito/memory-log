@@ -1,0 +1,222 @@
+dc コマンド
+============================
+
+dc は逆ポーランド記号を計算するためのコマンド.
+
+* スタック指向で計算を行う
+* レジスターが 256個 用意されており、保存・取り出しが自由に行える
+* 関数定義に似たマクロ定義が行えうことができ、これを使って高度な演算を行うことができる
+
+基本的な使い方
+----------------------------
+
+値を捨てたい場合は sw など利用してないレジスタに捨てる（p,n,P 系のコマンドの場合、値が出力されてしまう）
+if else を表現したい場合にはマクロ [] とマクロ脱出の Q を使う.
+dc でプログラムする場合はコードを短くするため, 副作用を伴うようにマクロを使うべき.
+
+* p: トップのスタックを表示する(print), 表示するだけでスタックの値は消費されない [No]
+* n: トップのスタックを消費し、表示する [Yes: 1 pop]
+* P: トップのスタックを消費する [Yes: 1 pop]
+* c: スタックをクリアする [Yes: N pop]
+* r: スタック上の 2 つの値をswapする [No]
+* z: スタックの要素をスタックに積む [Yes: 1 pop]
+* ?: ターミナルから1行読込実行する
+* f: スタックを全て表示する [No]
+* q: やめる（quit） [No]
+* 1Q: マクロから1回脱出, 2Q でマクロを2回脱出, ... [No]
+* k: 浮動小数点の桁数を決定する [No]
+* _: dc でのマイナス [No]
+* v: 平方 (sqrt) [Yes: 2 pop 1 push]
+* ^: べき乗（**）[Yes: 2 pop 1 push]
+* +: プラス      [Yes: 2 pop 1 push]
+* -: マイナス    [Yes: 2 pop 1 push]
+* *: 掛ける      [Yes: 2 pop 1 push]
+* ~: 割る + 余り [Yes: 2 pop 2 push]
+    スタック上 [a, b] の場合: [a / b, a % b]
+* /: 割る        [Yes: 2 pop 1 push]
+    スタック上 [a, b] の場合: push b / a
+* %: 余り        [Yes: 2 pop 1 push]
+    スタック上 [a, b] の場合: push b % a
+* s[a-Z]: スタックから値を取り出し、レジスタに保存する  [Yes: 1 pop]
+* l[a-Z]: レジスターの値を取り出し、スタックに保存する *この時レジスターの値は変わらない*  [Yes: 1 push]
+* S[a-Z]: 大文字の場合はレジスターがスタックになる  [Yes: 1 pop]
+* L[a-Z]: 同上                                      [Yes: 1 push]
+* 文字列: [] の記号で囲まれた文字                       [Yes: 1 push]
+* x: スタックから取り出した値を実行する                 [Yes: 1 pop]
+* d: duplicate, スタックから取り出したのと同じ値を再度保存する  [Yes: 1 push]
+* 条件分岐: '>', '!>', '<', '!<', '!=', '=' など                [Yes: 2 pop]
+  >a の場合, スタックから2つ値を取り出し, の最初の値と2番目の値を比べる.
+  条件が真の場合 a のレジスターに保存されいてる値を実行する.
+  *条件分岐ではスタックが消費されてしまうので、ループする場合は基本的に d を入れる*
+* 配列: 'Index:Register' で格納 'Index;Register' で取り出し
+  ':' [Yes: 1 pop]
+  ';' [Yes: 1 push]
+  例)
+  
+    # レジスタ 0:a に値 1 を保存する, スタックから値は取り除かれる
+    $ dc <<< '1 0:a f'
+    
+    # レジスタ 0:a に保存した値を取り出す
+    $ dc <<< '1 0:a f 0;a f'
+    1
+    
+    # Index にはレジスターも指定できる
+    dc <<< '5 sb 2 lb:a f lb;a f'
+    2
+
+例
+----------------------------
+1. 1 ~ 100 までを表示する
+
+    $ dc <<< '[p1-d0<m] sm 100 lmxq'
+
+2. 1 ~ N まで表示する（引数別バージョン）
+
+    $ echo 100 | dc <<< '[p1-d0<m] sm ? lmxq'
+    
+3. 1 ~ 100 まで足し合わせる
+
+    $ dc <<< '[1 - d li + si d 0<m li] sm 0 si 100 lm x p q'  
+
+4. 1 ~ 100 までを掛け合わせる（クロージャーバージョン）
+
+    # クロージャーバージョン
+    $ dc <<< '[[1 - d li * si d 1<n li] sn 1 si ln x] sm 100 lm x p q' 
+    
+    # スタックを効率的に使った場合
+    $ dc <<< '[d 1 - d 1 <F *] sF 100 lFxpq'
+
+5. 足し合わせる
+
+    $ echo 1 2 3 4 8 29 38 | dc <<< '[q] sq [z 2>q + lm x] sm ? lm x pq'
+    85
+
+6. 関数渡しで掛け合わせる
+
+    $ echo 1 2 5 6 7 8 | dc <<< '[rq] sq [2=q se le x le z lmx] sm ? [+] z lmxpq'
+    29
+
+7. 平均を求める
+
+    $ echo 1 2 3 8 | dc <<< '3k [q] sq [z 2>q + lm x] z si sm ? lm x li / pq'
+    2.800
+
+8. for 文
+
+for 文の引数: stop, start, fun, init, それぞれ順番にスタック領域へ積まれる
+for 文はマクロ sm を起動すると実行される.
+        
+    # for 文を使った 100! の計算
+    $ dc <<< '[swswq] sq [sp d lp=q st sf lt lf x lf lt 1 + lp lmx] sm 1 [*] 1 100 lmxfq'
+    933262154439441526816992388562667004907159682643816214685929638952175\
+    999932299156089414639761565182862536979208272237582511852109168640000\
+    000000000000000000
+    
+    # for 文を使った (1 + 2 + ... + 100) の計算
+    $ dc <<< '[swswq] sq [sp d lp=q st sf lt lf x lf lt 1 + lp lmx] sm 0 [+] 1 100 lmxfq'
+    4950
+
+9. FizzBuzz 問題
+
+まず fizzbuzz モジュールを作る
+
+    $ echo 10 | dc <<< '[psw] sy [[fizz]lyxq] sF [[buzz]lyxq] sB [[fizzbuzz]lyxq] sZ [d si li 15 % 0=Z li 3 % 0=F li 5 % 0=B ly] sm ? lmxq'
+    fizz
+    
+    $ echo 2 | dc <<< '[psw] sy [[fizz]lyxq] sF [[buzz]lyxq] sB [[fizzbuzz]lyxq] sZ [d si li 15 % 0=Z li 3 % 0=F li 5 % 0=B ly] sm ? lmxq'  
+    2
+
+その後 8. で作った for 文と合わせて完成
+
+    $ dc <<< '[swswq] sq [sp d lp=q st sf lt lf x lf lt 1 + lp lkx] sk [psw] sy [[fizz]lyxq] sF [[buzz]lyxq] sB [[fizzbuzz]lyxq] sZ [d si li 15 % 0=Z li 3 % 0=F li 5 % 0=B lyx] sm 1 lm 1 101 lkxq'
+    1
+    2
+    fizz
+    4
+    buzz
+    fizz
+    7
+    8
+    fizz
+    buzz
+    11
+    fizz
+    13
+    14
+    fizzbuzz
+    16
+    17
+    fizz
+    19
+    20
+    ...
+
+10. フィボナッチ数列
+
+    $ dc <<< '?[smsnlmlnlm+plAx]sA1 1lAxq'
+    1
+    1
+    2
+    3
+    5
+    8
+    13
+    21
+    34
+    55
+    ...
+
+11. アッカーマン関数
+
+    $ echo 3 4 | dc <<<  '?[ln1+2Q]sM[lm1-1lDx2Q]sN[lm1-lmln1-lDxlDx2Q]sA[snsmlm0=Mln0=NlAx]sDlDxpq'
+    125
+
+12. 2次方程式を解くプログラム
+
+    $ echo 1 3 2 | dc <<< '?scsbsa[sf0lb-lblb*lcla4**-vlfxla2*/]sU[3k[+]lUx[-]lUx]sslsxfq'
+    -2.000
+    -1.000
+
+13. 完全数を表示するプログラム
+
+    $ echo 1 1000 | dc <<< '?[sw]sX[swsw]sZ[swla]sY[sasblbla%d0!=Xd0=Ylbla1+dlb>Adlb=Z]sA[+z1<B]sB[lspsw2Q]sT[2Q]sF[snln1lAxz1<Bsslnls=Tlnls!=F]sC[smsililCxli1+lmd1-li<D]sDlDxq'
+    6
+    28
+    496
+
+14. 数値のビット表現を出力する
+
+    $ echo 2048 | dc <<< '?0sl[snln2%Ssll1+slln2/d0!=A]sA[Lsn[ ]nll1-slll0<B]sBlAxlBxpq'
+    1 0 0 0 0 0 0 0 0 0 0 0 0
+
+15. エラストテレスの篩
+
+    $ echo 1000 | dc <<< '?sSlSvsM[sn0ln:Tln1-ln2=A]sAlSlAxsw[[sk_1lk:Tlkln+dlS>E]sElnln+lEx]sN[snln;T0=Nln1+dlM!<i]si[]sX[lnpsw]sY[snln;T_1=Xln;T0=Yln1+dlS>P]sP2lix2lPxq'
+    2
+    3
+    57
+    11
+    13
+    17
+    19
+    23
+    29
+    ...
+
+
+
+注意するべき点
+----------------------------
+
+* 最初は空白でコマンドごとに区切って入力する
+* スタックが空かどうかの判断は z で行う
+* ループする場合は条件判断付きで行う, そうしないと recursion level too deep で異常終了してしまう.
+* ファイルに書きだしたコマンドを実行する場合 `dc -f file.dc` のように行う.
+  -e の場合は引数をスタック上に積むことができる. `dc -e "3 4" file.dc`
+  スタック上に引数を一つしか乗せない場合, 2重カッコは必要ない
+
+リファレンス
+----------------------------
+
+* [Calculating with dc](http://wiki.bash-hackers.org/howto/calculate-dc)
+* [dc を使ってみる](http://d.hatena.ne.jp/goth_wrist_cut/20080218/1203327063)

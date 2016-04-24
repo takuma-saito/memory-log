@@ -109,12 +109,131 @@ SNI（SSLでバーチャルホストが行える）
 *  `_default_ VirtualHost overlap on port 443, the first has precedence` というエラーが出る時:    
     `NameVirtualHost *:443` の設定を追加する。
 
-Proxy の設定
+suexec モードで php を動かす
 ----------------------------
 
-    ProxyPass /foo http://foo.example.com/bar
-    ProxyPassReverse /foo http://foo.example.com/bar 
+suexec で動かす場合は php-cgi モードで php を実行することになる。
+以下のように必要なモジュールをインストールする。
 
+    $ sudo aptitude install php5-cgi
+    $ sudo aptitude install apache2-suexec-custom
+    $ sudo a2enmod suexec
+
+一応きちんと suexec が入っているかどうかを確認する。
+
+    $ apache2 -V | grep su
+     -D SUEXEC_BIN="/usr/lib/apache2/suexec"
+
+suexec を -V オプションで実行すると詳細情報を出力してくれる
+
+    $ sudo /usr/lib/apache2/suexec -V
+    -D SUEXEC_CONFIG_DIR=/etc/apache2/suexec/
+    -D AP_GID_MIN=100
+    -D AP_LOG_EXEC="/var/log/apache2/suexec.log"
+    -D AP_SAFE_PATH="/usr/local/bin:/usr/bin:/bin"
+    -D AP_UID_MIN=100
+
+apache で CGI が実行できように設定する。
+
+    $ sudo emacs /etc/apache2/conf.d/server.conf
+
+    <VirtualHost *:80>
+        SuexecUserGroup username group
+    
+        <Directory "/home/user/www">
+            ....
+            Options ExecCGI ...
+            AddHandler fcgid-script .php
+            FCGIWrapper /home/user/bin/php-cgi .php  
+        </Directory>
+    </VirtualHost>
+
+拡張子と実行するファイルとの関連付けを行う。
+実行するファイルは直接 "/usr/bin/php-cgi" を指定してはならない。（今回は /home 以下のディレクトリしか実行権限がないため）
+必ず下記のように php-cgi のラッパースクリプトを通してプログラムを実行すること。
+    
+    $ cat > ~/bin/php-cgi
+    #!/bin/sh
+    PHPRC=/etc/
+    export PHPRC
+    export PHP_FCGI_MAX_REQUESTS=5000
+    export PHP_FCGI_CHILDREN=8
+    exec /usr/bin/php-cgi
+
+    $ sudo emacs /etc/apache2/suexec/www-data
+    /home
+    ...
+
+以上の設定を終えたら、サーバーを再度起動させる。
+
+    $ sudo /etc/init.d/apache2 restart
+    Restarting web server: apache2 ... waiting .
+
+ディレクトリのパーミッションを設定する
+
+    $ chmod 710 /home/username
+
+php-cgi 自体はグループの権限で実行されるので、パーミッションはグループの実行権限は付けなければならない。
+
+apache でポートフォワードを行う
+----------------------------
+
+特定の URL にアクセスされた場合 8080 番ポートにデータを転送する。
+mod_proxy をパッケージ管理ソフトでインストールする。
+debian の場合以下のようにして、モジュールを有効にする。
+
+    $ sudo a2enmod proxy
+    $ sudo a2enmod proxy_http
+    $ sudo a2enmod proxy_connect
+
+sub.domain.com にアクセスした場合 localhost の 8080 番に転送するのは以下のように設定を行えばよい。
+
+    <VirtualHost *:80>
+        ServerName sub.domain.com
+        ErrorLog /var/log/apache2/monitor-error.log
+        CustomLog /var/log/apache2/monitor-access.log combined    
+        ProxyPass / http://localhost:8080/
+        ProxyPassReverse / http://localhost:8080/
+        ProxyRequests off
+    </VirtualHost>
+    
+上記設定の後、再度 apache を再起動する
+
+    $ sudo /etc/init.d/apache2 restart
+
+ProxyPass は URL のマッピングを行うディレクティブ。書式は以下。
+
+* ProxyPass 公開パス 転送先URL
+
+公開パスにアクセスすると、apache 側で自動的に転送先 URL にアクセスしそのコンテンツをする。
+
+*ProxyPassReverse ディレクティブは Location, Content-Location, URI-header 等の書き換えを行う。*
+つまり、リダイレクト先と proxy 先のURLを正しいマッピングを行う。
+ProxyPass, ProxyPassReverse 共に Location ディレクティブ内に記述されると、公開パスを省略しなければならない。
+書式は以下の通り。
+
+* ProxyPassReverse 公開パス 転送先URL
+
+リバースプロキシとして設定する場合、フォワードプロキシとしての機能は off にしなければならない。
+ProxyRequests ディレクティブでプロキシーのタイプを設定できる。
+リバースプロキシの場合必ず off にする。これが on の場合, フォワードプロキシとして利用されてしまう。
+
+* ProxyRequests off
+
+ログの管理
+----------------------------
+* /favicon.ico の 404 エラーログをなくす。
+  httpd.conf に以下を追記する
+
+    Redirect 404 /favicon.ico
+
+    <Location /favicon.ico>
+       ErrorDocument 404 "No favicon"
+    </Location>
+    
+    SetEnvIf Request_URI "\.ico$" no_log
+    CustomLog /dev/shm/access_log combined env=!no_log
+ 
 .htaccessの設定
 ----------------------------
 

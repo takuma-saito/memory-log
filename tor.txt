@@ -1,0 +1,12 @@
+TOR 関連
+------------
+
+逆引き
+=================
+Tor 経由で ssh を使う, tor は socks5 を使うように設定
+
+    $ tor
+    $ socat TCP-LISTEN:<port> SOCKS5:localhost:<host>:22,socksport=9050
+    $ ssh <user>@localhost -p <port>
+
+

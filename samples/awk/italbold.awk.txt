@@ -1,0 +1,81 @@
+# filename:     ITALBOLD.AWK
+#   author:     Eric Pement <pemente@northpark.edu>
+#  version:     1.0
+#     date:     July 21, 1996
+#   syntax:     awk -f ITALBOLD.AWK input_fil
+# requires:     GNU Awk or nawk, due to sub() & "/dev/stderr" functions.
+#  purpose:     To take a text file where pseudo-italic or underlining is
+#               displayed by the underscore character, and boldface is
+#               shown by the asterisk as in the following:
+#
+#    BBS's and electronic text may use underscores to indicate _italic
+#    type,_ and asterisks for *boldface.* These act as _toggle
+#    switches_ and always come in pairs. This script will handle
+#    embe_dd_ed characters and multi-line emphasis.
+#
+#  and to convert it to this hypertext markup (HTML) style:
+#
+#    BBS's and electronic text may use underscores to indicate <i>italic
+#    type,</i> and asterisks for <b>boldface.</b> These act as <i>toggle
+#    switches</i> and always come in pairs. This script will handle
+#    embe<i>dd</i>ed characters and multi-line emphasis.
+#
+#    notes:     This program may be freely distributed, and may easily
+#               be converted to accommodate various other toggle-type
+#               representations (e.g., ~tilde~, etc.).
+#     BUGS:     If underscores or asterisks are used for ASCII drawings,
+#               or if the input text uses an underscore character in a
+#               non-toggle fashion (e.g., "_E_Pluribus_Unum_") to connect
+#               internal words, the output may not be what you expect.
+
+BEGIN {
+ count = 0              # set both counters to zero
+ count2 = 0
+ ital_on  = "<i>"       # MODIFY THESE TWO VALUES TO MEET YOUR OWN NEEDS
+ ital_off = "</i>"      # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ bold_on  = "<b>"
+ bold_off = "</b>" 
+}
+
+{
+  while ( index($0,"_") ) {     # While "_" can be found in the current line,
+    if (count % 2 == 0)		# .. if there are an even number of tags,
+       sub (/_/,ital_on)	# .. it's time to turn italics ON.
+    else			# .. But if there are an odd number of tags,
+       sub (/_/,ital_off)	# .. turn the italics off.
+    count++			# Increment the counter, and advance to
+  }				# the next "_" on the current line.
+
+  while ( index($0,"*") ) {     # Same routine for the asterisk, except
+    if (count2 % 2 == 0)        # we use a different counter, and we must
+       sub (/\*/,bold_on)       # precede the asterisk with a backslash,
+    else                        # since it has special meaning in regular
+       sub (/\*/,bold_off)      # expressions (GNU Awk won't complain).
+    count2++
+  }
+print
+}
+
+END {                           # This routine warns of unpaired sets.
+ if (count % 2 != 0) {
+   print                                                " " > "/dev/stderr"
+   print "************************************************" > "/dev/stderr"
+   print "   WARNING!  The input file has an odd number"    > "/dev/stderr"
+   print "   of underscore characters, which means that"    > "/dev/stderr"
+   print "   italic was turned ON but was never later"      > "/dev/stderr"
+   print "   turned OFF. The file was processed anyway."    > "/dev/stderr"
+   print "************************************************" > "/dev/stderr"
+ }
+ if (count2 % 2 != 0) {
+   print                                                " " > "/dev/stderr"
+   print "************************************************" > "/dev/stderr"
+   print "   WARNING!  The input file has an odd number"    > "/dev/stderr"
+   print "   of asterisk characters, which means that"      > "/dev/stderr"
+   print "   boldfacing was turned ON but was not later"    > "/dev/stderr"
+   print "   turned OFF. The file was processed anyway."    > "/dev/stderr"
+   print "************************************************" > "/dev/stderr"
+ }
+
+}
+#--- end of script ---
+

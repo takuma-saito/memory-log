@@ -1,0 +1,19 @@
+font
+=====
+
+フリーフォント（日本語）
+------------------------
+
+* Line font: http://font.websozai.jp/line-font-mihon.html
+* Ricty: https://github.com/yascentur/Ricty
+* mgenplus: http://jikasei.me/font/mgenplus/
+* Rounded Mgen+: http://jikasei.me/font/rounded-mgenplus/
+* ほのかフォント: http://font.gloomy.jp/honoka-maru-gothic-dl.html
+* Takao Font: https://launchpad.net/takao-fonts
+* チェックポイントフォント: http://marusexijaxs.web.fc2.com/quizfont.html
+
+# Mac でフォントのインストール
+$ mv font.ttf ~/Library/Fonts/
+
+
+

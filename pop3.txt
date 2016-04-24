@@ -1,7 +1,6 @@
 pop3 入門
 ============================
 
-
 pop3 プロトコルとは
 ----------------------------
 pop3 プロトコルはメール転送プロトコルの一つである。
@@ -57,7 +56,18 @@ pop3 プロトコルはメール転送プロトコルの一つである。
 pop3 通信の例
 ----------------------------
 
-pop3で通信する例。
+sakura サーバーの例
+
+$ socat TCP:hogehoge.sakura.ne.jp:110 -
+> +OK Hello there. <47990.1431060271@hogehoge.sakura.ne.jp>
+USER contact@hogehoge.sakura.ne.jp
+> +OK Password required.
+PASS hogedayo
+> +OK logged in.
+quit
+> +OK Bye-bye.
+
+gmail に pop3で通信する例。
 今回はopensslを使ってgmailのpop3サーバーに接続してみる。
 
 ちなみに、GMAILの場合はダウンロード可能なメール数は560前後に制限している模様。
