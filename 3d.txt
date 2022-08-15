@@ -13,6 +13,8 @@ wavefront obj 形式のファイル
 Blender の操作方法
 ------------------
 
+テスト
+
 ### 初期設定 ###
 
 * オブジェクト選択を左クリックに変更: `User preference -> input -> select with -> left`
@@ -33,6 +35,3 @@ Blender の操作方法
   * `5`: 上面
   * `Shift + F`: カメラ固定で視点移動
 * `オブジェクトの選択移動`: Tab
-
-
-
